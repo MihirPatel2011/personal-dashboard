@@ -49,7 +49,8 @@ export default function Dashboard() {
   const recentLoans = [...loans].sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0)).slice(0, 5);
   const recentNotes = [...notes].sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0)).slice(0, 4);
 
-  const firstName = user?.email?.split('@')[0] || 'Mihir';
+  const rawName   = user?.email?.split('@')[0] || 'Mihir';
+  const firstName = rawName.split(/[-._]/)[0];
 
   if (loading) {
     return (
