@@ -97,7 +97,7 @@ function DueDateLabel({ date, status }) {
 
 // ─── CRM Tasks Page ────────────────────────────────────────────────────────────
 export default function CRMTasks() {
-  const { crmTasks, clients, addCRMTask, updateCRMTask, deleteCRMTask } = useData();
+  const { crmTasks, clients, addCrmTask: addCRMTask, updateCrmTask: updateCRMTask, deleteCrmTask: deleteCRMTask } = useData();
   const [search,     setSearch]    = useState('');
   const [filterSt,   setFilterSt]  = useState('active');
   const [filterPr,   setFilterPr]  = useState('all');
