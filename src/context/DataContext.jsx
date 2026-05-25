@@ -8,20 +8,16 @@ const DataContext = createContext(null);
 export function DataProvider({ children }) {
   const { user } = useAuth();
 
-  // Mortgage CRM data (shared with existing CRM app)
-  const [clients, setClients] = useState([]);
-  const [loans,   setLoans]   = useState([]);
-  const [notes,   setNotes]   = useState([]);
-  const [crmTasks, setCrmTasks] = useState([]);
-
-  // Goals data (personal)
-  const [goals,   setGoals]   = useState([]);
-  const [goalLog, setGoalLog] = useState([]);
-
-  // Personal tasks
-  const [personalTasks, setPersonalTasks] = useState([]);
-
-  const [loading, setLoading] = useState(true);
+  const [clients,          setClients]          = useState([]);
+  const [loans,            setLoans]            = useState([]);
+  const [notes,            setNotes]            = useState([]);
+  const [crmTasks,         setCrmTasks]         = useState([]);
+  const [goals,            setGoals]            = useState([]);
+  const [goalLog,          setGoalLog]          = useState([]);
+  const [personalTasks,    setPersonalTasks]    = useState([]);
+  const [taskCategories,   setTaskCategories]   = useState([]);
+  const [mortgageSettings, setMortgageSettings] = useState({});
+  const [loading,          setLoading]          = useState(true);
 
   const toArr = snap => {
     const v = snap.val() || {};
@@ -31,48 +27,59 @@ export function DataProvider({ children }) {
   useEffect(() => {
     if (!user) {
       setClients([]); setLoans([]); setNotes([]); setCrmTasks([]);
-      setGoals([]); setGoalLog([]); setPersonalTasks([]);
+      setGoals([]); setGoalLog([]); setPersonalTasks([]); setTaskCategories([]);
+      setMortgageSettings({});
       setLoading(false);
       return;
     }
     setLoading(true);
     let count = 0;
-    const done = () => { count++; if (count >= 7) setLoading(false); };
+    const TOTAL = 9;
+    const done = () => { count++; if (count >= TOTAL) setLoading(false); };
 
-    const u1 = onValue(ref(db, 'clients'),      s => { setClients(toArr(s));      done(); });
-    const u2 = onValue(ref(db, 'loans'),        s => { setLoans(toArr(s));        done(); });
-    const u3 = onValue(ref(db, 'notes'),        s => { setNotes(toArr(s));        done(); });
-    const u4 = onValue(ref(db, 'tasks'),        s => { setCrmTasks(toArr(s));     done(); });
-    const u5 = onValue(ref(db, 'goals'),        s => { setGoals(toArr(s));        done(); });
-    const u6 = onValue(ref(db, 'goalLog'),      s => { setGoalLog(toArr(s));      done(); });
-    const u7 = onValue(ref(db, 'personalTasks'),s => { setPersonalTasks(toArr(s));done(); });
+    const u1 = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
+    const u2 = onValue(ref(db, 'loans'),            s => { setLoans(toArr(s));                 done(); });
+    const u3 = onValue(ref(db, 'notes'),            s => { setNotes(toArr(s));                 done(); });
+    const u4 = onValue(ref(db, 'tasks'),            s => { setCrmTasks(toArr(s));              done(); });
+    const u5 = onValue(ref(db, 'goals'),            s => { setGoals(toArr(s));                 done(); });
+    const u6 = onValue(ref(db, 'goalLog'),          s => { setGoalLog(toArr(s));               done(); });
+    const u7 = onValue(ref(db, 'personalTasks'),    s => { setPersonalTasks(toArr(s));         done(); });
+    const u8 = onValue(ref(db, 'taskCategories'),   s => { setTaskCategories(toArr(s));        done(); });
+    const u9 = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); };
   }, [user]);
 
-  // ─── Mortgage: Clients ────────────────────────────────────────────────────
-  const addClient = useCallback(async data => {
+  // ─── Clients ──────────────────────────────────────────────────────────────
+  const addClient    = useCallback(async data => {
     const r = push(ref(db, 'clients'));
     await set(r, { ...data, createdAt: new Date().toISOString() });
     return r.key;
   }, []);
   const updateClient = useCallback(async (id, data) => update(ref(db, `clients/${id}`), data), []);
-  const deleteClient = useCallback(async (id) => {
+  const deleteClient = useCallback(async id => {
     const c = clients.find(x => x.id === id);
-    if (c) {
-      if (c.loanIds) for (const lid of Object.keys(c.loanIds)) await remove(ref(db, `loans/${lid}`));
-      if (c.noteIds) for (const nid of Object.keys(c.noteIds)) await remove(ref(db, `notes/${nid}`));
-      if (c.taskIds) for (const tid of Object.keys(c.taskIds)) await remove(ref(db, `tasks/${tid}`));
-    }
+    if (c?.loanIds) for (const lid of Object.keys(c.loanIds)) await remove(ref(db, `loans/${lid}`));
+    if (c?.noteIds) for (const nid of Object.keys(c.noteIds)) await remove(ref(db, `notes/${nid}`));
+    if (c?.taskIds) for (const tid of Object.keys(c.taskIds)) await remove(ref(db, `tasks/${tid}`));
     await remove(ref(db, `clients/${id}`));
   }, [clients]);
 
-  // ─── Mortgage: Loans ─────────────────────────────────────────────────────
+  // ─── Loans ────────────────────────────────────────────────────────────────
   const addLoan = useCallback(async data => {
-    const r = push(ref(db, 'loans'));
+    const r  = push(ref(db, 'loans'));
     const id = r.key;
-    await set(r, { ...data, createdAt: new Date().toISOString() });
-    if (data.clientId) await set(ref(db, `clients/${data.clientId}/loanIds/${id}`), true);
+    let clientId = data.clientId;
+
+    // Auto-create a client record when a name is typed manually
+    if (!clientId && data.clientObj?.trim()) {
+      const cr = push(ref(db, 'clients'));
+      clientId = cr.key;
+      await set(cr, { name: data.clientObj.trim(), createdAt: new Date().toISOString() });
+    }
+
+    await set(r, { ...data, clientId: clientId || '', createdAt: new Date().toISOString() });
+    if (clientId) await set(ref(db, `clients/${clientId}/loanIds/${id}`), true);
     return id;
   }, []);
   const updateLoan = useCallback(async (id, data) => update(ref(db, `loans/${id}`), data), []);
@@ -82,9 +89,9 @@ export function DataProvider({ children }) {
     await remove(ref(db, `loans/${id}`));
   }, [loans]);
 
-  // ─── Mortgage: Notes ─────────────────────────────────────────────────────
+  // ─── Notes ────────────────────────────────────────────────────────────────
   const addNote = useCallback(async data => {
-    const r = push(ref(db, 'notes'));
+    const r  = push(ref(db, 'notes'));
     const id = r.key;
     await set(r, { ...data, createdAt: new Date().toISOString() });
     if (data.clientId) await set(ref(db, `clients/${data.clientId}/noteIds/${id}`), true);
@@ -97,9 +104,9 @@ export function DataProvider({ children }) {
     await remove(ref(db, `notes/${id}`));
   }, [notes]);
 
-  // ─── Mortgage: CRM Tasks ─────────────────────────────────────────────────
-  const addCrmTask = useCallback(async data => {
-    const r = push(ref(db, 'tasks'));
+  // ─── CRM Tasks ────────────────────────────────────────────────────────────
+  const addCrmTask    = useCallback(async data => {
+    const r  = push(ref(db, 'tasks'));
     const id = r.key;
     await set(r, { ...data, createdAt: new Date().toISOString() });
     if (data.clientId) await set(ref(db, `clients/${data.clientId}/taskIds/${id}`), true);
@@ -112,46 +119,43 @@ export function DataProvider({ children }) {
     await remove(ref(db, `tasks/${id}`));
   }, [crmTasks]);
 
+  // ─── Mortgage Settings ────────────────────────────────────────────────────
+  const saveMortgageSettings = useCallback(async (section, arr) => {
+    await set(ref(db, `mortgageSettings/${section}`), arr);
+  }, []);
+
   // ─── Goals ───────────────────────────────────────────────────────────────
-  const addGoal = useCallback(async data => {
-    const r = push(ref(db, 'goals'));
-    await set(r, { ...data, createdAt: Date.now() });
-    return r.key;
-  }, []);
-  const updateGoal = useCallback(async (id, data) => update(ref(db, `goals/${id}`), data), []);
-  const deleteGoal = useCallback(async id => remove(ref(db, `goals/${id}`)), []);
-  const addGoalLog = useCallback(async data => {
-    const r = push(ref(db, 'goalLog'));
-    await set(r, { ...data, ts: Date.now() });
-  }, []);
+  const addGoal       = useCallback(async data => { const r = push(ref(db, 'goals')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
+  const updateGoal    = useCallback(async (id, data) => update(ref(db, `goals/${id}`), data), []);
+  const deleteGoal    = useCallback(async id => remove(ref(db, `goals/${id}`)), []);
+  const addGoalLog    = useCallback(async data => { const r = push(ref(db, 'goalLog')); await set(r, { ...data, ts: data.ts ?? Date.now() }); }, []);
+  const updateGoalLog = useCallback(async (id, data) => update(ref(db, `goalLog/${id}`), data), []);
   const deleteGoalLog = useCallback(async id => remove(ref(db, `goalLog/${id}`)), []);
 
   // ─── Personal Tasks ───────────────────────────────────────────────────────
-  const addPersonalTask = useCallback(async data => {
-    const r = push(ref(db, 'personalTasks'));
-    await set(r, { ...data, createdAt: Date.now(), updatedAt: Date.now() });
-    return r.key;
-  }, []);
-  const updatePersonalTask = useCallback(async (id, data) =>
-    update(ref(db, `personalTasks/${id}`), { ...data, updatedAt: Date.now() }), []);
+  const addPersonalTask    = useCallback(async data => { const r = push(ref(db, 'personalTasks')); await set(r, { ...data, createdAt: Date.now(), updatedAt: Date.now() }); return r.key; }, []);
+  const updatePersonalTask = useCallback(async (id, data) => update(ref(db, `personalTasks/${id}`), { ...data, updatedAt: Date.now() }), []);
   const deletePersonalTask = useCallback(async id => remove(ref(db, `personalTasks/${id}`)), []);
+
+  // ─── Task Categories ──────────────────────────────────────────────────────
+  const addTaskCategory    = useCallback(async data => { const r = push(ref(db, 'taskCategories')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
+  const updateTaskCategory = useCallback(async (id, data) => update(ref(db, `taskCategories/${id}`), data), []);
+  const deleteTaskCategory = useCallback(async id => remove(ref(db, `taskCategories/${id}`)), []);
 
   return (
     <DataContext.Provider value={{
-      // Data
       clients, loans, notes, crmTasks,
-      goals, goalLog, personalTasks,
-      loading,
-      // Mortgage
-      addClient, updateClient, deleteClient,
-      addLoan,   updateLoan,   deleteLoan,
-      addNote,   updateNote,   deleteNote,
-      addCrmTask, updateCrmTask, deleteCrmTask,
-      // Goals
-      addGoal, updateGoal, deleteGoal,
-      addGoalLog, deleteGoalLog,
-      // Personal Tasks
+      goals, goalLog, personalTasks, taskCategories,
+      mortgageSettings, loading,
+      addClient,    updateClient,    deleteClient,
+      addLoan,      updateLoan,      deleteLoan,
+      addNote,      updateNote,      deleteNote,
+      addCrmTask,   updateCrmTask,   deleteCrmTask,
+      saveMortgageSettings,
+      addGoal,      updateGoal,      deleteGoal,
+      addGoalLog,   updateGoalLog,   deleteGoalLog,
       addPersonalTask, updatePersonalTask, deletePersonalTask,
+      addTaskCategory, updateTaskCategory, deleteTaskCategory,
     }}>
       {children}
     </DataContext.Provider>

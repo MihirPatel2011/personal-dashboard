@@ -7,10 +7,11 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { StageBadge } from '../../components/common/Badge';
 import EmptyState from '../../components/common/EmptyState';
 import { LOAN_STAGES, LOAN_STATUSES, OBJECTIVES, LENDERS, REFERRERS, STAGE_COLORS, ACTIVE_STAGES } from '../../constants';
+// settings-aware helpers (used inside component after mortgageSettings is destructured)
 import { formatCurrency, fmtDate, fmtRelative } from '../../utils';
 
 // ─── Loan Form ─────────────────────────────────────────────────────────────────
-function LoanForm({ loan, clients, onSave, onClose }) {
+function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose }) {
   const isEdit = !!loan;
   const [f, setF] = useState({
     clientId:       loan?.clientId || '',
@@ -51,7 +52,7 @@ function LoanForm({ loan, clients, onSave, onClose }) {
             <label>Lender</label>
             <select value={f.lender} onChange={e => sf('lender', e.target.value)}>
               <option value="">— Select —</option>
-              {LENDERS.map(l => <option key={l}>{l}</option>)}
+              {lenders.map(l => <option key={l}>{l}</option>)}
             </select>
           </div>
           <div className="field">
@@ -70,13 +71,13 @@ function LoanForm({ loan, clients, onSave, onClose }) {
           <div className="field">
             <label>Pipeline Status</label>
             <select value={f.status} onChange={e => sf('status', e.target.value)}>
-              {LOAN_STATUSES.map(s => <option key={s}>{s}</option>)}
+              {statuses.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
           <div className="field">
             <label>Loan Stage</label>
             <select value={f.stage} onChange={e => sf('stage', e.target.value)}>
-              {LOAN_STAGES.map(s => <option key={s}>{s}</option>)}
+              {stages.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
         </div>
@@ -185,7 +186,12 @@ function LoanDrawer({ loan, clientName, onEdit, onDelete, onClose }) {
 
 // ─── Pipeline Page ────────────────────────────────────────────────────────────
 export default function Pipeline() {
-  const { loans, clients, addLoan, updateLoan, deleteLoan } = useData();
+  const { loans, clients, addLoan, updateLoan, deleteLoan, mortgageSettings } = useData();
+
+  // Use settings-overridden values if available, else fall back to constants
+  const activeLenders  = (mortgageSettings?.lenders  || LENDERS);
+  const activeStages   = (mortgageSettings?.stages   || LOAN_STAGES);
+  const activeStatuses = (mortgageSettings?.statuses || LOAN_STATUSES);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [search,  setSearch]  = useState('');
   const [showForm,setShowForm]= useState(false);
@@ -241,7 +247,7 @@ export default function Pipeline() {
           <button className={`status-tab${selectedStatus === 'all' ? ' active' : ''}`} onClick={() => setSelectedStatus('all')}>
             All <span className="tab-count">{loans.length}</span>
           </button>
-          {LOAN_STATUSES.map(s => (
+          {activeStatuses.map(s => (
             <button key={s} className={`status-tab${selectedStatus === s ? ' active' : ''}`} onClick={() => setSelectedStatus(s)}>
               {s} <span className="tab-count">{countByStatus(s)}</span>
             </button>
@@ -292,7 +298,7 @@ export default function Pipeline() {
         )}
       </div>
 
-      {showForm && <LoanForm loan={editLoan} clients={clients} onSave={handleSave} onClose={() => { setShowForm(false); setEditLoan(null); }}/>}
+      {showForm && <LoanForm loan={editLoan} clients={clients} lenders={activeLenders} stages={activeStages} statuses={activeStatuses} onSave={handleSave} onClose={() => { setShowForm(false); setEditLoan(null); }}/>}
       {viewLoan && (
         <LoanDrawer
           loan={viewLoan}

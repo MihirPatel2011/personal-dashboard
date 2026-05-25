@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, CheckSquare, Building2, Kanban, Users, FileText, ClipboardList, BarChart3, LogOut, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { isToday, isPast } from '../../utils';
@@ -64,14 +64,13 @@ export default function Sidebar() {
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><FileText size={15}/></span>
           Notes
         </button>
-        <button className={`nav-item${active('/mortgage/tasks') ? ' active' : ''}`} onClick={() => go('/mortgage/tasks')}>
-          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><ClipboardList size={15}/></span>
-          CRM Tasks
-          {overdueCrm > 0 && <span className="nav-badge">{overdueCrm}</span>}
-        </button>
         <button className={`nav-item${active('/mortgage/performance') ? ' active' : ''}`} onClick={() => go('/mortgage/performance')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><BarChart3 size={15}/></span>
           Performance
+        </button>
+        <button className={`nav-item${active('/mortgage/settings') ? ' active' : ''}`} onClick={() => go('/mortgage/settings')}>
+          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><Settings2 size={15}/></span>
+          Settings
         </button>
       </div>
 

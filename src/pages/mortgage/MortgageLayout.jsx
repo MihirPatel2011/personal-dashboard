@@ -1,17 +1,17 @@
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { Kanban, Users, FileText, ClipboardList, BarChart3 } from 'lucide-react';
+import { Kanban, Users, FileText, BarChart3, Settings2 } from 'lucide-react';
 
 const tabs = [
-  { path: '/mortgage/pipeline',    label: 'Pipeline',     icon: Kanban       },
-  { path: '/mortgage/clients',     label: 'Clients',      icon: Users        },
-  { path: '/mortgage/notes',       label: 'Notes',        icon: FileText     },
-  { path: '/mortgage/tasks',       label: 'CRM Tasks',    icon: ClipboardList},
-  { path: '/mortgage/performance', label: 'Performance',  icon: BarChart3    },
+  { path: '/mortgage/pipeline',    label: 'Pipeline',     icon: Kanban    },
+  { path: '/mortgage/clients',     label: 'Clients',      icon: Users     },
+  { path: '/mortgage/notes',       label: 'Notes',        icon: FileText  },
+  { path: '/mortgage/performance', label: 'Performance',  icon: BarChart3 },
+  { path: '/mortgage/settings',    label: 'Settings',     icon: Settings2 },
 ];
 
 export default function MortgageLayout() {
-  const navigate  = useNavigate();
-  const { pathname } = useLocation();
+  const navigate      = useNavigate();
+  const { pathname }  = useLocation();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -25,7 +25,7 @@ export default function MortgageLayout() {
 
       <div className="crm-sub-nav">
         {tabs.map(t => {
-          const Icon = t.icon;
+          const Icon   = t.icon;
           const active = pathname === t.path || pathname.startsWith(t.path + '/');
           return (
             <button key={t.path} className={`crm-sub-btn${active ? ' active' : ''}`} onClick={() => navigate(t.path)}>

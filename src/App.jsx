@@ -11,6 +11,7 @@ import Clients from './pages/mortgage/Clients';
 import Notes from './pages/mortgage/Notes';
 import CRMTasks from './pages/mortgage/CRMTasks';
 import Performance from './pages/mortgage/Performance';
+import Settings from './pages/mortgage/Settings';
 
 function AppShell() {
   return (
@@ -29,6 +30,7 @@ function AppShell() {
             <Route path="notes"              element={<Notes/>}/>
             <Route path="tasks"              element={<CRMTasks/>}/>
             <Route path="performance"        element={<Performance/>}/>
+            <Route path="settings"           element={<Settings/>}/>
           </Route>
           <Route path="*"                    element={<Navigate to="/dashboard" replace/>}/>
         </Routes>
