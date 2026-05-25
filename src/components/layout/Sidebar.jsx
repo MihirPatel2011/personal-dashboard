@@ -1,12 +1,14 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut } from 'lucide-react';
+import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
+import { useTheme } from '../../context/ThemeContext';
 import { isToday, isPast } from '../../utils';
 
 export default function Sidebar() {
   const { logout } = useAuth();
   const { personalTasks, crmTasks, loading } = useData();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const go = path => navigate(path);
@@ -30,7 +32,7 @@ export default function Sidebar() {
 
       <div className="sidebar-scroll">
         {/* Main */}
-        <button className={`nav-item${active('/') && pathname === '/' ? ' active' : ''}`} onClick={() => go('/')}>
+        <button className={`nav-item${active('/') && pathname === '/' ? ' active' : ''}${active('/dashboard') ? ' active' : ''}`} onClick={() => go('/dashboard')}>
           <span className="nav-icon dash-icon"><LayoutDashboard size={15}/></span>
           Dashboard
         </button>
@@ -77,6 +79,13 @@ export default function Sidebar() {
       <div className="sidebar-footer">
         <div className={`sync-dot${loading ? ' syncing' : ''}`}/>
         <span className="sync-label">{loading ? 'Syncing…' : 'Live sync'}</span>
+        <button
+          className="icon-btn sm"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {theme === 'dark' ? <Sun size={13}/> : <Moon size={13}/>}
+        </button>
         <button className="icon-btn sm" onClick={logout} title="Sign out"><LogOut size={13}/></button>
       </div>
     </aside>

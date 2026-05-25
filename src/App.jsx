@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { useAuth } from './context/AuthContext';
+import { useTheme } from './context/ThemeContext';
 import Sidebar from './components/layout/Sidebar';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -12,6 +14,42 @@ import Notes from './pages/mortgage/Notes';
 import CRMTasks from './pages/mortgage/CRMTasks';
 import Performance from './pages/mortgage/Performance';
 import Settings from './pages/mortgage/Settings';
+
+function ThemedToaster() {
+  const { theme } = useTheme();
+  const dark = theme === 'dark';
+  return (
+    <Toaster
+      position="bottom-center"
+      toastOptions={{
+        style: {
+          background:   dark ? '#2C2C2E' : '#FFFFFF',
+          color:        dark ? '#FFFFFF' : '#000000',
+          border:       `1px solid ${dark ? 'rgba(84,84,88,0.6)' : 'rgba(60,60,67,0.2)'}`,
+          borderRadius: '99px',
+          fontSize:     '13px',
+          fontWeight:   500,
+          padding:      '10px 18px',
+          boxShadow:    dark
+            ? '0 8px 32px rgba(0,0,0,0.65)'
+            : '0 8px 32px rgba(0,0,0,0.12)',
+        },
+        success: {
+          iconTheme: {
+            primary:   dark ? '#30D158' : '#34C759',
+            secondary: dark ? '#2C2C2E' : '#FFFFFF',
+          },
+        },
+        error: {
+          iconTheme: {
+            primary:   dark ? '#FF453A' : '#FF3B30',
+            secondary: dark ? '#2C2C2E' : '#FFFFFF',
+          },
+        },
+      }}
+    />
+  );
+}
 
 function AppShell() {
   return (
@@ -51,5 +89,10 @@ export default function App() {
     );
   }
 
-  return user ? <AppShell/> : <Login/>;
+  return (
+    <>
+      {user ? <AppShell/> : <Login/>}
+      <ThemedToaster/>
+    </>
+  );
 }
