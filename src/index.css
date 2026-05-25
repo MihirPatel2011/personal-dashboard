@@ -1,110 +1,120 @@
 /* ═══════════════════════════════════════════════════════════
-   APEX — PERSONAL DASHBOARD  |  Apple Design System
+   APEX — PERSONAL DASHBOARD  |  Warm Ember Design System
    ═══════════════════════════════════════════════════════════ */
 
-/* ── DESIGN TOKENS: DARK (DEFAULT) ───────────────────────── */
+/* ── DESIGN TOKENS: DARK — "Warm Ember" ──────────────────── */
 :root {
-  --bg:              #000000;
-  --surface:         #1C1C1E;
-  --surface-2:       #2C2C2E;
-  --surface-3:       #3A3A3C;
-  --surface-hover:   #48484A;
-  --border:          rgba(84,84,88,0.6);
-  --border-2:        rgba(84,84,88,0.8);
-  --border-strong:   #636366;
-  --ink:             #FFFFFF;
-  --ink-2:           rgba(235,235,245,0.75);
-  --ink-3:           rgba(235,235,245,0.4);
-  --ink-4:           rgba(235,235,245,0.2);
+  /* Backgrounds & surfaces — deep warm charcoal */
+  --bg:              #0D0B09;
+  --surface:         #171410;
+  --surface-2:       #1F1B16;
+  --surface-3:       #28231C;
+  --surface-hover:   #322B22;
+  /* Borders — whisper of warm amber */
+  --border:          rgba(245,215,160,0.08);
+  --border-2:        rgba(245,215,160,0.14);
+  --border-strong:   rgba(245,215,160,0.24);
+  /* Text — warm cream */
+  --ink:             #F2EBE0;
+  --ink-2:           rgba(242,235,224,0.72);
+  --ink-3:           rgba(242,235,224,0.40);
+  --ink-4:           rgba(242,235,224,0.18);
 
-  /* Brand / Accent — Apple Blue */
-  --accent:          #0A84FF;
-  --accent-bright:   #409CFF;
-  --accent-dim:      rgba(10,132,255,0.15);
-  --accent-border:   rgba(10,132,255,0.35);
-  --accent-gradient: linear-gradient(145deg, #0A84FF 0%, #0064D2 100%);
+  /* Brand accent — burnished copper */
+  --accent:          #CF8B46;
+  --accent-bright:   #E0A05C;
+  --accent-dim:      rgba(207,139,70,0.16);
+  --accent-border:   rgba(207,139,70,0.32);
+  --accent-gradient: linear-gradient(145deg, #CF8B46 0%, #A46428 100%);
 
   /* Module colors */
-  --goals:           #BF5AF2;
-  --goals-dim:       rgba(191,90,242,0.15);
-  --goals-border:    rgba(191,90,242,0.35);
-  --tasks:           #FF9F0A;
-  --tasks-dim:       rgba(255,159,10,0.15);
-  --tasks-border:    rgba(255,159,10,0.35);
-  --mortgage:        #30D158;
-  --mortgage-dim:    rgba(48,209,88,0.15);
-  --mortgage-border: rgba(48,209,88,0.35);
+  --goals:           #9B8ED4;
+  --goals-dim:       rgba(155,142,212,0.16);
+  --goals-border:    rgba(155,142,212,0.32);
+  --tasks:           #D47A65;
+  --tasks-dim:       rgba(212,122,101,0.16);
+  --tasks-border:    rgba(212,122,101,0.32);
+  --mortgage:        #60B08A;
+  --mortgage-dim:    rgba(96,176,138,0.16);
+  --mortgage-border: rgba(96,176,138,0.32);
 
   /* Semantic */
-  --ok:         #30D158;
-  --ok-dim:     rgba(48,209,88,0.15);
-  --warn:       #FF9F0A;
-  --warn-dim:   rgba(255,159,10,0.15);
-  --danger:     #FF453A;
-  --danger-dim: rgba(255,69,58,0.15);
-  --info:       #0A84FF;
-  --info-dim:   rgba(10,132,255,0.15);
+  --ok:         #60B08A;
+  --ok-dim:     rgba(96,176,138,0.16);
+  --warn:       #D4A84E;
+  --warn-dim:   rgba(212,168,78,0.16);
+  --danger:     #D46055;
+  --danger-dim: rgba(212,96,85,0.16);
+  --info:       #6A9DD4;
+  --info-dim:   rgba(106,157,212,0.16);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.6);
-  --shadow:    0 4px 16px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4);
-  --shadow-xl: 0 20px 60px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5);
+  /* Shadows — deep and warm */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.7);
+  --shadow:    0 4px 16px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.75), 0 2px 8px rgba(0,0,0,0.5);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.85), 0 4px 16px rgba(0,0,0,0.6);
 
   /* Invariant tokens */
   --r: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 22px;
   --sidebar-w: 244px;
-  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
   --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Consolas, monospace;
   --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --t: .15s var(--ease-out); --t-slow: .25s var(--ease-out);
 }
 
-/* ── DESIGN TOKENS: LIGHT ─────────────────────────────────── */
+/* ── DESIGN TOKENS: LIGHT — "Warm Parchment" ─────────────── */
 html[data-theme="light"] {
-  --bg:              #F2F2F7;
-  --surface:         #FFFFFF;
-  --surface-2:       #F2F2F7;
-  --surface-3:       #E5E5EA;
-  --surface-hover:   #D1D1D6;
-  --border:          rgba(60,60,67,0.2);
-  --border-2:        rgba(60,60,67,0.32);
-  --border-strong:   rgba(60,60,67,0.46);
-  --ink:             #000000;
-  --ink-2:           rgba(60,60,67,0.78);
-  --ink-3:           rgba(60,60,67,0.48);
-  --ink-4:           rgba(60,60,67,0.24);
+  /* Backgrounds & surfaces — warm cream */
+  --bg:              #F2EDE6;
+  --surface:         #FEFCF9;
+  --surface-2:       #F2EDE6;
+  --surface-3:       #E8E1D8;
+  --surface-hover:   #DDD5C9;
+  /* Borders — warm caramel tones */
+  --border:          rgba(100,70,40,0.14);
+  --border-2:        rgba(100,70,40,0.22);
+  --border-strong:   rgba(100,70,40,0.36);
+  /* Text — rich warm brown-black */
+  --ink:             #1C1511;
+  --ink-2:           rgba(28,21,17,0.72);
+  --ink-3:           rgba(28,21,17,0.44);
+  --ink-4:           rgba(28,21,17,0.22);
 
-  --accent:          #007AFF;
-  --accent-bright:   #409CFF;
-  --accent-dim:      rgba(0,122,255,0.1);
-  --accent-border:   rgba(0,122,255,0.3);
-  --accent-gradient: linear-gradient(145deg, #007AFF 0%, #0055CC 100%);
+  /* Brand accent — warm caramel */
+  --accent:          #B87040;
+  --accent-bright:   #CC8450;
+  --accent-dim:      rgba(184,112,64,0.13);
+  --accent-border:   rgba(184,112,64,0.3);
+  --accent-gradient: linear-gradient(145deg, #B87040 0%, #964E22 100%);
 
-  --goals:           #AF52DE;
-  --goals-dim:       rgba(175,82,222,0.1);
-  --goals-border:    rgba(175,82,222,0.3);
-  --tasks:           #FF9500;
-  --tasks-dim:       rgba(255,149,0,0.1);
-  --tasks-border:    rgba(255,149,0,0.3);
-  --mortgage:        #34C759;
-  --mortgage-dim:    rgba(52,199,89,0.1);
-  --mortgage-border: rgba(52,199,89,0.3);
+  /* Module colors */
+  --goals:           #7A6BB8;
+  --goals-dim:       rgba(122,107,184,0.12);
+  --goals-border:    rgba(122,107,184,0.28);
+  --tasks:           #B86050;
+  --tasks-dim:       rgba(184,96,80,0.12);
+  --tasks-border:    rgba(184,96,80,0.28);
+  --mortgage:        #3D9068;
+  --mortgage-dim:    rgba(61,144,104,0.12);
+  --mortgage-border: rgba(61,144,104,0.28);
 
-  --ok:         #34C759;
-  --ok-dim:     rgba(52,199,89,0.1);
-  --warn:       #FF9500;
-  --warn-dim:   rgba(255,149,0,0.1);
-  --danger:     #FF3B30;
-  --danger-dim: rgba(255,59,48,0.1);
-  --info:       #007AFF;
-  --info-dim:   rgba(0,122,255,0.1);
+  /* Semantic */
+  --ok:         #3D9068;
+  --ok-dim:     rgba(61,144,104,0.12);
+  --warn:       #A87C30;
+  --warn-dim:   rgba(168,124,48,0.12);
+  --danger:     #B84A3A;
+  --danger-dim: rgba(184,74,58,0.12);
+  --info:       #4870B0;
+  --info-dim:   rgba(72,112,176,0.12);
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow:    0 2px 8px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
-  --shadow-xl: 0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.1);
+  /* Shadows — soft and warm */
+  --shadow-sm: 0 1px 3px rgba(80,50,20,0.1), 0 1px 2px rgba(80,50,20,0.07);
+  --shadow:    0 2px 8px rgba(80,50,20,0.13), 0 1px 3px rgba(80,50,20,0.09);
+  --shadow-lg: 0 8px 24px rgba(80,50,20,0.16), 0 2px 8px rgba(80,50,20,0.1);
+  --shadow-xl: 0 20px 60px rgba(80,50,20,0.2), 0 4px 16px rgba(80,50,20,0.13);
 }
 
 /* ── RESET ────────────────────────────────────────────────── */

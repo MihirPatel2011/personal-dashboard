@@ -23,27 +23,27 @@ function ThemedToaster() {
       position="bottom-center"
       toastOptions={{
         style: {
-          background:   dark ? '#2C2C2E' : '#FFFFFF',
-          color:        dark ? '#FFFFFF' : '#000000',
-          border:       `1px solid ${dark ? 'rgba(84,84,88,0.6)' : 'rgba(60,60,67,0.2)'}`,
+          background:   dark ? '#1F1B16' : '#FEFCF9',
+          color:        dark ? '#F2EBE0' : '#1C1511',
+          border:       `1px solid ${dark ? 'rgba(245,215,160,0.14)' : 'rgba(100,70,40,0.22)'}`,
           borderRadius: '99px',
           fontSize:     '13px',
           fontWeight:   500,
           padding:      '10px 18px',
           boxShadow:    dark
-            ? '0 8px 32px rgba(0,0,0,0.65)'
-            : '0 8px 32px rgba(0,0,0,0.12)',
+            ? '0 8px 32px rgba(0,0,0,0.7)'
+            : '0 8px 32px rgba(80,50,20,0.16)',
         },
         success: {
           iconTheme: {
-            primary:   dark ? '#30D158' : '#34C759',
-            secondary: dark ? '#2C2C2E' : '#FFFFFF',
+            primary:   dark ? '#60B08A' : '#3D9068',
+            secondary: dark ? '#1F1B16' : '#FEFCF9',
           },
         },
         error: {
           iconTheme: {
-            primary:   dark ? '#FF453A' : '#FF3B30',
-            secondary: dark ? '#2C2C2E' : '#FFFFFF',
+            primary:   dark ? '#D46055' : '#B84A3A',
+            secondary: dark ? '#1F1B16' : '#FEFCF9',
           },
         },
       }}
