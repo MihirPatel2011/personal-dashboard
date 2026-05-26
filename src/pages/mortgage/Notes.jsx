@@ -152,7 +152,7 @@ export default function Notes() {
 
   return (
     <>
-      <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+      <div className="crm-toolbar" style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ position: 'relative' }}>
             <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }}/>
@@ -170,7 +170,7 @@ export default function Notes() {
         </button>
       </div>
 
-      <div style={{ padding: '20px 28px' }}>
+      <div className="crm-body" style={{ padding: '20px 28px' }}>
         {filtered.length === 0 ? (
           <EmptyState emoji="📝" title="No notes yet" description="Keep track of client interactions and important conversations."
             actionLabel="Add Note" onAction={() => { setEditNote(null); setShowForm(true); }}/>

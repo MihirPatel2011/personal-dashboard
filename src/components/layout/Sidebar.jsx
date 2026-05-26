@@ -5,6 +5,56 @@ import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
 import { isToday, isPast } from '../../utils';
 
+// ─── Mobile bottom tab bar ─────────────────────────────────────────────────────
+export function MobileNav() {
+  const { logout } = useAuth();
+  const { personalTasks } = useData();
+  const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  const inboxCount = personalTasks.filter(t => t.status === 'inbox').length;
+
+  const isActive = path => {
+    if (path === '/dashboard') return pathname === '/dashboard' || pathname === '/';
+    const base = '/' + path.split('/').filter(Boolean)[0];
+    return pathname.startsWith(base);
+  };
+
+  const tabs = [
+    { path: '/dashboard',        label: 'Home',     icon: LayoutDashboard },
+    { path: '/goals',            label: 'Goals',    icon: Target          },
+    { path: '/tasks',            label: 'Tasks',    icon: CheckSquare     },
+    { path: '/mortgage/pipeline',label: 'Mortgage', icon: Kanban          },
+  ];
+
+  return (
+    <nav className="mobile-nav" aria-label="Main navigation">
+      {tabs.map(({ path, label, icon: Icon }) => (
+        <button
+          key={path}
+          className={`mobile-nav-item${isActive(path) ? ' active' : ''}`}
+          onClick={() => navigate(path)}
+        >
+          <Icon size={22}/>
+          <span>{label}</span>
+          {path === '/tasks' && inboxCount > 0 && (
+            <span className="mobile-nav-badge">{inboxCount > 9 ? '9+' : inboxCount}</span>
+          )}
+        </button>
+      ))}
+      <button
+        className="mobile-nav-item"
+        onClick={toggleTheme}
+        title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+      >
+        {theme === 'dark' ? <Sun size={22}/> : <Moon size={22}/>}
+        <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+      </button>
+    </nav>
+  );
+}
+
 export default function Sidebar() {
   const { logout } = useAuth();
   const { personalTasks, crmTasks, loading } = useData();

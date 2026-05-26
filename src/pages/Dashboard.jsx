@@ -86,7 +86,7 @@ export default function Dashboard() {
       </div>
 
       {/* 3-column content */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+      <div className="dash-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
 
         {/* Goals column */}
         <div className="dash-section">

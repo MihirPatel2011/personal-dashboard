@@ -429,7 +429,7 @@ export default function Clients() {
   return (
     <>
       {/* ── Toolbar ── */}
-      <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+      <div className="crm-toolbar" style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
         <div style={{ position: 'relative' }}>
           <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }}/>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients…"
@@ -444,7 +444,7 @@ export default function Clients() {
       </div>
 
       {/* ── Grid ── */}
-      <div style={{ padding: '20px 28px' }}>
+      <div className="crm-body" style={{ padding: '20px 28px' }}>
         {filtered.length === 0 ? (
           <EmptyState emoji="👤" title="No clients yet" description="Add your first client to start building your CRM."
             actionLabel="Add Client" onAction={() => { setEditClient(null); setShowForm(true); }}/>

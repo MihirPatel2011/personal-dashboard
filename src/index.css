@@ -467,6 +467,193 @@ a { color: inherit; text-decoration: none; }
 .loan-grid > *:nth-child(5) { animation-delay: 160ms; }
 .loan-grid > *:nth-child(n+6) { animation-delay: 180ms; }
 
+/* ══ MOBILE NAV (bottom tab bar — desktop: hidden) ══════════ */
+.mobile-nav { display: none; }
+
+/* ══ RESPONSIVE: PHONE ≤ 768px ══════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Shell ── */
+  .sidebar { display: none; }
+
+  /* Bottom nav */
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 50;
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--ink-3);
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 8px 4px;
+    position: relative;
+    transition: color var(--t), transform 120ms var(--ease-out);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav-item:active { transform: scale(0.9); }
+  .mobile-nav-item.active { color: var(--accent); }
+  .mobile-nav-badge {
+    position: absolute;
+    top: 5px;
+    right: calc(50% - 18px);
+    min-width: 15px;
+    height: 15px;
+    border-radius: 99px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 1.5px solid var(--surface);
+  }
+
+  /* ── Main content — offset for bottom nav ── */
+  .main-content { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important; }
+
+  /* ── Page header ── */
+  .page-header { padding: 14px 16px 12px; }
+  .page-title  { font-size: 18px; }
+  .page-body   { padding: 16px; }
+
+  /* ── KPI grid: 2-up ── */
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-grid.wide { grid-template-columns: 1fr 1fr; }
+  .kpi-value { font-size: 20px; }
+
+  /* ── Form grids: single column ── */
+  .form-2, .form-3 { grid-template-columns: 1fr; }
+
+  /* ── Modals → bottom sheet ── */
+  .overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    border-radius: 20px 20px 0 0;
+    max-height: 92vh;
+    width: 100%;
+    max-width: 100%;
+    animation: slideUpSheet .28s var(--ease-out);
+  }
+  .modal-head { padding: 16px 20px; }
+  .modal-body { padding: 16px 20px; }
+  .modal-foot { padding: 14px 20px; }
+
+  /* ── Drawers → bottom sheet ── */
+  .drawer-backdrop { z-index: 100; }
+  .drawer {
+    width: 100%;
+    height: 90dvh;
+    top: auto;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    animation: slideUpSheet .28s var(--ease-out);
+  }
+  .drawer-head { padding: 16px 20px; }
+  .drawer-body { padding: 16px 20px; }
+  .drawer-foot { padding: 12px 20px; flex-direction: row; }
+
+  /* ── Goals page: sidebar → horizontal pill scroller ── */
+  .goals-layout { grid-template-columns: 1fr; min-height: unset; }
+  .goals-sidebar {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .goals-sidebar::-webkit-scrollbar { display: none; }
+  .goals-sidebar-section { display: none; }
+  .goal-list-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    border-radius: 99px;
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    padding: 6px 14px;
+  }
+  .goal-list-item.active {
+    background: var(--goals-dim);
+    border-color: var(--goals-border);
+    color: var(--goals);
+  }
+  .goal-list-pct { display: none; }
+  .goals-main { padding: 16px; }
+
+  /* Goals detail */
+  .metrics-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .week-grid    { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .goal-detail-header { flex-direction: column; gap: 12px; }
+  .goal-icon-lg { width: 40px; height: 40px; font-size: 18px; }
+
+  /* ── Tasks page: hide right panel ── */
+  .tasks-layout { grid-template-columns: 1fr; min-height: unset; }
+  .tasks-side { display: none; }
+  .tasks-main { padding: 16px; border-right: none; }
+
+  /* ── Dashboard 3-col content grid ── */
+  .dash-main-grid { grid-template-columns: 1fr !important; gap: 0 !important; }
+
+  /* ── CRM toolbar (Pipeline / Clients / Notes) ── */
+  .crm-toolbar {
+    padding: 12px 16px !important;
+    flex-wrap: wrap;
+    gap: 10px !important;
+  }
+  .crm-toolbar input[type="text"],
+  .crm-toolbar input:not([type]) { width: 100% !important; }
+
+  /* ── CRM body padding ── */
+  .crm-body { padding: 12px 16px !important; }
+
+  /* ── CRM sub-nav tabs ── */
+  .crm-sub-nav { padding: 0 12px; }
+  .crm-sub-btn { padding: 12px 10px; font-size: 12px; }
+
+  /* ── Pipeline status tabs ── */
+  .pipeline-status-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .pipeline-status-tabs::-webkit-scrollbar { display: none; }
+
+  /* ── Info rows ── */
+  .info-row { flex-direction: column; gap: 2px; padding: 10px 0; }
+  .info-key { min-width: unset; font-size: 11px; color: var(--ink-3); }
+  .info-val  { font-size: 14px; }
+
+  /* ── Buttons: better touch targets on mobile ── */
+  .btn     { padding: 9px 16px; min-height: 40px; }
+  .btn.sm  { padding: 7px 12px; min-height: 34px; }
+  .icon-btn { width: 36px; height: 36px; }
+  .icon-btn.sm { width: 32px; height: 32px; }
+}
+
+/* slideUpSheet animation (used by drawers + modals on mobile) */
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); opacity: 1; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

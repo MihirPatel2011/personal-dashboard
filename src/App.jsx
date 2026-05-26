@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
-import Sidebar from './components/layout/Sidebar';
+import Sidebar, { MobileNav } from './components/layout/Sidebar';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Goals from './pages/Goals';
@@ -55,7 +55,7 @@ function AppShell() {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
       <Sidebar/>
-      <main style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <main className="main-content" style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         <Routes>
           <Route path="/"                    element={<Navigate to="/dashboard" replace/>}/>
           <Route path="/dashboard"           element={<Dashboard/>}/>
@@ -73,6 +73,7 @@ function AppShell() {
           <Route path="*"                    element={<Navigate to="/dashboard" replace/>}/>
         </Routes>
       </main>
+      <MobileNav/>
     </div>
   );
 }

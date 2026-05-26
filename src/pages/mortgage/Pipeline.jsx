@@ -228,7 +228,7 @@ export default function Pipeline() {
 
   return (
     <>
-      <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+      <div className="crm-toolbar" style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ position: 'relative' }}>
             <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }}/>
@@ -242,7 +242,7 @@ export default function Pipeline() {
         </button>
       </div>
 
-      <div style={{ padding: '16px 28px 0' }}>
+      <div className="crm-body" style={{ padding: '16px 28px 0' }}>
         <div className="pipeline-status-tabs">
           <button className={`status-tab${selectedStatus === 'all' ? ' active' : ''}`} onClick={() => setSelectedStatus('all')}>
             All <span className="tab-count">{loans.length}</span>
@@ -255,7 +255,7 @@ export default function Pipeline() {
         </div>
       </div>
 
-      <div style={{ padding: '16px 28px 28px' }}>
+      <div className="crm-body" style={{ padding: '16px 28px 28px' }}>
         {filtered.length === 0 ? (
           <EmptyState emoji="🏠" title="No loans yet" description="Add your first loan to start tracking your pipeline."
             actionLabel="Add Loan" onAction={() => { setEditLoan(null); setShowForm(true); }}/>
