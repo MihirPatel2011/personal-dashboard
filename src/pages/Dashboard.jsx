@@ -32,12 +32,17 @@ export default function Dashboard() {
   }).length;
 
   // ── Task metrics ───────────────────────────────────────────────────────────
-  const essential = personalTasks.find(t => t.status === 'essential');
-  const secondary = personalTasks.filter(t => t.status === 'secondary');
-  const inboxCount = personalTasks.filter(t => t.status === 'inbox').length;
-  const tasksDueToday = personalTasks.filter(t =>
-    !['done','nd'].includes(t.status) && isToday(t.dueDate)
-  ).length;
+  // Support both legacy (essential/secondary) and new GTD (isToday / when) status model
+  const todayTasks = personalTasks.filter(t => {
+    const s = t.status;
+    if (['logbook', 'done', 'nd', 'someday'].includes(s)) return false;
+    if (s === 'essential' || s === 'secondary') return true;
+    return !!(t.isToday || isToday(t.when));
+  });
+  const essential = todayTasks[0] || null;
+  const secondary = todayTasks.slice(1);
+  const inboxCount = personalTasks.filter(t => t.status === 'inbox' || !t.status).length;
+  const tasksDueToday = todayTasks.length;
 
   // ── Mortgage metrics ────────────────────────────────────────────────────────
   const activeLoans   = loans.filter(l => ACTIVE_STAGES.includes(l.stage));
@@ -144,12 +149,12 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* Essential */}
+          {/* Today's top task */}
           <div className="essential-dash" onClick={() => navigate('/tasks')} style={{ cursor: 'pointer', marginBottom: 10 }}>
-            <div className="ess-label">⭐ Essential</div>
+            <div className="ess-label">☀️ Today</div>
             {essential
               ? <div className="ess-task-title">{essential.title}</div>
-              : <div className="ess-empty-hint">No essential task set — tap to add one</div>
+              : <div className="ess-empty-hint">Nothing pinned for today — open Tasks to schedule</div>
             }
           </div>
 
