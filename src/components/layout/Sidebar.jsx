@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -13,7 +13,10 @@ export function MobileNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const inboxCount = personalTasks.filter(t => t.status === 'inbox').length;
+  const inboxCount = personalTasks.filter(t => {
+    if (t.status !== 'inbox' && t.status) return false;
+    return !t.deadline && !t.isToday;
+  }).length;
 
   const isActive = path => {
     if (path === '/dashboard') return pathname === '/dashboard' || pathname === '/';
@@ -23,8 +26,8 @@ export function MobileNav() {
 
   const tabs = [
     { path: '/dashboard',        label: 'Home',     icon: LayoutDashboard },
-    { path: '/goals',            label: 'Goals',    icon: Target          },
     { path: '/tasks',            label: 'Tasks',    icon: CheckSquare     },
+    { path: '/notes',            label: 'Notes',    icon: NotebookPen     },
     { path: '/mortgage/pipeline',label: 'Mortgage', icon: Kanban          },
   ];
 
@@ -68,7 +71,10 @@ export default function Sidebar() {
   const overdueCrm = crmTasks.filter(t =>
     !['Done','Cancelled'].includes(t.status) && isPast(t.dueDate) && !isToday(t.dueDate)
   ).length;
-  const inboxCount = personalTasks.filter(t => t.status === 'inbox').length;
+  const inboxCount = personalTasks.filter(t => {
+    if (t.status !== 'inbox' && t.status) return false;
+    return !t.deadline && !t.isToday;
+  }).length;
 
   return (
     <aside className="sidebar">
@@ -100,6 +106,10 @@ export default function Sidebar() {
           <span className="nav-icon tasks-icon"><CheckSquare size={15}/></span>
           Task Manager
           {inboxCount > 0 && <span className="nav-badge warn">{inboxCount}</span>}
+        </button>
+        <button className={`nav-item${active('/notes') ? ' active' : ''}`} onClick={() => go('/notes')}>
+          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><NotebookPen size={15}/></span>
+          Notes &amp; Ideas
         </button>
 
         {/* Mortgage */}

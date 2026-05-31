@@ -19,6 +19,7 @@ export function DataProvider({ children }) {
   const [projects,         setProjects]         = useState([]);
   const [taskAreas,        setTaskAreas]        = useState([]);
   const [mortgageSettings, setMortgageSettings] = useState({});
+  const [personalNotes,    setPersonalNotes]    = useState([]);
   const [loading,          setLoading]          = useState(true);
 
   const toArr = snap => {
@@ -30,14 +31,14 @@ export function DataProvider({ children }) {
     if (!user) {
       setClients([]); setLoans([]); setNotes([]); setCrmTasks([]);
       setGoals([]); setGoalLog([]); setPersonalTasks([]); setTaskCategories([]);
-      setProjects([]); setTaskAreas([]);
+      setProjects([]); setTaskAreas([]); setPersonalNotes([]);
       setMortgageSettings({});
       setLoading(false);
       return;
     }
     setLoading(true);
     let count = 0;
-    const TOTAL = 11;
+    const TOTAL = 12;
     const done = () => { count++; if (count >= TOTAL) setLoading(false); };
 
     const u1  = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
@@ -51,8 +52,9 @@ export function DataProvider({ children }) {
     const u9  = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
     const u10 = onValue(ref(db, 'projects'),         s => { setProjects(toArr(s));              done(); });
     const u11 = onValue(ref(db, 'taskAreas'),        s => { setTaskAreas(toArr(s));             done(); });
+    const u12 = onValue(ref(db, 'personalNotes'),    s => { setPersonalNotes(toArr(s));         done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); u11(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); u11(); u12(); };
   }, [user]);
 
   // ─── Clients ──────────────────────────────────────────────────────────────
@@ -69,6 +71,11 @@ export function DataProvider({ children }) {
     if (c?.taskIds) for (const tid of Object.keys(c.taskIds)) await remove(ref(db, `tasks/${tid}`));
     await remove(ref(db, `clients/${id}`));
   }, [clients]);
+
+  // ─── Personal Notes ───────────────────────────────────────────────────────────
+  const addPersonalNote    = useCallback(async data => { const r = push(ref(db, 'personalNotes')); await set(r, { ...data, createdAt: Date.now(), updatedAt: Date.now() }); return r.key; }, []);
+  const updatePersonalNote = useCallback(async (id, data) => update(ref(db, `personalNotes/${id}`), { ...data, updatedAt: Date.now() }), []);
+  const deletePersonalNote = useCallback(async id => remove(ref(db, `personalNotes/${id}`)), []);
 
   // ─── Loans ────────────────────────────────────────────────────────────────
   const addLoan = useCallback(async data => {
@@ -161,7 +168,7 @@ export function DataProvider({ children }) {
     <DataContext.Provider value={{
       clients, loans, notes, crmTasks,
       goals, goalLog, personalTasks, taskCategories,
-      projects, taskAreas,
+      projects, taskAreas, personalNotes,
       mortgageSettings, loading,
       addClient,    updateClient,    deleteClient,
       addLoan,      updateLoan,      deleteLoan,
@@ -174,6 +181,7 @@ export function DataProvider({ children }) {
       addTaskCategory, updateTaskCategory, deleteTaskCategory,
       addProject,   updateProject,   deleteProject,
       addTaskArea,  updateTaskArea,  deleteTaskArea,
+      addPersonalNote, updatePersonalNote, deletePersonalNote,
     }}>
       {children}
     </DataContext.Provider>

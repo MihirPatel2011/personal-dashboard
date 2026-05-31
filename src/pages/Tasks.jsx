@@ -1,5 +1,5 @@
 // src/pages/Tasks.jsx — GTD / Things 3 style task manager
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Plus, Sun, Calendar, Layers, Bookmark, BookOpen,
   FolderOpen, Trash2, Edit3, Check, X,
@@ -10,6 +10,13 @@ import { useData } from '../context/DataContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import Modal from '../components/common/Modal';
 import { fmtShortDate, isToday, isPast } from '../utils';
+
+// ─── Area color palette ──────────────────────────────────────────────────────
+const AREA_COLORS = [
+  '#60A5FA', '#A78BFA', '#34D399', '#FB923C', '#F472B6',
+  '#2DD4BF', '#FBBF24', '#818CF8', '#FB7185', '#22D3EE',
+  '#4ADE80', '#E879F9',
+];
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 function getEffStatus(t) {
@@ -24,12 +31,15 @@ function inToday(t) {
   const s = t.status;
   if (['logbook', 'done', 'nd', 'someday'].includes(s)) return false;
   if (s === 'essential' || s === 'secondary') return true;
-  return !!(t.isToday || isToday(t.when));
+  return !!(t.isToday || isToday(t.deadline));
 }
 function inUpcoming(t) {
-  if (['logbook', 'done', 'nd', 'someday', 'inbox'].includes(t.status)) return false;
-  if (!t.when) return false;
-  const d = new Date(t.when + 'T00:00:00');
+  // Logbook / someday / legacy-done never appear in upcoming
+  if (['logbook', 'done', 'nd', 'someday'].includes(t.status)) return false;
+  // Items that are "today" don't also show in upcoming
+  if (inToday(t)) return false;
+  if (!t.deadline) return false;
+  const d = new Date(t.deadline + 'T00:00:00');
   const today = new Date(); today.setHours(0, 0, 0, 0);
   return d > today;
 }
@@ -50,10 +60,13 @@ function TaskFormModal({ task, defaultView, defaultProjectId, projects, areas, o
     if (defaultView === 'inbox')   return 'inbox';
     return 'anytime';
   }
+  const todayStr    = new Date().toISOString().slice(0, 10);
+  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const nextWeekStr = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+
   const [f, setF] = useState({
     title:     task?.title     || '',
     notes:     task?.notes     || '',
-    when:      task?.when      || '',
     deadline:  task?.deadline  || '',
     projectId: task?.projectId || defaultProjectId || '',
     area:      task?.area      || '',
@@ -84,14 +97,13 @@ function TaskFormModal({ task, defaultView, defaultProjectId, projects, areas, o
           <textarea value={f.notes} onChange={e => sf('notes', e.target.value)}
             placeholder="Extra context, links…" style={{ minHeight: 60 }}/>
         </div>
-        <div className="form-grid form-2">
-          <div className="field">
-            <label>When</label>
-            <input type="date" value={f.when} onChange={e => sf('when', e.target.value)}/>
-          </div>
-          <div className="field">
-            <label>Deadline</label>
-            <input type="date" value={f.deadline} onChange={e => sf('deadline', e.target.value)}/>
+        <div className="field">
+          <label>Deadline</label>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input type="date" value={f.deadline} onChange={e => sf('deadline', e.target.value)} style={{ flex: 1, minWidth: 140 }}/>
+            <button type="button" className="btn ghost sm" onClick={() => sf('deadline', todayStr)} style={{ flexShrink: 0 }}>Today</button>
+            <button type="button" className="btn ghost sm" onClick={() => sf('deadline', tomorrowStr)} style={{ flexShrink: 0 }}>Tomorrow</button>
+            <button type="button" className="btn ghost sm" onClick={() => sf('deadline', nextWeekStr)} style={{ flexShrink: 0 }}>Next week</button>
           </div>
         </div>
         <div className="form-grid form-2">
@@ -212,50 +224,88 @@ function ProjectFormModal({ project, areas, onSave, onClose }) {
   );
 }
 
+// ─── Color Swatches (shared) ─────────────────────────────────────────────────
+function ColorSwatches({ selected, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
+      {AREA_COLORS.map(c => (
+        <button
+          key={c}
+          onMouseDown={e => { e.preventDefault(); onChange(c); }}
+          style={{
+            width: 22, height: 22, borderRadius: '50%', background: c, border: 'none',
+            outline: selected === c ? `2px solid white` : '2px solid transparent',
+            boxShadow: selected === c ? `0 0 0 3px ${c}` : 'none',
+            cursor: 'pointer', flexShrink: 0, transition: 'all .12s',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── Area Manager Modal ───────────────────────────────────────────────────────
 function AreaManagerModal({ areas, onAdd, onUpdate, onDelete, onClose }) {
-  const [newLabel, setNewLabel] = useState('');
-  const [editId,   setEditId]   = useState(null);
-  const [editVal,  setEditVal]  = useState('');
+  const [newLabel,  setNewLabel]  = useState('');
+  const [newColor,  setNewColor]  = useState(AREA_COLORS[0]);
+  const [editId,    setEditId]    = useState(null);
+  const [editVal,   setEditVal]   = useState('');
+  const [editColor, setEditColor] = useState(AREA_COLORS[0]);
+
+  function commitEdit(id) {
+    onUpdate(id, { label: editVal, color: editColor });
+    setEditId(null);
+  }
+
   return (
     <Modal isOpen={true} onClose={onClose} title="Manage Areas" size="sm">
       <div className="modal-body">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+        {/* Existing areas */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
           {areas.length === 0 && (
             <p style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic', lineHeight: 1.6 }}>
-              Areas group your projects and tasks by life domain — e.g. Work, Personal, Health.
+              Areas group your projects by life domain — e.g. Work, Personal, Health.
             </p>
           )}
           {areas.map(a => (
-            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r)' }}>
+            <div key={a.id} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 12px' }}>
               {editId === a.id ? (
-                <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <input value={editVal} onChange={e => setEditVal(e.target.value)} autoFocus
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') { onUpdate(a.id, { label: editVal }); setEditId(null); }
-                      if (e.key === 'Escape') setEditId(null);
-                    }}
-                    style={{ flex: 1, background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 8px', fontSize: 13, color: 'var(--ink)', outline: 'none' }}/>
-                  <button className="btn sm accent" onClick={() => { onUpdate(a.id, { label: editVal }); setEditId(null); }}>Save</button>
-                </>
+                    onKeyDown={e => { if (e.key === 'Enter') commitEdit(a.id); if (e.key === 'Escape') setEditId(null); }}
+                    style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontSize: 13, color: 'var(--ink)', outline: 'none', width: '100%' }}/>
+                  <ColorSwatches selected={editColor} onChange={setEditColor}/>
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                    <button className="btn ghost sm" onClick={() => setEditId(null)}>Cancel</button>
+                    <button className="btn accent sm" onClick={() => commitEdit(a.id)}>Save</button>
+                  </div>
+                </div>
               ) : (
-                <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span style={{ width: 11, height: 11, borderRadius: '50%', background: a.color || AREA_COLORS[0], flexShrink: 0 }}/>
                   <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{a.label}</span>
-                  <button className="icon-btn sm" onClick={() => { setEditId(a.id); setEditVal(a.label); }}><Edit3 size={12}/></button>
+                  <button className="icon-btn sm" onClick={() => { setEditId(a.id); setEditVal(a.label); setEditColor(a.color || AREA_COLORS[0]); }}><Edit3 size={12}/></button>
                   <button className="icon-btn sm danger" onClick={() => onDelete(a.id)}><Trash2 size={12}/></button>
-                </>
+                </div>
               )}
             </div>
           ))}
         </div>
-        <div className="section-label" style={{ marginBottom: 8 }}>New Area</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input value={newLabel} onChange={e => setNewLabel(e.target.value)}
-            placeholder="e.g. Work, Health, Personal…"
-            onKeyDown={e => { if (e.key === 'Enter' && newLabel.trim()) { onAdd({ label: newLabel.trim() }); setNewLabel(''); } }}
-            style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--r)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 13, outline: 'none' }}/>
-          <button className="btn sm accent" disabled={!newLabel.trim()}
-            onClick={() => { onAdd({ label: newLabel.trim() }); setNewLabel(''); }}>Add</button>
+
+        {/* New area form */}
+        <div className="section-label" style={{ marginBottom: 10 }}>New Area</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={newLabel} onChange={e => setNewLabel(e.target.value)}
+              placeholder="e.g. Work, Health, Personal…"
+              onKeyDown={e => { if (e.key === 'Enter' && newLabel.trim()) { onAdd({ label: newLabel.trim(), color: newColor }); setNewLabel(''); setNewColor(AREA_COLORS[0]); } }}
+              style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--r)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 13, outline: 'none' }}/>
+            <button className="btn accent sm" disabled={!newLabel.trim()}
+              onClick={() => { onAdd({ label: newLabel.trim(), color: newColor }); setNewLabel(''); setNewColor(AREA_COLORS[0]); }}>
+              Add
+            </button>
+          </div>
+          <ColorSwatches selected={newColor} onChange={setNewColor}/>
         </div>
       </div>
       <div className="modal-foot">
@@ -342,24 +392,18 @@ function TaskDetail({ task, projects, areas, onUpdate, onDelete, onClose }) {
 
         {/* Field rows */}
         <div style={{ borderTop: '1px solid var(--border)' }}>
-          {/* When */}
+          {/* Deadline + Today toggle */}
           <div className="tasks-detail-field">
-            <span className="tasks-detail-field-label">When</span>
+            <span className="tasks-detail-field-label">Deadline</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-              <input type="date" value={task.when || ''} onChange={e => save('when', e.target.value || null)}
-                style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', fontFamily: 'inherit', flex: 1 }}/>
+              <input type="date" value={task.deadline || ''} onChange={e => save('deadline', e.target.value || null)}
+                style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', cursor: 'pointer', color: (isPast(task.deadline) && !isToday(task.deadline) && task.deadline) ? 'var(--danger)' : 'var(--ink-2)', flex: 1 }}/>
               <button
                 onClick={() => save('isToday', !task.isToday)}
                 style={{ fontSize: 11, padding: '2px 9px', borderRadius: 99, background: task.isToday ? 'var(--tasks-dim)' : 'var(--surface-3)', color: task.isToday ? 'var(--tasks)' : 'var(--ink-4)', border: `1px solid ${task.isToday ? 'var(--tasks-border)' : 'transparent'}`, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', transition: 'all .15s', flexShrink: 0 }}>
                 ☀ Today
               </button>
             </div>
-          </div>
-          {/* Deadline */}
-          <div className="tasks-detail-field">
-            <span className="tasks-detail-field-label">Deadline</span>
-            <input type="date" value={task.deadline || ''} onChange={e => save('deadline', e.target.value || null)}
-              style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', cursor: 'pointer', color: (isPast(task.deadline) && !isToday(task.deadline) && task.deadline) ? 'var(--danger)' : 'var(--ink-2)', flex: 1 }}/>
           </div>
           {/* Project */}
           <div className="tasks-detail-field">
@@ -497,16 +541,31 @@ export default function Tasks() {
   const [showPF,      setShowPF]      = useState(false);  // project form modal
   const [editProj,    setEditProj]    = useState(null);
   const [showAM,      setShowAM]      = useState(false);  // area manager modal
-  const [quickAdd,    setQuickAdd]    = useState('');
-  const [delItem,     setDelItem]     = useState(null);   // { type, item }
+  const [quickAdd,      setQuickAdd]      = useState('');
+  const [quickDeadline, setQuickDeadline] = useState('');
+  const [delItem,       setDelItem]       = useState(null); // { type, item }
+
+  const inboxInputRef = useRef(null);
+
+  // Auto-focus the capture input every time the user enters Inbox
+  useEffect(() => {
+    if (view === 'inbox') {
+      const timer = setTimeout(() => inboxInputRef.current?.focus(), 60);
+      return () => clearTimeout(timer);
+    }
+  }, [view]);
 
   // Always resolve freshest task data from store
   const currentTask = selTask ? (personalTasks.find(t => t.id === selTask) || null) : null;
 
   // ── View lists ───────────────────────────────────────────────────────────────
-  const inboxList    = personalTasks.filter(t => (t.status === 'inbox' || !t.status));
+  // Inbox: capture only — once a deadline or today-pin is set the task moves to Today/Upcoming
+  const inboxList = personalTasks.filter(t => {
+    if (t.status !== 'inbox' && t.status) return false; // must be inbox-status or legacy no-status
+    return !t.deadline && !t.isToday;                   // no deadline set, not pinned to today
+  });
   const todayList    = personalTasks.filter(t => inToday(t) && getEffStatus(t) !== 'logbook');
-  const upcomingList = personalTasks.filter(t => inUpcoming(t)).sort((a, b) => new Date(a.when) - new Date(b.when));
+  const upcomingList = personalTasks.filter(t => inUpcoming(t)).sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
   const anytimeList  = personalTasks.filter(t => getEffStatus(t) === 'anytime' && !inToday(t) && !inUpcoming(t));
   const somedayList  = personalTasks.filter(t => getEffStatus(t) === 'someday');
   const logbookList  = personalTasks.filter(t => getEffStatus(t) === 'logbook')
@@ -533,14 +592,15 @@ export default function Tasks() {
   async function handleQuickAdd() {
     const t = quickAdd.trim();
     if (!t) return;
+    const fallbackDl = view === 'upcoming' ? new Date(Date.now() + 86400000).toISOString().slice(0, 10) : null;
     const newT = {
       title:     t,
       status:    view === 'someday' ? 'someday' : view === 'inbox' ? 'inbox' : 'anytime',
       isToday:   view === 'today',
-      when:      view === 'upcoming' ? new Date(Date.now() + 86400000).toISOString().slice(0, 10) : null,
+      deadline:  quickDeadline || fallbackDl,
       projectId: view === 'project' && projectView ? projectView : null,
     };
-    try { await addPersonalTask(newT); setQuickAdd(''); }
+    try { await addPersonalTask(newT); setQuickAdd(''); setQuickDeadline(''); }
     catch { toast.error('Failed to add.'); }
   }
 
@@ -613,7 +673,7 @@ export default function Tasks() {
   const activeProjList = projects.filter(p => p.status !== 'completed');
   const viewLabel      = view === 'project' && activeProj ? activeProj.title : (NAV.find(v => v.id === view)?.label || 'Tasks');
   const ViewIcon       = view === 'project' ? FolderOpen : (NAV.find(v => v.id === view)?.Icon || Layers);
-  const showQuickAdd   = view !== 'logbook' && view !== 'projects';
+  const showQuickAdd   = view !== 'logbook' && view !== 'projects' && view !== 'inbox';
 
   return (
     <>
@@ -634,21 +694,7 @@ export default function Tasks() {
             ))}
           </div>
 
-          {/* Areas */}
-          <div className="tasks-nav-section">
-            <div className="tasks-nav-slabel">Areas</div>
-            {taskAreas.map(a => (
-              <div key={a.id} className="tasks-nav-sub">
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--tasks)', flexShrink: 0 }}/>
-                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.label}</span>
-              </div>
-            ))}
-            <button className="tasks-nav-add" onClick={() => setShowAM(true)}>
-              <Settings2 size={11}/> Manage Areas
-            </button>
-          </div>
-
-          {/* Projects */}
+          {/* Projects — first */}
           <div className="tasks-nav-section">
             <div className="tasks-nav-slabel">Projects</div>
             <button
@@ -658,12 +704,13 @@ export default function Tasks() {
               All Projects
             </button>
             {activeProjList.map(p => {
-              const remaining = personalTasks.filter(t => t.projectId === p.id && getEffStatus(t) !== 'logbook').length;
+              const remaining  = personalTasks.filter(t => t.projectId === p.id && getEffStatus(t) !== 'logbook').length;
+              const areaColor  = p.area ? (taskAreas.find(a => a.id === p.area)?.color || null) : null;
               return (
                 <button key={p.id}
                   className={`tasks-nav-sub tasks-nav-proj${view === 'project' && projectView === p.id ? ' active' : ''}`}
                   onClick={() => switchView('project', p.id)}>
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--tasks)', flexShrink: 0 }}/>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: areaColor || 'var(--tasks)', flexShrink: 0 }}/>
                   <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12.5 }}>{p.title}</span>
                   {remaining > 0 && <span style={{ fontSize: 10, color: 'var(--ink-4)', flexShrink: 0 }}>{remaining}</span>}
                 </button>
@@ -671,6 +718,20 @@ export default function Tasks() {
             })}
             <button className="tasks-nav-add" onClick={() => { setEditProj(null); setShowPF(true); }}>
               <Plus size={11}/> New Project
+            </button>
+          </div>
+
+          {/* Areas — below projects */}
+          <div className="tasks-nav-section">
+            <div className="tasks-nav-slabel">Areas</div>
+            {taskAreas.map(a => (
+              <div key={a.id} className="tasks-nav-sub">
+                <span style={{ width: 9, height: 9, borderRadius: '50%', background: a.color || AREA_COLORS[0], flexShrink: 0 }}/>
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.label}</span>
+              </div>
+            ))}
+            <button className="tasks-nav-add" onClick={() => setShowAM(true)}>
+              <Settings2 size={11}/> Manage Areas
             </button>
           </div>
         </div>
@@ -699,7 +760,7 @@ export default function Tasks() {
                 <span className="tasks-lhead-title">{viewLabel}</span>
               </div>
               <div className="tasks-lhead-sub">
-                {view === 'inbox'    && `${viewTasks.length} to process`}
+                {view === 'inbox'    && (viewTasks.length === 0 ? 'Capture first, organise later' : `${viewTasks.length} captured`)}
                 {view === 'today'    && (viewTasks.length === 0 ? 'Nothing due today' : `${viewTasks.length} task${viewTasks.length !== 1 ? 's' : ''}`)}
                 {view === 'upcoming' && 'Scheduled tasks'}
                 {view === 'anytime'  && 'Available whenever'}
@@ -721,13 +782,38 @@ export default function Tasks() {
                   <Plus size={13}/> New
                 </button>
               )}
-              {view !== 'logbook' && view !== 'projects' && (
+              {view !== 'logbook' && view !== 'projects' && view !== 'inbox' && (
                 <button className="btn accent sm" onClick={() => { setEditTask(null); setShowTF(true); }}>
                   <Plus size={13}/> Add
                 </button>
               )}
             </div>
           </div>
+
+          {/* Inbox capture zone — always visible, auto-focused */}
+          {view === 'inbox' && (
+            <div className="inbox-capture-zone">
+              <div className="inbox-capture-field">
+                <Plus size={16} style={{ color: 'var(--ink-4)', flexShrink: 0 }}/>
+                <input
+                  ref={inboxInputRef}
+                  className="inbox-capture-input"
+                  value={quickAdd}
+                  onChange={e => setQuickAdd(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && quickAdd.trim()) handleQuickAdd();
+                    if (e.key === 'Escape') setQuickAdd('');
+                  }}
+                  placeholder="What needs to be captured?"
+                />
+                {quickAdd && (
+                  <span style={{ fontSize: 11, color: 'var(--ink-4)', flexShrink: 0, userSelect: 'none', letterSpacing: '0.01em' }}>
+                    ↵ add
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Body */}
           <div className="tasks-lbody">
@@ -742,14 +828,18 @@ export default function Tasks() {
               ) : (
                 <div className="tasks-proj-grid">
                   {projects.map(p => {
-                    const total  = personalTasks.filter(t => t.projectId === p.id).length;
-                    const doneN  = personalTasks.filter(t => t.projectId === p.id && getEffStatus(t) === 'logbook').length;
-                    const pct    = total > 0 ? Math.round((doneN / total) * 100) : 0;
-                    const area   = taskAreas.find(a => a.id === p.area)?.label;
-                    const isOver = p.deadline && isPast(p.deadline) && !isToday(p.deadline);
+                    const total      = personalTasks.filter(t => t.projectId === p.id).length;
+                    const doneN      = personalTasks.filter(t => t.projectId === p.id && getEffStatus(t) === 'logbook').length;
+                    const pct        = total > 0 ? Math.round((doneN / total) * 100) : 0;
+                    const areaObj    = taskAreas.find(a => a.id === p.area);
+                    const areaLabel  = areaObj?.label;
+                    const areaColor  = areaObj?.color || null;
+                    const projColor  = areaColor || 'var(--tasks)';
+                    const isOver     = p.deadline && isPast(p.deadline) && !isToday(p.deadline);
                     return (
                       <div key={p.id} className={`tasks-proj-card${p.status === 'on-hold' ? ' on-hold' : ''}`}
-                        onClick={() => switchView('project', p.id)}>
+                        onClick={() => switchView('project', p.id)}
+                        style={{ borderTop: `3px solid ${projColor}` }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
                           <div className="tasks-proj-title">{p.title}</div>
                           <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
@@ -758,12 +848,17 @@ export default function Tasks() {
                           </div>
                         </div>
                         <div className="tasks-proj-meta">
-                          {area && <span>{area}</span>}
+                          {areaLabel && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: areaColor || 'var(--tasks)' }}/>
+                              {areaLabel}
+                            </span>
+                          )}
                           {p.status === 'on-hold' && <span style={{ color: 'var(--warn)' }}>On Hold</span>}
                           {p.deadline && <span style={{ color: isOver ? 'var(--danger)' : 'var(--ink-3)' }}>{isOver ? '⚠ ' : ''}Due {fmtShortDate(p.deadline)}</span>}
                           <span>{total - doneN} remaining · {pct}%</span>
                         </div>
-                        <div className="tasks-proj-bar"><div className="tasks-proj-fill" style={{ width: pct + '%' }}/></div>
+                        <div className="tasks-proj-bar"><div className="tasks-proj-fill" style={{ width: pct + '%', background: projColor }}/></div>
                       </div>
                     );
                   })}
@@ -771,9 +866,17 @@ export default function Tasks() {
               )
             ) : viewTasks.length === 0 ? (
               <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13.5, lineHeight: 1.8 }}>
-                {view === 'inbox'    && '📬 Inbox is clear.'}
+                {view === 'inbox'    && (
+                  <div>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>✓</div>
+                    <div>Inbox is clear</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-4)', marginTop: 4 }}>
+                      Type above to start capturing
+                    </div>
+                  </div>
+                )}
                 {view === 'today'    && '✨ Nothing scheduled for today.'}
-                {view === 'upcoming' && '📅 No upcoming tasks.\nSchedule a "when" date on a task to see it here.'}
+                {view === 'upcoming' && '📅 No upcoming tasks. Set a deadline on a task to see it here.'}
                 {view === 'anytime'  && '♾️ No tasks here. Move items out of Inbox to Anytime.'}
                 {view === 'someday'  && '🌙 No ideas in Someday.'}
                 {view === 'logbook'  && '📚 No completed tasks yet.'}
@@ -803,7 +906,18 @@ export default function Tasks() {
                 onKeyDown={e => { if (e.key === 'Enter') handleQuickAdd(); }}
                 placeholder={`Add to ${viewLabel}…`}
               />
-              {quickAdd && <button className="btn sm accent" onClick={handleQuickAdd}>Add</button>}
+              {quickAdd && (
+                <>
+                  <input
+                    type="date"
+                    value={quickDeadline}
+                    onChange={e => setQuickDeadline(e.target.value)}
+                    title="Set deadline"
+                    style={{ border: '1px solid var(--border)', borderRadius: 'var(--r)', background: 'var(--surface-2)', color: 'var(--ink-2)', fontSize: 12, padding: '4px 8px', fontFamily: 'inherit', cursor: 'pointer', outline: 'none', flexShrink: 0 }}
+                  />
+                  <button className="btn sm accent" onClick={handleQuickAdd}>Add</button>
+                </>
+              )}
             </div>
           )}
         </div>
