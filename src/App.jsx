@@ -14,6 +14,7 @@ import Notes from './pages/mortgage/Notes';
 import CRMTasks from './pages/mortgage/CRMTasks';
 import Performance from './pages/mortgage/Performance';
 import Settings from './pages/mortgage/Settings';
+import PersonalNotes from './pages/PersonalNotes';
 
 function ThemedToaster() {
   const { theme } = useTheme();
@@ -23,27 +24,27 @@ function ThemedToaster() {
       position="bottom-center"
       toastOptions={{
         style: {
-          background:   dark ? '#1F1B16' : '#FEFCF9',
-          color:        dark ? '#F2EBE0' : '#1C1511',
-          border:       `1px solid ${dark ? 'rgba(245,215,160,0.14)' : 'rgba(100,70,40,0.22)'}`,
+          background:   dark ? '#121922' : '#FAFCFE',
+          color:        dark ? '#E2EDF7' : '#0A1628',
+          border:       `1px solid ${dark ? 'rgba(0,210,160,0.13)' : 'rgba(0,100,80,0.18)'}`,
           borderRadius: '99px',
           fontSize:     '13px',
           fontWeight:   500,
           padding:      '10px 18px',
           boxShadow:    dark
             ? '0 8px 32px rgba(0,0,0,0.7)'
-            : '0 8px 32px rgba(80,50,20,0.16)',
+            : '0 8px 24px rgba(0,60,50,0.14)',
         },
         success: {
           iconTheme: {
-            primary:   dark ? '#60B08A' : '#3D9068',
-            secondary: dark ? '#1F1B16' : '#FEFCF9',
+            primary:   dark ? '#00C896' : '#009870',
+            secondary: dark ? '#121922' : '#FAFCFE',
           },
         },
         error: {
           iconTheme: {
-            primary:   dark ? '#D46055' : '#B84A3A',
-            secondary: dark ? '#1F1B16' : '#FEFCF9',
+            primary:   dark ? '#F06060' : '#C83030',
+            secondary: dark ? '#121922' : '#FAFCFE',
           },
         },
       }}
@@ -61,6 +62,7 @@ function AppShell() {
           <Route path="/dashboard"           element={<Dashboard/>}/>
           <Route path="/goals"               element={<Goals/>}/>
           <Route path="/tasks"               element={<Tasks/>}/>
+          <Route path="/notes"               element={<PersonalNotes/>}/>
           <Route path="/mortgage"            element={<MortgageLayout/>}>
             <Route index                     element={<Navigate to="/mortgage/pipeline" replace/>}/>
             <Route path="pipeline"           element={<Pipeline/>}/>
