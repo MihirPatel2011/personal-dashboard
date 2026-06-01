@@ -485,18 +485,19 @@ function TaskDetail({ task, projects, areas, onUpdate, onDelete, onClose }) {
 }
 
 // ─── Task Item Row ────────────────────────────────────────────────────────────
-function TaskItem({ task, selected, projects, onClick, onComplete, onQuickMove }) {
+function TaskItem({ task, selected, projects, areas, onClick, onComplete, onQuickMove, onInlineUpdate }) {
   const eff      = getEffStatus(task);
   const isDone   = eff === 'logbook';
   const isInbox  = eff === 'inbox';
   const proj     = projects.find(p => p.id === task.projectId);
+  const area     = areas?.find(a => a.id === task.area);
   const deadline = task.deadline;
   const overdue  = deadline && isPast(deadline) && !isToday(deadline);
   const dueToday = deadline && isToday(deadline);
   const tags     = (task.tags || []).slice(0, 2);
 
   return (
-    <div className={`task-item${selected ? ' selected' : ''}${isDone ? ' completed' : ''}`} onClick={onClick}>
+    <div className={`task-item${selected ? ' selected' : ''}${isDone ? ' completed' : ''}${isInbox ? ' inbox-item' : ''}`} onClick={onClick}>
       <button
         className={`task-item-check${isDone ? ' done' : ''}`}
         onClick={e => { e.stopPropagation(); onComplete(task); }}>
@@ -504,9 +505,15 @@ function TaskItem({ task, selected, projects, onClick, onComplete, onQuickMove }
       </button>
       <div className="task-item-body">
         <div className="task-item-title">{task.title}</div>
-        {(proj || deadline || tags.length > 0) && (
+        {/* Meta row — project, area, deadline, tags */}
+        {(proj || area || deadline || tags.length > 0) && (
           <div className="task-item-meta">
             {proj && <span className="task-item-proj">{proj.title}</span>}
+            {area && !proj && (
+              <span className="task-item-area" style={{ background: (area.color || '#60A5FA') + '22', color: area.color || '#60A5FA', border: `1px solid ${(area.color || '#60A5FA')}44` }}>
+                {area.label}
+              </span>
+            )}
             {deadline && (
               <span className={`task-item-dl${overdue ? ' overdue' : dueToday ? ' today' : ''}`}>
                 {overdue ? '⚠ ' : ''}{fmtShortDate(deadline)}
@@ -515,12 +522,37 @@ function TaskItem({ task, selected, projects, onClick, onComplete, onQuickMove }
             {tags.map(t => <span key={t} className="task-item-tag">#{t}</span>)}
           </div>
         )}
+        {/* Inline project + area assignment for inbox items */}
+        {isInbox && onInlineUpdate && (
+          <div className="inbox-inline-assign" onClick={e => e.stopPropagation()}>
+            <select
+              className="inbox-inline-select"
+              value={task.projectId || ''}
+              onChange={e => onInlineUpdate(task.id, { projectId: e.target.value || null })}
+              title="Assign project"
+            >
+              <option value="">+ Project</option>
+              {projects.filter(p => p.status !== 'completed').map(p =>
+                <option key={p.id} value={p.id}>{p.title}</option>
+              )}
+            </select>
+            <select
+              className="inbox-inline-select"
+              value={task.area || ''}
+              onChange={e => onInlineUpdate(task.id, { area: e.target.value || null })}
+              title="Assign area"
+            >
+              <option value="">+ Area</option>
+              {(areas || []).map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+            </select>
+          </div>
+        )}
       </div>
       {isInbox && onQuickMove && (
         <div className="task-item-inbox-actions" onClick={e => e.stopPropagation()}>
-          <button className="inbox-quick-btn" title="Move to Today" onClick={() => onQuickMove(task, 'today')}>☀️</button>
-          <button className="inbox-quick-btn" title="Move to Anytime" onClick={() => onQuickMove(task, 'anytime')}>→</button>
-          <button className="inbox-quick-btn" title="Move to Someday" onClick={() => onQuickMove(task, 'someday')}>🌙</button>
+          <button className="inbox-quick-btn" title="Move to Today"    onClick={() => onQuickMove(task, 'today')}>☀️</button>
+          <button className="inbox-quick-btn" title="Move to Anytime"  onClick={() => onQuickMove(task, 'anytime')}>→</button>
+          <button className="inbox-quick-btn" title="Move to Someday"  onClick={() => onQuickMove(task, 'someday')}>🌙</button>
         </div>
       )}
       {task.isToday && !isDone && !isInbox && (
@@ -551,6 +583,8 @@ export default function Tasks() {
   const [showAM,      setShowAM]      = useState(false);  // area manager modal
   const [quickAdd,      setQuickAdd]      = useState('');
   const [quickDeadline, setQuickDeadline] = useState('');
+  const [quickProject,  setQuickProject]  = useState('');
+  const [quickArea,     setQuickArea]     = useState('');
   const [delItem,       setDelItem]       = useState(null); // { type, item }
   const [clearLogbook,  setClearLogbook]  = useState(false);
 
@@ -607,9 +641,13 @@ export default function Tasks() {
       status:    view === 'someday' ? 'someday' : view === 'inbox' ? 'inbox' : 'anytime',
       isToday:   view === 'today',
       deadline:  quickDeadline || fallbackDl,
-      projectId: view === 'project' && projectView ? projectView : null,
+      projectId: (view === 'project' && projectView ? projectView : quickProject) || null,
+      area:      quickArea || null,
     };
-    try { await addPersonalTask(newT); setQuickAdd(''); setQuickDeadline(''); }
+    try {
+      await addPersonalTask(newT);
+      setQuickAdd(''); setQuickDeadline(''); setQuickProject(''); setQuickArea('');
+    }
     catch { toast.error('Failed to add.'); }
   }
 
@@ -622,6 +660,11 @@ export default function Tasks() {
   }
 
   const handleUpdate = useCallback(async (id, patch) => {
+    try { await updatePersonalTask(id, patch); }
+    catch { toast.error('Failed.'); }
+  }, [updatePersonalTask]);
+
+  const handleInlineUpdate = useCallback(async (id, patch) => {
     try { await updatePersonalTask(id, patch); }
     catch { toast.error('Failed.'); }
   }, [updatePersonalTask]);
@@ -834,16 +877,39 @@ export default function Tasks() {
                   onChange={e => setQuickAdd(e.target.value)}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && quickAdd.trim()) handleQuickAdd();
-                    if (e.key === 'Escape') setQuickAdd('');
+                    if (e.key === 'Escape') { setQuickAdd(''); setQuickProject(''); setQuickArea(''); }
                   }}
                   placeholder="What needs to be captured?"
                 />
                 {quickAdd && (
-                  <span style={{ fontSize: 11, color: 'var(--ink-4)', flexShrink: 0, userSelect: 'none', letterSpacing: '0.01em' }}>
-                    ↵ add
-                  </span>
+                  <button className="btn accent sm" style={{ flexShrink: 0 }} onClick={handleQuickAdd}>
+                    Add
+                  </button>
                 )}
               </div>
+              {/* Context row — project & area — slides in when text is typed */}
+              {quickAdd && (
+                <div className="inbox-capture-context">
+                  <select
+                    className="inbox-ctx-select"
+                    value={quickProject}
+                    onChange={e => setQuickProject(e.target.value)}
+                  >
+                    <option value="">No project</option>
+                    {projects.filter(p => p.status !== 'completed').map(p =>
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    )}
+                  </select>
+                  <select
+                    className="inbox-ctx-select"
+                    value={quickArea}
+                    onChange={e => setQuickArea(e.target.value)}
+                  >
+                    <option value="">No area</option>
+                    {taskAreas.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
           )}
 
@@ -921,9 +987,11 @@ export default function Tasks() {
                   task={t}
                   selected={selTask === t.id}
                   projects={projects}
+                  areas={taskAreas}
                   onClick={() => setSelTask(selTask === t.id ? null : t.id)}
                   onComplete={handleComplete}
                   onQuickMove={view === 'inbox' ? handleQuickMove : undefined}
+                  onInlineUpdate={view === 'inbox' ? handleInlineUpdate : undefined}
                 />
               ))
             )}

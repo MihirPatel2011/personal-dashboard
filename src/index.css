@@ -522,6 +522,71 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 }
 .inbox-capture-input::placeholder { color: var(--ink-4); }
 
+/* Context row (project + area) — slides in when text is typed */
+.inbox-capture-context {
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px 2px;
+  animation: slideDown 0.15s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.inbox-ctx-select {
+  flex: 1;
+  padding: 5px 10px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  color-scheme: dark;
+  transition: border-color var(--t);
+}
+.inbox-ctx-select:focus { border-color: var(--accent); }
+.inbox-ctx-select option { background: var(--surface-2); color: var(--ink); }
+
+/* Inline project/area selects on each inbox task row */
+.inbox-inline-assign {
+  display: flex;
+  gap: 5px;
+  margin-top: 3px;
+  opacity: 0;
+  transition: opacity var(--t);
+}
+.inbox-item:hover .inbox-inline-assign,
+.inbox-item.selected .inbox-inline-assign { opacity: 1; }
+.inbox-inline-select {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  color-scheme: dark;
+  transition: border-color var(--t), color var(--t);
+}
+.inbox-inline-select:focus,
+.inbox-inline-select:hover { border-color: var(--tasks); color: var(--ink-2); }
+.inbox-inline-select option { background: var(--surface-2); color: var(--ink); }
+
+/* Area badge on task item meta */
+.task-item-area {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
 /* Middle task list */
 .tasks-list { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
 .tasks-vpills { display: none; }
