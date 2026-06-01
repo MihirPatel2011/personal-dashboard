@@ -1,68 +1,65 @@
-// src/pages/Journal.jsx — Habit Tracker & Journal with page-curl book layout
+// src/pages/Journal.jsx — Habit Tracker & Journal, physical book aesthetic
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, ChevronLeft, ChevronRight, Trash2, Calendar, BookOpen, Settings } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Trash2, Calendar, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+const LINE_H = 32; // px — every rule, every row, every input is this height
 const MAX_HIGHLIGHT_CHARS = 70;
 
+// Header height must be an integer multiple of LINE_H so rules land on rows
+const HL_HEADER_H  = LINE_H * 2;  // 64px — month nav + "Daily Highlights" label
+const TRK_HEADER_H = LINE_H;      // 32px — column name row
+
 const DATE_FORMATS = [
-  { label: '1 June 2026',          fn: (d) => `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` },
-  { label: 'Sunday, 1 June 2026',  fn: (d) => `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` },
-  { label: 'June 1st, 2026',       fn: (d) => `${MONTHS[d.getMonth()]} ${d.getDate()}${ord(d.getDate())}, ${d.getFullYear()}` },
-  { label: '01/06/2026',           fn: (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` },
-  { label: 'Mon 1 Jun \'26',       fn: (d) => `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)} '${String(d.getFullYear()).slice(2)}` },
+  { label: '1 June 2026',         fn: d => `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` },
+  { label: 'Sunday, 1 June 2026', fn: d => `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` },
+  { label: 'June 1st, 2026',      fn: d => `${MONTHS[d.getMonth()]} ${d.getDate()}${ord(d.getDate())}, ${d.getFullYear()}` },
+  { label: '01/06/2026',          fn: d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` },
+  { label: "Mon 1 Jun '26",       fn: d => `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)} '${String(d.getFullYear()).slice(2)}` },
 ];
 
 function ord(n) {
-  const s = ['th','st','nd','rd'];
-  const v = n % 100;
+  const s = ['th','st','nd','rd'], v = n % 100;
   return s[(v-20)%10] || s[v] || s[0];
 }
+function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+function nowYearMonth()    { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; }
 
-function daysInMonth(year, month) {
-  return new Date(year, month + 1, 0).getDate();
+// Ruled background: lines at the bottom of every LINE_H row.
+// background-position offsets by headerH so first line lands under row 1.
+function ruledStyle(headerH) {
+  return {
+    backgroundImage: [
+      'repeating-linear-gradient(transparent, transparent 31px, rgba(160,130,80,0.22) 31px, rgba(160,130,80,0.22) 32px)',
+    ].join(','),
+    backgroundSize:     `100% ${LINE_H}px`,
+    backgroundPosition: `0 ${headerH}px`,
+  };
 }
 
-function nowYearMonth() {
-  const d = new Date();
-  return { year: d.getFullYear(), month: d.getMonth() };
-}
-
-// ─── Ruled Page Background (CSS via inline style) ─────────────────────────────
-const RULED_BG = {
-  backgroundImage: 'repeating-linear-gradient(transparent, transparent 31px, rgba(100,130,200,0.18) 31px, rgba(100,130,200,0.18) 32px)',
-  backgroundSize: '100% 32px',
-  backgroundPosition: '0 40px',
-};
-
-// ─── Left Page: Daily Highlights ─────────────────────────────────────────────
+// ─── Daily Highlights (left page) ────────────────────────────────────────────
 function DailyHighlightsPage({ spread, onUpdate }) {
-  const now = nowYearMonth();
+  const now   = nowYearMonth();
   const year  = spread.year  ?? now.year;
   const month = spread.month ?? now.month;
   const total = daysInMonth(year, month);
   const highlights = spread.highlights || {};
 
-  const [editing, setEditing] = useState(null); // day number being edited
+  const [editing, setEditing] = useState(null);
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    if (editing !== null) inputRef.current?.focus();
-  }, [editing]);
+  useEffect(() => { if (editing !== null) inputRef.current?.focus(); }, [editing]);
 
   const saveHighlight = useCallback((day, val) => {
-    const next = { ...(spread.highlights || {}), [day]: val };
-    onUpdate({ highlights: next });
+    onUpdate({ highlights: { ...(spread.highlights || {}), [day]: val } });
   }, [spread.highlights, onUpdate]);
 
-  const monthLabel = `${MONTHS[month]} ${year}`;
-
-  // Month/year picker
   function prevMonth() {
     let m = month - 1, y = year;
     if (m < 0) { m = 11; y--; }
@@ -75,167 +72,135 @@ function DailyHighlightsPage({ spread, onUpdate }) {
   }
 
   return (
-    <div className="journal-page journal-page-left" style={RULED_BG}>
-      {/* Red margin line */}
-      <div className="journal-margin-line"/>
+    <div className="jnl-page jnl-page-left" style={ruledStyle(HL_HEADER_H)}>
+      <div className="jnl-margin"/>
 
-      {/* Month header */}
-      <div className="journal-month-header">
-        <button className="jnl-arrow" onClick={prevMonth}><ChevronLeft size={14}/></button>
-        <span className="journal-month-title">{monthLabel}</span>
-        <button className="jnl-arrow" onClick={nextMonth}><ChevronRight size={14}/></button>
+      {/* Header — exactly HL_HEADER_H tall */}
+      <div className="jnl-hl-header">
+        <div className="jnl-month-row">
+          <button className="jnl-arrow" onClick={prevMonth}><ChevronLeft size={13}/></button>
+          <span className="jnl-month-title">{MONTHS[month]} {year}</span>
+          <button className="jnl-arrow" onClick={nextMonth}><ChevronRight size={13}/></button>
+        </div>
+        <div className="jnl-col-label">Daily Highlights</div>
       </div>
-      <div className="journal-col-label">Daily Highlights</div>
 
-      {/* Day rows */}
-      <div className="journal-highlights">
-        {Array.from({ length: total }, (_, i) => i + 1).map(day => {
-          const date = new Date(year, month, day);
-          const dayLabel = DAYS[date.getDay()].slice(0, 2);
-          const val = highlights[day] || '';
-          const isEditing = editing === day;
-
-          return (
-            <div key={day} className="journal-hl-row">
-              {/* Date label — outside the margin line */}
-              <div className="journal-hl-date">
-                <span className="journal-hl-dd">{String(day).padStart(2, '0')}</span>
-                <span className="journal-hl-day">{dayLabel}</span>
-              </div>
-              {/* Text area */}
-              <div className="journal-hl-text-wrap" onClick={() => setEditing(day)}>
-                {isEditing ? (
-                  <input
-                    ref={inputRef}
-                    className="journal-hl-input"
-                    value={val}
-                    maxLength={MAX_HIGHLIGHT_CHARS}
-                    onChange={e => saveHighlight(day, e.target.value)}
-                    onBlur={() => setEditing(null)}
-                    onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setEditing(null); }}
-                  />
-                ) : (
-                  <span className="journal-hl-text">{val || <span className="journal-hl-placeholder"/>}</span>
-                )}
-              </div>
+      {/* Rows — each exactly LINE_H tall */}
+      {Array.from({ length: total }, (_, i) => i + 1).map(day => {
+        const dayLabel = DAYS[new Date(year, month, day).getDay()].slice(0, 2);
+        const val      = highlights[day] || '';
+        const isEd     = editing === day;
+        return (
+          <div key={day} className="jnl-hl-row" onClick={() => setEditing(day)}>
+            <div className="jnl-hl-date">
+              <span className="jnl-hl-dd">{String(day).padStart(2,'0')}</span>
+              <span className="jnl-hl-dy">{dayLabel}</span>
             </div>
-          );
-        })}
-      </div>
+            {isEd ? (
+              <input
+                ref={inputRef}
+                className="jnl-hl-input"
+                value={val}
+                maxLength={MAX_HIGHLIGHT_CHARS}
+                onChange={e => saveHighlight(day, e.target.value)}
+                onBlur={() => setEditing(null)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setEditing(null); }}
+              />
+            ) : (
+              <span className="jnl-hl-text">{val}</span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Right Page: Habit Tracker ────────────────────────────────────────────────
+// ─── Habit Tracker (right page) ───────────────────────────────────────────────
 function HabitTrackerPage({ spread, onUpdate }) {
-  const now = nowYearMonth();
+  const now   = nowYearMonth();
   const year  = spread.year  ?? now.year;
   const month = spread.month ?? now.month;
   const total = daysInMonth(year, month);
-  const headers  = spread.habitHeaders || ['Habit 1'];
+  const headers   = spread.habitHeaders || ['Habit 1'];
   const habitData = spread.habitData   || {};
-  const ROW_H = 32; // matches ruled line height
 
   const [editHeader, setEditHeader] = useState(null);
   const headerInputRef = useRef(null);
 
-  useEffect(() => {
-    if (editHeader !== null) headerInputRef.current?.focus();
-  }, [editHeader]);
+  useEffect(() => { if (editHeader !== null) headerInputRef.current?.focus(); }, [editHeader]);
 
   function setCell(day, col, val) {
-    const next = {
-      ...habitData,
-      [day]: { ...(habitData[day] || {}), [col]: val },
-    };
-    onUpdate({ habitData: next });
+    onUpdate({ habitData: { ...habitData, [day]: { ...(habitData[day] || {}), [col]: val } } });
   }
-
-  function addHabit() {
-    onUpdate({ habitHeaders: [...headers, `Habit ${headers.length + 1}`] });
-  }
-
-  function removeHabit(idx) {
-    const next = headers.filter((_, i) => i !== idx);
-    onUpdate({ habitHeaders: next });
-  }
-
-  function saveHeader(idx, val) {
-    const next = headers.map((h, i) => i === idx ? val : h);
-    onUpdate({ habitHeaders: next });
-    setEditHeader(null);
-  }
+  function addHabit()        { onUpdate({ habitHeaders: [...headers, `Habit ${headers.length + 1}`] }); }
+  function removeHabit(idx)  { onUpdate({ habitHeaders: headers.filter((_, i) => i !== idx) }); }
+  function saveHeader(i, v)  { onUpdate({ habitHeaders: headers.map((h, j) => j === i ? (v || h) : h) }); setEditHeader(null); }
 
   return (
-    <div className="journal-page journal-page-right" style={RULED_BG}>
-      <div className="journal-margin-line journal-margin-line-right"/>
+    <div className="jnl-page jnl-page-right" style={ruledStyle(TRK_HEADER_H)}>
+      <div className="jnl-margin jnl-margin-right"/>
 
-      {/* Header row */}
-      <div className="journal-tracker-header-row">
-        <div className="journal-tracker-day-col"/>
+      {/* Column header row — exactly TRK_HEADER_H = LINE_H tall */}
+      <div className="jnl-trk-header">
+        <div className="jnl-trk-day-col"/>
         {headers.map((h, i) => (
-          <div key={i} className="journal-tracker-col-head">
+          <div key={i} className="jnl-trk-col-head">
             {editHeader === i ? (
               <input
                 ref={headerInputRef}
-                className="journal-tracker-head-input"
+                className="jnl-trk-head-input"
                 defaultValue={h}
-                onBlur={e => saveHeader(i, e.target.value || h)}
-                onKeyDown={e => { if (e.key === 'Enter') saveHeader(i, e.target.value || h); if (e.key === 'Escape') setEditHeader(null); }}
+                onBlur={e => saveHeader(i, e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveHeader(i, e.target.value); if (e.key === 'Escape') setEditHeader(null); }}
               />
             ) : (
-              <span className="journal-tracker-head-label" onClick={() => setEditHeader(i)} title="Click to rename">{h}</span>
+              <span className="jnl-trk-head-label" onClick={() => setEditHeader(i)} title="Click to rename">{h}</span>
             )}
             {headers.length > 1 && (
-              <button className="journal-tracker-del-habit" onClick={() => removeHabit(i)} title="Remove">×</button>
+              <button className="jnl-trk-del" onClick={() => removeHabit(i)}>×</button>
             )}
           </div>
         ))}
-        <button className="journal-tracker-add-habit" onClick={addHabit} title="Add habit">+</button>
+        <button className="jnl-trk-add" onClick={addHabit} title="Add habit column">+</button>
       </div>
 
-      {/* Data rows */}
-      <div className="journal-tracker-rows">
-        {Array.from({ length: total }, (_, i) => i + 1).map(day => {
-          const date = new Date(year, month, day);
-          const dayLabel = DAYS[date.getDay()].slice(0, 2);
-          return (
-            <div key={day} className="journal-tracker-row" style={{ height: ROW_H }}>
-              <div className="journal-tracker-day-cell">
-                <span className="journal-tracker-dd">{String(day).padStart(2,'0')}</span>
-                <span className="journal-tracker-dl">{dayLabel}</span>
-              </div>
-              {headers.map((_, col) => (
-                <input
-                  key={col}
-                  className="journal-tracker-cell"
-                  style={{ height: ROW_H }}
-                  value={(habitData[day] || {})[col] || ''}
-                  onChange={e => setCell(day, col, e.target.value)}
-                  placeholder="—"
-                />
-              ))}
-              <div style={{ width: 28 }}/>
+      {/* Data rows — each exactly LINE_H tall */}
+      {Array.from({ length: total }, (_, i) => i + 1).map(day => {
+        const dayLabel = DAYS[new Date(year, month, day).getDay()].slice(0, 2);
+        return (
+          <div key={day} className="jnl-trk-row">
+            <div className="jnl-trk-day-cell">
+              <span className="jnl-trk-dd">{String(day).padStart(2,'0')}</span>
+              <span className="jnl-trk-dl">{dayLabel}</span>
             </div>
-          );
-        })}
-      </div>
-
+            {headers.map((_, col) => (
+              <input
+                key={col}
+                className="jnl-trk-cell"
+                value={(habitData[day] || {})[col] || ''}
+                onChange={e => setCell(day, col, e.target.value)}
+                placeholder="-"
+              />
+            ))}
+            <div className="jnl-trk-add-spacer"/>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Free Journal Page (ruled, contenteditable) ───────────────────────────────
+// ─── Free Journal Page ────────────────────────────────────────────────────────
 function FreeJournalPage({ side, spread, onUpdate, dateFormats }) {
-  const key    = side === 'left' ? 'leftContent' : 'rightContent';
-  const edRef  = useRef(null);
-  const timer  = useRef(null);
+  const key   = side === 'left' ? 'leftContent' : 'rightContent';
+  const edRef = useRef(null);
+  const timer = useRef(null);
   const [showDateMenu, setShowDateMenu] = useState(false);
 
   useEffect(() => {
-    if (edRef.current && edRef.current.innerHTML !== (spread[key] || '')) {
+    if (edRef.current && edRef.current.innerHTML !== (spread[key] || ''))
       edRef.current.innerHTML = spread[key] || '';
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spread.id]);
 
@@ -245,7 +210,6 @@ function FreeJournalPage({ side, spread, onUpdate, dateFormats }) {
       if (edRef.current) onUpdate({ [key]: edRef.current.innerHTML });
     }, 500);
   }
-
   function insertDate(fmt) {
     edRef.current?.focus();
     document.execCommand('insertText', false, fmt.fn(new Date()));
@@ -253,38 +217,33 @@ function FreeJournalPage({ side, spread, onUpdate, dateFormats }) {
     schedSave();
   }
 
-  const isLeft = side === 'left';
+  // Free pages: first LINE_H is the toolbar, so offset by one line
+  const TOOLBAR_H = LINE_H;
 
   return (
-    <div className={`journal-page ${isLeft ? 'journal-page-left' : 'journal-page-right'}`} style={RULED_BG}>
-      <div className={`journal-margin-line${isLeft ? '' : ' journal-margin-line-right'}`}/>
+    <div className={`jnl-page ${side === 'left' ? 'jnl-page-left' : 'jnl-page-right'}`} style={ruledStyle(TOOLBAR_H)}>
+      <div className={`jnl-margin${side === 'right' ? ' jnl-margin-right' : ''}`}/>
 
-      {/* Toolbar */}
-      <div className="journal-free-toolbar">
-        <div className="journal-date-btn-wrap">
-          <button
-            className="journal-date-btn"
-            onClick={() => setShowDateMenu(v => !v)}
-            title="Insert date"
-          >
-            <Calendar size={13}/> Date
+      {/* Toolbar — exactly LINE_H tall */}
+      <div className="jnl-free-toolbar">
+        <div className="jnl-date-wrap">
+          <button className="jnl-date-btn" onClick={() => setShowDateMenu(v => !v)}>
+            <Calendar size={12}/> Date
           </button>
           {showDateMenu && (
-            <div className="journal-date-menu">
+            <div className="jnl-date-menu">
               {dateFormats.map((f, i) => (
-                <button key={i} className="journal-date-menu-item" onClick={() => insertDate(f)}>
-                  {f.label}
-                </button>
+                <button key={i} className="jnl-date-item" onClick={() => insertDate(f)}>{f.label}</button>
               ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Writing area */}
+      {/* Writing area — lines from toolbar onward */}
       <div
         ref={edRef}
-        className="journal-free-body"
+        className={`jnl-free-body${side === 'right' ? ' right' : ''}`}
         contentEditable
         suppressContentEditableWarning
         data-placeholder="Begin writing…"
@@ -298,30 +257,23 @@ function FreeJournalPage({ side, spread, onUpdate, dateFormats }) {
 // ─── Book Spread ──────────────────────────────────────────────────────────────
 function BookSpread({ spread, spreadIndex, total, onUpdate, onPrev, onNext, onDelete, turning, turnDir }) {
   const isHabit = spread.type === 'habit';
-
   return (
-    <div className={`journal-book-wrap${turning ? ` turning-${turnDir}` : ''}`}>
+    <div className={`jnl-book-wrap${turning ? ` jnl-turning-${turnDir}` : ''}`}>
       {/* Navigation */}
-      <div className="journal-book-nav">
-        <button className="journal-nav-btn" onClick={onPrev} disabled={spreadIndex === 0}>
-          <ChevronLeft size={18}/>
+      <div className="jnl-nav">
+        <button className="jnl-nav-btn" onClick={onPrev} disabled={spreadIndex === 0}>
+          <ChevronLeft size={16}/>
         </button>
-        <span className="journal-nav-label">
-          {spreadIndex + 1} / {total}
-          {isHabit ? ' · Habit Tracker' : ' · Journal'}
-        </span>
-        <button className="journal-nav-btn" onClick={onNext} disabled={spreadIndex === total - 1}>
-          <ChevronRight size={18}/>
+        <span className="jnl-nav-label">{spreadIndex + 1} / {total}</span>
+        <button className="jnl-nav-btn" onClick={onNext} disabled={spreadIndex === total - 1}>
+          <ChevronRight size={16}/>
         </button>
       </div>
 
-      {/* Book */}
-      <div className="journal-book">
-        {/* Page curl shadow during turn */}
-        {turning && <div className="journal-curl-overlay"/>}
-
+      {/* The open book */}
+      <div className="jnl-book">
         {/* Left page */}
-        <div className="journal-book-left">
+        <div className="jnl-book-side jnl-book-left-side">
           {isHabit
             ? <DailyHighlightsPage spread={spread} onUpdate={onUpdate}/>
             : <FreeJournalPage side="left" spread={spread} onUpdate={onUpdate} dateFormats={DATE_FORMATS}/>
@@ -329,10 +281,12 @@ function BookSpread({ spread, spreadIndex, total, onUpdate, onPrev, onNext, onDe
         </div>
 
         {/* Spine */}
-        <div className="journal-spine"/>
+        <div className="jnl-spine">
+          <div className="jnl-spine-inner"/>
+        </div>
 
         {/* Right page */}
-        <div className="journal-book-right">
+        <div className="jnl-book-side jnl-book-right-side">
           {isHabit
             ? <HabitTrackerPage spread={spread} onUpdate={onUpdate}/>
             : <FreeJournalPage side="right" spread={spread} onUpdate={onUpdate} dateFormats={DATE_FORMATS}/>
@@ -341,16 +295,16 @@ function BookSpread({ spread, spreadIndex, total, onUpdate, onPrev, onNext, onDe
       </div>
 
       {/* Delete */}
-      <div className="journal-spread-actions">
-        <button className="journal-del-btn" onClick={onDelete} title="Delete this spread">
-          <Trash2 size={13}/> Delete spread
+      <div className="jnl-spread-actions">
+        <button className="jnl-del-btn" onClick={onDelete}>
+          <Trash2 size={12}/> Delete spread
         </button>
       </div>
     </div>
   );
 }
 
-// ─── Main Journal Page ────────────────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Journal() {
   const { journalSpreads, addJournalSpread, updateJournalSpread, deleteJournalSpread } = useData();
 
@@ -358,11 +312,11 @@ export default function Journal() {
 
   const [idx,       setIdx]       = useState(0);
   const [turning,   setTurning]   = useState(false);
-  const [turnDir,   setTurnDir]   = useState('next'); // 'next' | 'prev'
+  const [turnDir,   setTurnDir]   = useState('next');
   const [delSpread, setDelSpread] = useState(null);
   const [showAdd,   setShowAdd]   = useState(false);
 
-  const now = nowYearMonth();
+  const now           = nowYearMonth();
   const currentSpread = spreads[idx] || null;
 
   function navigate(dir) {
@@ -370,13 +324,10 @@ export default function Journal() {
     if (next < 0 || next >= spreads.length) return;
     setTurnDir(dir);
     setTurning(true);
-    setTimeout(() => {
-      setIdx(next);
-      setTurning(false);
-    }, 550);
+    setTimeout(() => { setIdx(next); setTurning(false); }, 580);
   }
 
-  const handleUpdate = useCallback(async (patch) => {
+  const handleUpdate = useCallback(async patch => {
     if (!currentSpread) return;
     try { await updateJournalSpread(currentSpread.id, patch); }
     catch { toast.error('Failed to save.'); }
@@ -385,13 +336,12 @@ export default function Journal() {
   async function addSpread(type) {
     setShowAdd(false);
     try {
-      const order = spreads.length;
-      const base  = { type, order, createdAt: Date.now() };
+      const base  = { type, order: spreads.length, createdAt: Date.now() };
       const extra = type === 'habit'
-        ? { year: now.year, month: now.month, highlights: {}, habitHeaders: ['Exercise','Water (L)','Sleep (hrs)'], habitData: {}, rowHeight: 30 }
+        ? { year: now.year, month: now.month, highlights: {}, habitHeaders: ['Exercise','Water (L)','Sleep (h)'], habitData: {} }
         : { leftContent: '', rightContent: '' };
       await addJournalSpread({ ...base, ...extra });
-      setTimeout(() => setIdx(spreads.length), 100); // go to new spread
+      setTimeout(() => setIdx(spreads.length), 120);
       toast.success(type === 'habit' ? 'Habit spread added!' : 'Journal spread added!');
     } catch { toast.error('Failed to add.'); }
   }
@@ -405,46 +355,41 @@ export default function Journal() {
     setDelSpread(null);
   }
 
-  // Empty state
   if (spreads.length === 0) {
     return (
-      <div className="journal-empty-state">
-        <BookOpen size={52} style={{ color: 'var(--ink-4)', marginBottom: 18 }}/>
-        <div className="journal-empty-title">Your journal is empty</div>
-        <div className="journal-empty-sub">Add a habit tracker spread or a blank journal spread to get started.</div>
-        <div className="journal-empty-btns">
-          <button className="btn accent" onClick={() => addSpread('habit')}>
-            <Plus size={14}/> Add Habit Spread
-          </button>
-          <button className="btn ghost" onClick={() => addSpread('journal')}>
-            <Plus size={14}/> Add Journal Spread
-          </button>
+      <div className="jnl-empty">
+        <BookOpen size={48} style={{ color: '#8b7355', marginBottom: 16 }}/>
+        <div className="jnl-empty-title">Your journal is empty</div>
+        <div className="jnl-empty-sub">Start with a habit tracker spread or a blank ruled journal.</div>
+        <div className="jnl-empty-btns">
+          <button className="btn accent" onClick={() => addSpread('habit')}><Plus size={13}/> Habit Spread</button>
+          <button className="btn ghost"  onClick={() => addSpread('journal')}><Plus size={13}/> Journal Spread</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="journal-root">
-      {/* Top bar */}
-      <div className="journal-topbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <BookOpen size={17} style={{ color: 'var(--accent)' }}/>
-          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>Journal</span>
+    <div className="jnl-root">
+      {/* Topbar */}
+      <div className="jnl-topbar">
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <BookOpen size={16} style={{ color:'var(--accent)' }}/>
+          <span style={{ fontWeight:700, fontSize:14, color:'var(--ink)' }}>Journal</span>
         </div>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position:'relative' }}>
           <button className="btn accent sm" onClick={() => setShowAdd(v => !v)}>
-            <Plus size={13}/> Add Spread
+            <Plus size={12}/> Add Spread
           </button>
           {showAdd && (
-            <div className="journal-add-menu">
-              <button className="journal-add-menu-item" onClick={() => addSpread('habit')}>
-                📊 Habit Tracker Spread
-                <span className="journal-add-menu-sub">Monthly highlights + habit table</span>
+            <div className="jnl-add-menu">
+              <button className="jnl-add-item" onClick={() => addSpread('habit')}>
+                <span>Habit Tracker</span>
+                <span className="jnl-add-sub">Monthly highlights + habit columns</span>
               </button>
-              <button className="journal-add-menu-item" onClick={() => addSpread('journal')}>
-                📝 Blank Journal Spread
-                <span className="journal-add-menu-sub">Two ruled pages for free writing</span>
+              <button className="jnl-add-item" onClick={() => addSpread('journal')}>
+                <span>Blank Journal</span>
+                <span className="jnl-add-sub">Two ruled pages for free writing</span>
               </button>
             </div>
           )}
