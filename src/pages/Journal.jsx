@@ -134,7 +134,7 @@ function HabitTrackerPage({ spread, onUpdate }) {
   const total = daysInMonth(year, month);
   const headers  = spread.habitHeaders || ['Habit 1'];
   const habitData = spread.habitData   || {};
-  const rowHeight = spread.rowHeight   || 30;
+  const ROW_H = 32; // matches ruled line height
 
   const [editHeader, setEditHeader] = useState(null);
   const headerInputRef = useRef(null);
@@ -200,7 +200,7 @@ function HabitTrackerPage({ spread, onUpdate }) {
           const date = new Date(year, month, day);
           const dayLabel = DAYS[date.getDay()].slice(0, 2);
           return (
-            <div key={day} className="journal-tracker-row" style={{ height: rowHeight }}>
+            <div key={day} className="journal-tracker-row" style={{ height: ROW_H }}>
               <div className="journal-tracker-day-cell">
                 <span className="journal-tracker-dd">{String(day).padStart(2,'0')}</span>
                 <span className="journal-tracker-dl">{dayLabel}</span>
@@ -209,30 +209,18 @@ function HabitTrackerPage({ spread, onUpdate }) {
                 <input
                   key={col}
                   className="journal-tracker-cell"
-                  style={{ height: rowHeight }}
+                  style={{ height: ROW_H }}
                   value={(habitData[day] || {})[col] || ''}
                   onChange={e => setCell(day, col, e.target.value)}
                   placeholder="—"
                 />
               ))}
-              {/* placeholder for add-habit button column */}
               <div style={{ width: 28 }}/>
             </div>
           );
         })}
       </div>
 
-      {/* Row height control */}
-      <div className="journal-tracker-controls">
-        <span className="journal-tracker-ctrl-label">Row height</span>
-        <input
-          type="range" min="22" max="52" step="2"
-          value={rowHeight}
-          onChange={e => onUpdate({ rowHeight: Number(e.target.value) })}
-          className="journal-tracker-range"
-        />
-        <span className="journal-tracker-ctrl-label">{rowHeight}px</span>
-      </div>
     </div>
   );
 }
