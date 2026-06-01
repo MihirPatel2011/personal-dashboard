@@ -268,6 +268,9 @@ function BookSpread({ spread, spreadIndex, total, onUpdate, onPrev, onNext, onDe
         <button className="jnl-nav-btn" onClick={onNext} disabled={spreadIndex === total - 1}>
           <ChevronRight size={16}/>
         </button>
+        <button className="jnl-nav-btn jnl-nav-del" onClick={onDelete} title="Delete this spread">
+          <Trash2 size={14}/>
+        </button>
       </div>
 
       {/* The open book */}
@@ -294,12 +297,6 @@ function BookSpread({ spread, spreadIndex, total, onUpdate, onPrev, onNext, onDe
         </div>
       </div>
 
-      {/* Delete */}
-      <div className="jnl-spread-actions">
-        <button className="jnl-del-btn" onClick={onDelete}>
-          <Trash2 size={12}/> Delete spread
-        </button>
-      </div>
     </div>
   );
 }
@@ -324,7 +321,7 @@ export default function Journal() {
     if (next < 0 || next >= spreads.length) return;
     setTurnDir(dir);
     setTurning(true);
-    setTimeout(() => { setIdx(next); setTurning(false); }, 580);
+    setTimeout(() => { setIdx(next); setTurning(false); }, 180);
   }
 
   const handleUpdate = useCallback(async patch => {
