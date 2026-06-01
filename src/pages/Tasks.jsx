@@ -525,6 +525,26 @@ function TaskItem({ task, selected, projects, areas, onClick, onComplete, onQuic
         {/* Inline project + area assignment for inbox items */}
         {isInbox && onInlineUpdate && (
           <div className="inbox-inline-assign" onClick={e => e.stopPropagation()}>
+            {/* Deadline quick-chips */}
+            {[
+              { label: 'Today',    val: new Date().toISOString().slice(0,10) },
+              { label: 'Tomorrow', val: new Date(Date.now()+86400000).toISOString().slice(0,10) },
+              { label: '+7d',      val: new Date(Date.now()+7*86400000).toISOString().slice(0,10) },
+            ].map(({ label, val }) => (
+              <button
+                key={label}
+                className={`inbox-inline-chip${task.deadline === val ? ' active' : ''}`}
+                onClick={() => onInlineUpdate(task.id, { deadline: task.deadline === val ? null : val })}
+              >{label}</button>
+            ))}
+            <input
+              type="date"
+              className="inbox-inline-date"
+              value={task.deadline || ''}
+              onChange={e => onInlineUpdate(task.id, { deadline: e.target.value || null })}
+              title="Pick a deadline"
+            />
+            <div className="inbox-inline-sep"/>
             <select
               className="inbox-inline-select"
               value={task.projectId || ''}
@@ -893,34 +913,62 @@ export default function Tasks() {
                   </button>
                 )}
               </div>
-              {/* Context row — project & area — slides in when text is typed */}
+              {/* Context row — deadline, project & area — slides in when text is typed */}
               {quickAdd && (
                 <div className="inbox-capture-context">
-                  <select
-                    className="inbox-ctx-select"
-                    value={quickProject}
-                    onChange={e => {
-                      const pid = e.target.value;
-                      setQuickProject(pid);
-                      if (pid) {
-                        const proj = projects.find(p => p.id === pid);
-                        if (proj?.area) setQuickArea(proj.area);
-                      }
-                    }}
-                  >
-                    <option value="">No project</option>
-                    {projects.filter(p => p.status !== 'completed').map(p =>
-                      <option key={p.id} value={p.id}>{p.title}</option>
+                  {/* ── Deadline row ── */}
+                  <div className="inbox-ctx-deadline-row">
+                    {[
+                      { label: 'Today',     val: new Date().toISOString().slice(0,10) },
+                      { label: 'Tomorrow',  val: new Date(Date.now()+86400000).toISOString().slice(0,10) },
+                      { label: 'Next week', val: new Date(Date.now()+7*86400000).toISOString().slice(0,10) },
+                    ].map(({ label, val }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        className={`inbox-ctx-chip${quickDeadline === val ? ' active' : ''}`}
+                        onClick={() => setQuickDeadline(quickDeadline === val ? '' : val)}
+                      >{label}</button>
+                    ))}
+                    <input
+                      type="date"
+                      className="inbox-ctx-date"
+                      value={quickDeadline}
+                      onChange={e => setQuickDeadline(e.target.value)}
+                      title="Pick a date"
+                    />
+                    {quickDeadline && (
+                      <button type="button" className="inbox-ctx-clear" onClick={() => setQuickDeadline('')} title="Clear deadline">×</button>
                     )}
-                  </select>
-                  <select
-                    className="inbox-ctx-select"
-                    value={quickArea}
-                    onChange={e => setQuickArea(e.target.value)}
-                  >
-                    <option value="">No area</option>
-                    {taskAreas.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
-                  </select>
+                  </div>
+                  {/* ── Project + Area row ── */}
+                  <div className="inbox-ctx-selects-row">
+                    <select
+                      className="inbox-ctx-select"
+                      value={quickProject}
+                      onChange={e => {
+                        const pid = e.target.value;
+                        setQuickProject(pid);
+                        if (pid) {
+                          const proj = projects.find(p => p.id === pid);
+                          if (proj?.area) setQuickArea(proj.area);
+                        }
+                      }}
+                    >
+                      <option value="">No project</option>
+                      {projects.filter(p => p.status !== 'completed').map(p =>
+                        <option key={p.id} value={p.id}>{p.title}</option>
+                      )}
+                    </select>
+                    <select
+                      className="inbox-ctx-select"
+                      value={quickArea}
+                      onChange={e => setQuickArea(e.target.value)}
+                    >
+                      <option value="">No area</option>
+                      {taskAreas.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                    </select>
+                  </div>
                 </div>
               )}
             </div>

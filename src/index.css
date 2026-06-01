@@ -522,16 +522,72 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 }
 .inbox-capture-input::placeholder { color: var(--ink-4); }
 
-/* Context row (project + area) — slides in when text is typed */
+/* Context rows — slide in when text is typed in capture zone */
 .inbox-capture-context {
   display: flex;
-  gap: 8px;
-  padding: 8px 14px 2px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 14px 4px;
   animation: slideDown 0.15s ease;
 }
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Deadline row: chips + date input */
+.inbox-ctx-deadline-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.inbox-ctx-chip {
+  padding: 3px 10px;
+  border: 1px solid var(--border-2);
+  border-radius: 99px;
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--t);
+  white-space: nowrap;
+}
+.inbox-ctx-chip:hover  { border-color: var(--tasks); color: var(--ink-2); }
+.inbox-ctx-chip.active { border-color: var(--tasks); background: var(--tasks-dim); color: var(--tasks); font-weight: 600; }
+.inbox-ctx-date {
+  padding: 3px 8px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  color-scheme: dark;
+  transition: border-color var(--t);
+}
+.inbox-ctx-date:focus { border-color: var(--tasks); }
+.inbox-ctx-clear {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  background: none;
+  color: var(--ink-3);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  transition: all var(--t);
+}
+.inbox-ctx-clear:hover { background: var(--danger-dim); border-color: var(--danger); color: var(--danger); }
+
+/* Project + area selects row */
+.inbox-ctx-selects-row {
+  display: flex;
+  gap: 8px;
 }
 .inbox-ctx-select {
   flex: 1;
@@ -550,16 +606,55 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 .inbox-ctx-select:focus { border-color: var(--accent); }
 .inbox-ctx-select option { background: var(--surface-2); color: var(--ink); }
 
-/* Inline project/area selects on each inbox task row */
+/* Inline controls on each inbox task row */
 .inbox-inline-assign {
   display: flex;
-  gap: 5px;
-  margin-top: 3px;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
   opacity: 0;
   transition: opacity var(--t);
 }
 .inbox-item:hover .inbox-inline-assign,
 .inbox-item.selected .inbox-inline-assign { opacity: 1; }
+
+.inbox-inline-chip {
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: var(--surface-2);
+  color: var(--ink-4);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--t);
+}
+.inbox-inline-chip:hover  { border-color: var(--tasks); color: var(--ink-2); }
+.inbox-inline-chip.active { border-color: var(--tasks); background: var(--tasks-dim); color: var(--tasks); font-weight: 600; }
+
+.inbox-inline-date {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  color: var(--ink-4);
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  color-scheme: dark;
+  transition: border-color var(--t);
+}
+.inbox-inline-date:focus { border-color: var(--tasks); }
+
+.inbox-inline-sep {
+  width: 1px; height: 14px;
+  background: var(--border-2);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
 .inbox-inline-select {
   padding: 2px 8px;
   border: 1px solid var(--border);
