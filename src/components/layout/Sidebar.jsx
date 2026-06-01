@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked } from 'lucide-react';
+import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -99,6 +99,13 @@ export default function Sidebar() {
         <button className={`nav-item${active('/goals') ? ' active' : ''}`} onClick={() => go('/goals')}>
           <span className="nav-icon goals-icon"><Target size={15}/></span>
           Goals Tracker
+        </button>
+
+        {/* Habits */}
+        <div className="sidebar-section-label">Wellness</div>
+        <button className={`nav-item${active('/habits') ? ' active' : ''}`} onClick={() => go('/habits')}>
+          <span className="nav-icon habits-icon"><Zap size={15}/></span>
+          Habits
         </button>
 
         {/* Tasks */}

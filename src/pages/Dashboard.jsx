@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency, fmtShortDate, getGreeting, getDayLabel, pctRound, getGoalActuals, getGoalPeriods, paceStatus, getGoalIdeal, isToday, isPast, isWithinDays } from '../utils';
 import { STAGE_COLORS, ACTIVE_STAGES, ACTIVE_STAGES as ACTIVE } from '../constants';
 import { StageBadge } from '../components/common/Badge';
+import HabitsWidget from '../components/habits/HabitsWidget';
 
 function KpiCard({ icon: Icon, label, value, sub, color, soft, onClick }) {
   return (
@@ -145,6 +146,11 @@ export default function Dashboard() {
           sub={followUps7 > 0 ? `${followUps7} due this week` : undefined}
           color={overdueCrm > 0 ? 'var(--danger)' : 'var(--ok)'} soft={overdueCrm > 0 ? 'var(--danger-dim)' : 'var(--ok-dim)'}
           onClick={() => navigate('/mortgage/tasks')}/>
+      </div>
+
+      {/* Habits widget — full width above the 3-column grid */}
+      <div style={{ marginBottom: 20 }}>
+        <HabitsWidget/>
       </div>
 
       {/* 3-column content */}
