@@ -528,7 +528,13 @@ function TaskItem({ task, selected, projects, areas, onClick, onComplete, onQuic
             <select
               className="inbox-inline-select"
               value={task.projectId || ''}
-              onChange={e => onInlineUpdate(task.id, { projectId: e.target.value || null })}
+              onChange={e => {
+                const pid = e.target.value || null;
+                const proj = pid ? projects.find(p => p.id === pid) : null;
+                const patch = { projectId: pid };
+                if (proj?.area) patch.area = proj.area;
+                onInlineUpdate(task.id, patch);
+              }}
               title="Assign project"
             >
               <option value="">+ Project</option>
@@ -893,7 +899,14 @@ export default function Tasks() {
                   <select
                     className="inbox-ctx-select"
                     value={quickProject}
-                    onChange={e => setQuickProject(e.target.value)}
+                    onChange={e => {
+                      const pid = e.target.value;
+                      setQuickProject(pid);
+                      if (pid) {
+                        const proj = projects.find(p => p.id === pid);
+                        if (proj?.area) setQuickArea(proj.area);
+                      }
+                    }}
                   >
                     <option value="">No project</option>
                     {projects.filter(p => p.status !== 'completed').map(p =>
