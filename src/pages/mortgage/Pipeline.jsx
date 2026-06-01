@@ -274,7 +274,9 @@ export default function Pipeline() {
 
   const [selectedStatus,  setSelectedStatus]  = useState('all');
   const [showSettled,     setShowSettled]      = useState(false);
-  const [sortBy,          setSortBy]           = useState('recent');
+  const [sortBy,          setSortBy]           = useState(() => {
+    try { return localStorage.getItem('pipeline.sortBy') || 'recent'; } catch { return 'recent'; }
+  });
   const [search,          setSearch]           = useState('');
   const [editStageId,     setEditStageId]      = useState(null); // loan id with open stage picker
   const [showForm,        setShowForm]         = useState(false);
@@ -373,7 +375,7 @@ export default function Pipeline() {
           {/* Sort */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <ArrowUpDown size={13} style={{ color: 'var(--ink-3)' }}/>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+            <select value={sortBy} onChange={e => { const v = e.target.value; setSortBy(v); try { localStorage.setItem('pipeline.sortBy', v); } catch {} }}
               style={{ fontSize: 12.5, color: 'var(--ink-2)', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '6px 10px', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }}>
               <option value="recent">Recent</option>
               <option value="stage">By Stage</option>

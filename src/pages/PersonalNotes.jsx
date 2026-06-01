@@ -1,6 +1,6 @@
 // src/pages/PersonalNotes.jsx — Notes & Ideas with rich text editing
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Search, Trash2, NotebookPen } from 'lucide-react';
+import { Plus, Search, Trash2, NotebookPen, Download, ArrowUpDown, CheckSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -36,6 +36,13 @@ function fmtRelTime(ts) {
 
 function todayIso() { return new Date().toISOString().slice(0, 10); }
 
+// ─── Note type config ─────────────────────────────────────────────────────────
+const NOTE_TYPES = [
+  { value: 'note',  label: 'Note',  color: '#60A5FA' },
+  { value: 'idea',  label: 'Idea',  color: '#F59E0B' },
+  { value: 'area',  label: 'Area',  color: '#34D399' },
+];
+
 // ─── Toolbar button data ──────────────────────────────────────────────────────
 const TB_GROUPS = [
   [
@@ -67,6 +74,8 @@ export default function PersonalNotes() {
   const [delNote,    setDelNote]    = useState(null);
   const [localTitle, setLocalTitle] = useState('');
   const [localDate,  setLocalDate]  = useState(todayIso());
+  const [sortMode,   setSortMode]   = useState('edited'); // 'edited' | 'created'
+  const [typeFilter, setTypeFilter] = useState('all');    // 'all' | 'note' | 'idea' | 'area'
 
   const editorRef  = useRef(null);
   const bodyTimer  = useRef(null);
@@ -74,12 +83,17 @@ export default function PersonalNotes() {
   const titleRef   = useRef(null);
 
   // Sorted + filtered note list
-  const sorted = [...personalNotes].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-  const filtered = sorted.filter(n =>
-    !search ||
-    (n.title || '').toLowerCase().includes(search.toLowerCase()) ||
-    stripHtml(n.body || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const sorted = [...personalNotes].sort((a, b) => {
+    if (sortMode === 'created') return (b.createdAt || 0) - (a.createdAt || 0);
+    return (b.updatedAt || 0) - (a.updatedAt || 0);
+  });
+  const filtered = sorted.filter(n => {
+    const matchSearch = !search ||
+      (n.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      stripHtml(n.body || '').toLowerCase().includes(search.toLowerCase());
+    const matchType = typeFilter === 'all' || n.noteType === typeFilter;
+    return matchSearch && matchType;
+  });
 
   const currentNote = selId ? personalNotes.find(n => n.id === selId) || null : null;
 
@@ -215,6 +229,46 @@ export default function PersonalNotes() {
     }
   }
 
+  // ── Note type ─────────────────────────────────────────────────────────────
+  async function handleTypeChange(val) {
+    if (selId) {
+      try { await updatePersonalNote(selId, { noteType: val || null }); }
+      catch { /* silent */ }
+    }
+  }
+
+  // ── Export to PDF ─────────────────────────────────────────────────────────
+  function handleExportPDF() {
+    if (!currentNote) return;
+    const typeObj = NOTE_TYPES.find(t => t.value === currentNote.noteType);
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>${currentNote.title || 'Note'}</title>
+      <style>
+        body { font-family: Georgia, serif; max-width: 700px; margin: 40px auto; padding: 0 24px; color: #111; line-height: 1.7; }
+        h1 { font-size: 28px; margin: 0 0 6px; }
+        .meta { font-size: 13px; color: #666; margin-bottom: 28px; display: flex; gap: 12px; align-items: center; }
+        .tag { background: ${typeObj?.color || '#ddd'}22; border: 1px solid ${typeObj?.color || '#ddd'}; color: ${typeObj?.color || '#888'}; border-radius: 99px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+        h1,h2,h3 { font-family: Georgia, serif; }
+        h2 { font-size: 20px; margin: 24px 0 6px; }
+        h3 { font-size: 16px; margin: 18px 0 4px; }
+        ul,ol { margin: 8px 0 12px 24px; }
+        li { margin: 4px 0; }
+        blockquote { border-left: 3px solid #ddd; margin: 12px 0; padding: 4px 16px; color: #555; }
+        @media print { body { margin: 0; } }
+      </style></head><body>
+      <h1>${currentNote.title || 'Untitled'}</h1>
+      <div class="meta">
+        ${currentNote.date ? `<span>${fmtNoteDate(currentNote.date)}</span>` : ''}
+        ${typeObj ? `<span class="tag">${typeObj.label}</span>` : ''}
+      </div>
+      ${currentNote.body || '<p><em>No content.</em></p>'}
+    </body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
+  }
+
   // ── Delete ────────────────────────────────────────────────────────────────
   async function handleDelete(note) {
     try {
@@ -239,6 +293,27 @@ export default function PersonalNotes() {
             <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-4)', pointerEvents: 'none' }}/>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search notes…" className="pnotes-search"/>
           </div>
+          {/* Type filter pills */}
+          <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
+            {['all', 'note', 'idea', 'area'].map(t => {
+              const cfg = NOTE_TYPES.find(x => x.value === t);
+              const active = typeFilter === t;
+              return (
+                <button key={t} onClick={() => setTypeFilter(t)}
+                  style={{ fontSize: 11, padding: '2px 9px', borderRadius: 99, cursor: 'pointer', fontWeight: 600, border: `1px solid ${active && cfg ? cfg.color : active ? 'var(--accent)' : 'var(--border)'}`, background: active && cfg ? cfg.color + '22' : active ? 'var(--accent-dim)' : 'transparent', color: active && cfg ? cfg.color : active ? 'var(--accent)' : 'var(--ink-3)', transition: 'all .15s' }}>
+                  {t === 'all' ? 'All' : cfg?.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* Sort toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+            <ArrowUpDown size={11} style={{ color: 'var(--ink-4)' }}/>
+            <button onClick={() => setSortMode(sortMode === 'edited' ? 'created' : 'edited')}
+              style={{ fontSize: 11, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              {sortMode === 'edited' ? 'Last edited' : 'Date created'}
+            </button>
+          </div>
         </div>
         <div className="pnotes-list">
           {filtered.length === 0 && (
@@ -246,17 +321,27 @@ export default function PersonalNotes() {
               {search ? 'No matching notes.' : 'No notes yet. Tap "New" to get started.'}
             </div>
           )}
-          {filtered.map(n => (
-            <div key={n.id} className={`pnotes-item${selId === n.id ? ' selected' : ''}`} onClick={() => setSelId(n.id)}>
-              <div className="pnotes-item-title">{n.title || 'Untitled'}</div>
-              {stripHtml(n.body) && (
-                <div className="pnotes-item-preview">{stripHtml(n.body).slice(0, 80)}</div>
-              )}
-              <div className="pnotes-item-meta">
-                {n.date ? fmtNoteDate(n.date) : fmtRelTime(n.updatedAt || n.createdAt)}
+          {filtered.map(n => {
+            const typeObj = NOTE_TYPES.find(t => t.value === n.noteType);
+            return (
+              <div key={n.id} className={`pnotes-item${selId === n.id ? ' selected' : ''}`} onClick={() => setSelId(n.id)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <div className="pnotes-item-title" style={{ flex: 1 }}>{n.title || 'Untitled'}</div>
+                  {typeObj && (
+                    <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 99, background: typeObj.color + '22', color: typeObj.color, border: `1px solid ${typeObj.color}44`, fontWeight: 600, flexShrink: 0 }}>
+                      {typeObj.label}
+                    </span>
+                  )}
+                </div>
+                {stripHtml(n.body) && (
+                  <div className="pnotes-item-preview">{stripHtml(n.body).slice(0, 80)}</div>
+                )}
+                <div className="pnotes-item-meta">
+                  {n.date ? fmtNoteDate(n.date) : fmtRelTime(n.updatedAt || n.createdAt)}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -291,7 +376,23 @@ export default function PersonalNotes() {
                   onChange={e => handleDateChange(e.target.value)}
                   title="Note date"
                 />
+                {/* Note type selector */}
+                <div style={{ display: 'flex', gap: 3 }}>
+                  {NOTE_TYPES.map(t => {
+                    const active = currentNote?.noteType === t.value;
+                    return (
+                      <button key={t.value} onClick={() => handleTypeChange(active ? null : t.value)}
+                        title={`Tag as ${t.label}`}
+                        style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, cursor: 'pointer', fontWeight: 600, border: `1px solid ${active ? t.color : 'var(--border)'}`, background: active ? t.color + '22' : 'transparent', color: active ? t.color : 'var(--ink-4)', transition: 'all .15s' }}>
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
                 <span className="pnotes-autosave-label">Auto-saved</span>
+                <button className="icon-btn sm" onClick={handleExportPDF} title="Export as PDF">
+                  <Download size={13}/>
+                </button>
                 <button className="icon-btn sm danger" onClick={() => setDelNote(currentNote)} title="Delete note">
                   <Trash2 size={13}/>
                 </button>
@@ -315,6 +416,20 @@ export default function PersonalNotes() {
                   {gi < TB_GROUPS.length - 1 && <div className="pnotes-tb-sep"/>}
                 </div>
               ))}
+              <div className="pnotes-tb-sep"/>
+              <div className="pnotes-tb-group">
+                <button
+                  className="pnotes-tb-btn"
+                  title="Insert checklist item"
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    editorRef.current?.focus();
+                    document.execCommand('insertHTML', false,
+                      '<div class="pnotes-check-item"><input type="checkbox" class="pnotes-check-cb"> <span></span></div>');
+                    handleEditorInput();
+                  }}
+                ><CheckSquare size={12}/></button>
+              </div>
             </div>
 
             {/* ── Rich text body (contentEditable) ── */}

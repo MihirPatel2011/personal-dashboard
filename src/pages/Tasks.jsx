@@ -485,9 +485,10 @@ function TaskDetail({ task, projects, areas, onUpdate, onDelete, onClose }) {
 }
 
 // ─── Task Item Row ────────────────────────────────────────────────────────────
-function TaskItem({ task, selected, projects, onClick, onComplete }) {
+function TaskItem({ task, selected, projects, onClick, onComplete, onQuickMove }) {
   const eff      = getEffStatus(task);
   const isDone   = eff === 'logbook';
+  const isInbox  = eff === 'inbox';
   const proj     = projects.find(p => p.id === task.projectId);
   const deadline = task.deadline;
   const overdue  = deadline && isPast(deadline) && !isToday(deadline);
@@ -515,8 +516,15 @@ function TaskItem({ task, selected, projects, onClick, onComplete }) {
           </div>
         )}
       </div>
-      {task.isToday && !isDone && (
-        <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--tasks)', flexShrink: 0, marginTop: 7, title: 'In Today' }}/>
+      {isInbox && onQuickMove && (
+        <div className="task-item-inbox-actions" onClick={e => e.stopPropagation()}>
+          <button className="inbox-quick-btn" title="Move to Today" onClick={() => onQuickMove(task, 'today')}>☀️</button>
+          <button className="inbox-quick-btn" title="Move to Anytime" onClick={() => onQuickMove(task, 'anytime')}>→</button>
+          <button className="inbox-quick-btn" title="Move to Someday" onClick={() => onQuickMove(task, 'someday')}>🌙</button>
+        </div>
+      )}
+      {task.isToday && !isDone && !isInbox && (
+        <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--tasks)', flexShrink: 0, marginTop: 7 }}/>
       )}
     </div>
   );
@@ -544,6 +552,7 @@ export default function Tasks() {
   const [quickAdd,      setQuickAdd]      = useState('');
   const [quickDeadline, setQuickDeadline] = useState('');
   const [delItem,       setDelItem]       = useState(null); // { type, item }
+  const [clearLogbook,  setClearLogbook]  = useState(false);
 
   const inboxInputRef = useRef(null);
 
@@ -617,6 +626,15 @@ export default function Tasks() {
     catch { toast.error('Failed.'); }
   }, [updatePersonalTask]);
 
+  async function handleQuickMove(task, dest) {
+    try {
+      if (dest === 'today')   await updatePersonalTask(task.id, { status: 'anytime', isToday: true });
+      if (dest === 'anytime') await updatePersonalTask(task.id, { status: 'anytime', isToday: false });
+      if (dest === 'someday') await updatePersonalTask(task.id, { status: 'someday', isToday: false });
+      toast.success(`Moved to ${dest === 'today' ? 'Today' : dest === 'anytime' ? 'Anytime' : 'Someday'}`);
+    } catch { toast.error('Failed.'); }
+  }
+
   async function handleComplete(task) {
     const done = getEffStatus(task) === 'logbook';
     try {
@@ -635,6 +653,15 @@ export default function Tasks() {
       toast.success('Deleted.');
     } catch { toast.error('Failed.'); }
     setDelItem(null);
+  }
+
+  async function handleClearLogbook() {
+    try {
+      await Promise.all(logbookList.map(t => deletePersonalTask(t.id)));
+      setSelTask(null);
+      toast.success(`Cleared ${logbookList.length} completed task${logbookList.length !== 1 ? 's' : ''}.`);
+    } catch { toast.error('Failed to clear logbook.'); }
+    setClearLogbook(false);
   }
 
   async function handleProjSave(data) {
@@ -782,6 +809,11 @@ export default function Tasks() {
                   <Plus size={13}/> New
                 </button>
               )}
+              {view === 'logbook' && logbookList.length > 0 && (
+                <button className="btn ghost sm" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => setClearLogbook(true)}>
+                  <Trash2 size={13}/> Clear All
+                </button>
+              )}
               {view !== 'logbook' && view !== 'projects' && view !== 'inbox' && (
                 <button className="btn accent sm" onClick={() => { setEditTask(null); setShowTF(true); }}>
                   <Plus size={13}/> Add
@@ -891,6 +923,7 @@ export default function Tasks() {
                   projects={projects}
                   onClick={() => setSelTask(selTask === t.id ? null : t.id)}
                   onComplete={handleComplete}
+                  onQuickMove={view === 'inbox' ? handleQuickMove : undefined}
                 />
               ))
             )}
@@ -977,6 +1010,14 @@ export default function Tasks() {
           ? `Delete "${delItem?.item?.title}"? Existing tasks won't be deleted.`
           : `Delete "${delItem?.item?.title}"?`}
         confirmLabel="Delete"
+      />
+      <ConfirmDialog
+        isOpen={clearLogbook}
+        onClose={() => setClearLogbook(false)}
+        onConfirm={handleClearLogbook}
+        title="Clear Logbook?"
+        message={`Permanently delete all ${logbookList.length} completed task${logbookList.length !== 1 ? 's' : ''}? This cannot be undone.`}
+        confirmLabel="Clear All"
       />
     </>
   );

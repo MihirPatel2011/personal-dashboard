@@ -52,6 +52,23 @@ export default function Dashboard() {
     .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
     .slice(0, 5);
 
+  // Anytime tasks (no deadline, not pinned, not done/someday) — up to 5
+  const anytimeDash = personalTasks
+    .filter(t => {
+      const s = t.status;
+      if (['logbook', 'done', 'nd', 'someday'].includes(s)) return false;
+      if (s === 'essential' || s === 'secondary') return false;
+      if (t.isToday || isToday(t.deadline)) return false;
+      if (t.deadline) return false;
+      return s === 'anytime' || (!s && false); // explicit anytime only
+    })
+    .slice(0, 5);
+
+  // Someday tasks — up to 5
+  const somedayDash = personalTasks
+    .filter(t => t.status === 'nd' || t.status === 'someday')
+    .slice(0, 5);
+
   // Inbox count: only tasks with no deadline and not pinned to today
   const inboxCount = personalTasks.filter(t => {
     if (t.status !== 'inbox' && t.status) return false;
@@ -247,6 +264,30 @@ export default function Dashboard() {
                 <div key={t.id} className="dash-upcoming-row" onClick={() => navigate('/tasks')}>
                   <span className="dash-task-title" style={{ fontSize: 12.5 }}>{t.title}</span>
                   <span className="dash-upcoming-date">{fmtShortDate(t.deadline)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Anytime tasks */}
+          {anytimeDash.length > 0 && (
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+              <div className="section-label" style={{ marginBottom: 5 }}>Anytime</div>
+              {anytimeDash.map(t => (
+                <div key={t.id} className="dash-upcoming-row" onClick={() => navigate('/tasks')}>
+                  <span className="dash-task-title" style={{ fontSize: 12.5 }}>{t.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Someday tasks */}
+          {somedayDash.length > 0 && (
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+              <div className="section-label" style={{ marginBottom: 5 }}>Someday</div>
+              {somedayDash.map(t => (
+                <div key={t.id} className="dash-upcoming-row" onClick={() => navigate('/tasks')}>
+                  <span className="dash-task-title" style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{t.title}</span>
                 </div>
               ))}
             </div>

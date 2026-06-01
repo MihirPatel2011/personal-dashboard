@@ -264,6 +264,7 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 .field input:hover:not(:focus), .field select:hover:not(:focus), .field textarea:hover:not(:focus) { border-color: var(--border-2); }
 .field input::placeholder, .field textarea::placeholder { color: var(--ink-4); }
 .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.field select { color-scheme: dark; }
 .field select option { background: var(--surface-2); color: var(--ink); }
 .form-grid { display: grid; gap: 14px; }
 .form-2 { grid-template-columns: 1fr 1fr; }
@@ -633,6 +634,42 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
   letter-spacing: .06em; color: var(--ink-3); flex-shrink: 0; width: 64px;
 }
 
+/* Fix select dropdowns in task detail — options need explicit colours */
+.tasks-detail-field select {
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 3px 6px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  flex: 1;
+  color-scheme: dark;
+}
+.tasks-detail-field select option {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* Inbox quick-clarify action buttons */
+.task-item-inbox-actions {
+  display: flex; align-items: center; gap: 2px; flex-shrink: 0;
+  opacity: 0; transition: opacity var(--t);
+}
+.task-item:hover .task-item-inbox-actions { opacity: 1; }
+.inbox-quick-btn {
+  background: none; border: none; cursor: pointer; font-size: 13px;
+  padding: 2px 4px; border-radius: var(--r); transition: background var(--t);
+  line-height: 1;
+}
+.inbox-quick-btn:hover { background: var(--surface-3); }
+
+/* Notes checklist in editor */
+.pnotes-body .pnotes-check-item { display: flex; align-items: baseline; gap: 6px; margin: 3px 0; }
+.pnotes-body .pnotes-check-cb { cursor: pointer; flex-shrink: 0; }
+
 /* Checklist */
 .tasks-checklist { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
 .tasks-checklist-header {
@@ -720,10 +757,9 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 .stage-popover-item:hover  { background: var(--surface-2); color: var(--ink); }
 .stage-popover-item.active { color: var(--mortgage); font-weight: 700; background: var(--mortgage-dim); }
 
-.loan-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px 18px; cursor: pointer; transition: border-color var(--t-slow), transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out); position: relative; overflow: hidden; }
-.loan-card:hover { border-color: var(--border-2); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.loan-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--mortgage); border-radius: var(--r-lg); padding: 16px 18px; cursor: pointer; transition: border-color var(--t-slow), transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out); position: relative; }
+.loan-card:hover { border-color: var(--border-2); border-left-color: var(--mortgage); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 .loan-card:active { transform: scale(0.98) translateY(0); box-shadow: var(--shadow-sm); }
-.loan-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--mortgage); box-shadow: 2px 0 10px rgba(96,176,138,0.3); }
 .loan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 .loan-client { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
 .loan-meta   { font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
