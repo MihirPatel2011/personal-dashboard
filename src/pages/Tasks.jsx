@@ -109,7 +109,14 @@ function TaskFormModal({ task, defaultView, defaultProjectId, projects, areas, o
         <div className="form-grid form-2">
           <div className="field">
             <label>Project</label>
-            <select value={f.projectId} onChange={e => sf('projectId', e.target.value)}>
+            <select value={f.projectId} onChange={e => {
+              const pid = e.target.value;
+              sf('projectId', pid);
+              if (pid) {
+                const proj = projects.find(p => p.id === pid);
+                if (proj?.area) sf('area', proj.area);
+              }
+            }}>
               <option value="">— None —</option>
               {projects.filter(p => p.status !== 'completed').map(p =>
                 <option key={p.id} value={p.id}>{p.title}</option>)}
@@ -408,7 +415,14 @@ function TaskDetail({ task, projects, areas, onUpdate, onDelete, onClose }) {
           {/* Project */}
           <div className="tasks-detail-field">
             <span className="tasks-detail-field-label">Project</span>
-            <select value={task.projectId || ''} onChange={e => save('projectId', e.target.value || null)}
+            <select value={task.projectId || ''} onChange={e => {
+              const pid = e.target.value || null;
+              save('projectId', pid);
+              if (pid) {
+                const proj = projects.find(p => p.id === pid);
+                if (proj?.area) save('area', proj.area);
+              }
+            }}
               style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', fontFamily: 'inherit', flex: 1 }}>
               <option value="">— None —</option>
               {projects.filter(p => p.status !== 'completed').map(p =>
