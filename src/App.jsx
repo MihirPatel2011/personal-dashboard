@@ -15,6 +15,7 @@ import CRMTasks from './pages/mortgage/CRMTasks';
 import Performance from './pages/mortgage/Performance';
 import Settings from './pages/mortgage/Settings';
 import PersonalNotes from './pages/PersonalNotes';
+import Journal from './pages/Journal';
 
 function ThemedToaster() {
   const { theme } = useTheme();
@@ -63,6 +64,7 @@ function AppShell() {
           <Route path="/goals"               element={<Goals/>}/>
           <Route path="/tasks"               element={<Tasks/>}/>
           <Route path="/notes"               element={<PersonalNotes/>}/>
+          <Route path="/journal"             element={<Journal/>}/>
           <Route path="/mortgage"            element={<MortgageLayout/>}>
             <Route index                     element={<Navigate to="/mortgage/pipeline" replace/>}/>
             <Route path="pipeline"           element={<Pipeline/>}/>

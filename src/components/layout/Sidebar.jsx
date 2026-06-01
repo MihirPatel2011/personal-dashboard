@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen } from 'lucide-react';
+import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -28,6 +28,7 @@ export function MobileNav() {
     { path: '/dashboard',        label: 'Home',     icon: LayoutDashboard },
     { path: '/tasks',            label: 'Tasks',    icon: CheckSquare     },
     { path: '/notes',            label: 'Notes',    icon: NotebookPen     },
+    { path: '/journal',          label: 'Journal',  icon: BookMarked      },
     { path: '/mortgage/pipeline',label: 'Mortgage', icon: Kanban          },
   ];
 
@@ -110,6 +111,10 @@ export default function Sidebar() {
         <button className={`nav-item${active('/notes') ? ' active' : ''}`} onClick={() => go('/notes')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><NotebookPen size={15}/></span>
           Notes &amp; Ideas
+        </button>
+        <button className={`nav-item${active('/journal') ? ' active' : ''}`} onClick={() => go('/journal')}>
+          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><BookMarked size={15}/></span>
+          Journal
         </button>
 
         {/* Mortgage */}
