@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Plus, Trash2, Edit3, TrendingUp, TrendingDown, Minus,
-         ChevronLeft, ChevronRight, Check, Calendar, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+         ChevronLeft, ChevronRight, Check, Calendar, BookOpen,
+         ChevronDown, ChevronUp, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import {
   formatCurrency, formatNumber, pctRound,
-  tsToDateInput, dateInputToTs, fmtShortDate, fmtRelative,
+  tsToDateInput, dateInputToTs, fmtShortDate,
   paceStatus,
 } from '../utils';
 import { GOAL_COLORS, GOAL_GLYPHS } from '../constants';
@@ -17,7 +18,7 @@ const nextCls = gs => GOAL_COLORS[gs.length % GOAL_COLORS.length].cls;
 const genId   = () => Math.random().toString(36).slice(2, 9);
 const todayISO = () => new Date().toISOString().split('T')[0];
 
-// ── 2026 Period constants ─────────────────────────────────────────────────────
+// ── 2026 period constants ─────────────────────────────────────────────────────
 const YEAR    = 2026;
 const Y_START = new Date(YEAR, 0, 1).getTime();
 const Y_END   = new Date(YEAR + 1, 0, 1).getTime();
@@ -36,7 +37,7 @@ const MONTHS_2026 = Array.from({ length:12 }, (_,i) => ({
   start:new Date(YEAR,i,1).getTime(), end:new Date(YEAR,i+1,1).getTime(),
 }));
 
-function nowQIdx()  { const i = QUARTERS.findIndex(q => Date.now()>=q.start && Date.now()<q.end); return i===-1?3:i; }
+function nowQIdx()  { const i = QUARTERS.findIndex(q=>Date.now()>=q.start&&Date.now()<q.end); return i===-1?3:i; }
 function nowMIdx()  { return new Date().getMonth(); }
 function getWeek(offset=0) {
   const now=new Date(), dow=now.getDay(), mon=new Date(now);
@@ -62,37 +63,43 @@ function windowIdeal(start,end) {
   return Math.round((now-start)/(end-start)*100);
 }
 
-// Collect all sub-goals across every period for a goal, labelled by period
 function getGroupedSubGoals(goal) {
-  const sg = goal.subGoals || {};
+  const sg = goal.subGoals||{};
   const groups = [];
   QUARTERS.forEach(q => {
-    const sgs = sg[qKey(q.idx)]||[];
+    const sgs=sg[qKey(q.idx)]||[];
     if(sgs.length>0) groups.push({ key:qKey(q.idx), label:`${q.label} · ${q.range} ${YEAR}`, sgs, start:q.start, end:q.end });
   });
   MONTHS_2026.forEach(m => {
-    const sgs = sg[mKey(m.idx)]||[];
+    const sgs=sg[mKey(m.idx)]||[];
     if(sgs.length>0) groups.push({ key:mKey(m.idx), label:`${m.label} ${YEAR}`, sgs, start:m.start, end:m.end });
   });
   Object.keys(sg).forEach(key => {
     if(!key.startsWith('w_')) return;
-    const ws = parseInt(key.slice(2));
-    const we = ws + 7*86400000;
-    const d = x=>`${x.getDate()} ${MONTHS_FULL[new Date(x).getMonth()].slice(0,3)}`;
-    const label = `Week ${d(new Date(ws))} – ${d(new Date(we-1))}`;
-    const sgs = sg[key]||[];
-    if(sgs.length>0) groups.push({ key, label, sgs, start:ws, end:we });
+    const ws=parseInt(key.slice(2)), we=ws+7*86400000;
+    const d=x=>`${new Date(x).getDate()} ${MONTHS_FULL[new Date(x).getMonth()].slice(0,3)}`;
+    const sgs=sg[key]||[];
+    if(sgs.length>0) groups.push({ key, label:`Week ${d(ws)} – ${d(we-1)}`, sgs, start:ws, end:we });
   });
   return groups;
 }
+
+// ── Shared inline styles ──────────────────────────────────────────────────────
+const inputStyle = {
+  padding:'8px 12px', border:'1.5px solid var(--border)', borderRadius:'var(--r)',
+  fontSize:13, background:'var(--surface-2)', color:'var(--ink)',
+  fontFamily:'inherit', outline:'none', width:'100%', transition:'border-color 0.15s',
+};
+const focusAccent = e => { e.target.style.borderColor='var(--accent)'; };
+const blurBorder  = e => { e.target.style.borderColor='var(--border)'; };
 
 // ── Pace Bar ──────────────────────────────────────────────────────────────────
 function PaceBar({ actual, target, ideal, color }) {
   const p = pctRound(actual,target);
   return (
-    <div className="pace-bar" style={{ height:5 }}>
-      <div className="pace-fill" style={{ width:p+'%', background:color||'var(--ok)' }}/>
-      {ideal!=null && <div className="pace-marker" style={{ left:ideal+'%' }}/>}
+    <div className="pace-bar" style={{height:5}}>
+      <div className="pace-fill" style={{width:p+'%',background:color||'var(--ok)'}}/>
+      {ideal!=null&&<div className="pace-marker" style={{left:ideal+'%'}}/>}
     </div>
   );
 }
@@ -105,14 +112,14 @@ const PERIOD_OPTIONS = [
 ];
 
 function GoalModal({ editGoal, allGoals, onSave, onClose }) {
-  const isEdit = !!editGoal;
-  const blank = {
+  const isEdit=!!editGoal;
+  const blank={
     label:'',short:'',glyph:'🎯',cls:nextCls(allGoals),unit:'count',step:'1',
     type:'northstar',parentId:'',yearTarget:'',periodType:'monthly',
     yearStart:tsToDateInput(new Date(YEAR,0,1).getTime()),
     yearEnd:  tsToDateInput(new Date(YEAR,11,31).getTime()),
   };
-  const [f,setF] = useState(()=>isEdit?{
+  const [f,setF]=useState(()=>isEdit?{
     label:editGoal.label,short:editGoal.short||'',glyph:editGoal.glyph,cls:editGoal.cls,
     unit:editGoal.unit,step:String(editGoal.step||1),type:editGoal.type,
     parentId:editGoal.parentId||'',yearTarget:String(editGoal.year?.target||''),
@@ -214,12 +221,12 @@ function GoalModal({ editGoal, allGoals, onSave, onClose }) {
   );
 }
 
-// ── Direct Log Modal (yearly goal) ────────────────────────────────────────────
+// ── Direct log entry modal ────────────────────────────────────────────────────
 function LogModal({ goal, editEntry, onSave, onClose }) {
-  const isCur = goal.unit==='currency';
-  const [amt,     setAmt]     = useState(editEntry?String(editEntry.amt):'');
-  const [note,    setNote]    = useState(editEntry?.note||'');
-  const [logDate, setLogDate] = useState(
+  const isCur=goal.unit==='currency';
+  const [amt,setAmt]=useState(editEntry?String(editEntry.amt):'');
+  const [note,setNote]=useState(editEntry?.note||'');
+  const [logDate,setLogDate]=useState(
     editEntry?.logDate||(editEntry?.ts?new Date(editEntry.ts).toISOString().split('T')[0]:todayISO())
   );
   return (
@@ -257,39 +264,32 @@ function LogModal({ goal, editEntry, onSave, onClose }) {
 }
 
 // ── Sub-goal log modal ────────────────────────────────────────────────────────
-function SubGoalLogModal({ sg, goal, editEntry, onSave, onClose }) {
-  const hasTarget = (sg.target||0) > 0;
-  const isCur     = goal.unit === 'currency';
-  const [amt,     setAmt]     = useState(editEntry?String(editEntry.amt):'');
-  const [note,    setNote]    = useState(editEntry?.note||'');
-  const [logDate, setLogDate] = useState(editEntry?.date||todayISO());
-
+function SubGoalLogModal({ sg, isCur, editEntry, onSave, onClose }) {
+  const hasTarget=(sg.target||0)>0;
+  const [amt,setAmt]=useState(editEntry?String(editEntry.amt):'');
+  const [note,setNote]=useState(editEntry?.note||'');
+  const [date,setDate]=useState(editEntry?.date||todayISO());
   return (
-    <Modal isOpen title={editEntry?`Edit log — ${sg.title}`:`Log — ${sg.title}`} onClose={onClose} size="sm">
+    <Modal isOpen title={editEntry?`Edit — ${sg.title}`:`Log — ${sg.title}`} onClose={onClose} size="sm">
       <div className="modal-body">
-        {hasTarget && (
-          <div className="form-grid form-2">
+        <div className={`form-grid${hasTarget?' form-2':''}`}>
+          {hasTarget&&(
             <div className="field"><label>{isCur?'Amount ($)':'Count'} *</label>
               <input type="number" value={amt} onChange={e=>setAmt(e.target.value)}
                 placeholder="1" autoFocus step={1}/></div>
-            <div className="field"><label>Date</label>
-              <input type="date" value={logDate} onChange={e=>setLogDate(e.target.value)}/></div>
-          </div>
-        )}
-        {!hasTarget && (
-          <div className="field">
-            <label>Date</label>
-            <input type="date" value={logDate} onChange={e=>setLogDate(e.target.value)} autoFocus/>
-          </div>
-        )}
+          )}
+          <div className="field"><label>Date</label>
+            <input type="date" value={date} onChange={e=>setDate(e.target.value)}
+              autoFocus={!hasTarget}/></div>
+        </div>
         <div className="field"><label>Note (optional)</label>
           <input value={note} onChange={e=>setNote(e.target.value)} placeholder="What happened?"/></div>
       </div>
       <div className="modal-foot">
         <button className="btn ghost" onClick={onClose}>Cancel</button>
         <button className="btn accent"
-          disabled={hasTarget && !Number(amt)}
-          onClick={()=>onSave({ id:editEntry?.id||genId(), amt:Number(amt)||1, note, date:logDate })}>
+          disabled={hasTarget&&!Number(amt)}
+          onClick={()=>onSave({ id:editEntry?.id||genId(), amt:Number(amt)||1, note, date })}>
           {editEntry?'Save':'Add Entry'}
         </button>
       </div>
@@ -298,48 +298,42 @@ function SubGoalLogModal({ sg, goal, editEntry, onSave, onClose }) {
 }
 
 // ── Sub-goal edit modal ───────────────────────────────────────────────────────
-function SubGoalEditModal({ sg, goal, onSave, onClose }) {
-  const [title,  setTitle]  = useState(sg.title);
-  const [target, setTarget] = useState(String(sg.target||''));
-  const valid = title.trim();
+function SubGoalEditModal({ sg, onSave, onClose }) {
+  const [title,setTitle]=useState(sg.title);
+  const [target,setTarget]=useState(String(sg.target||''));
   return (
     <Modal isOpen title="Edit goal" onClose={onClose} size="sm">
       <div className="modal-body">
         <div className="field"><label>Title *</label>
           <input value={title} onChange={e=>setTitle(e.target.value)} autoFocus
-            placeholder="e.g. Close 5 deals"/></div>
+            onKeyDown={e=>{ if(e.key==='Enter'&&title.trim()) onSave({title:title.trim(),target:Number(target)||0}); }}/></div>
         <div className="field">
           <label>Target (leave blank for checkbox)</label>
           <input type="number" value={target} onChange={e=>setTarget(e.target.value)}
-            placeholder="e.g. 5"/>
-        </div>
-        <div style={{fontSize:12,color:'var(--ink-3)'}}>
-          Changing target won't delete existing log entries.
+            placeholder="e.g. 5 (optional)"
+            onKeyDown={e=>{ if(e.key==='Enter'&&title.trim()) onSave({title:title.trim(),target:Number(target)||0}); }}/>
         </div>
       </div>
       <div className="modal-foot">
         <button className="btn ghost" onClick={onClose}>Cancel</button>
-        <button className="btn accent" disabled={!valid}
+        <button className="btn accent" disabled={!title.trim()}
           onClick={()=>onSave({ title:title.trim(), target:Number(target)||0 })}>Save</button>
       </div>
     </Modal>
   );
 }
 
-// ── Sub-goal row ──────────────────────────────────────────────────────────────
-function SubGoalRow({ sg, goalColor, isCur, onUpdate, onDelete }) {
-  const hasTarget   = (sg.target||0) > 0;
-  const entries     = sg.entries || [];
-  const loggedAmt   = entries.reduce((s,e)=>s+(Number(e.amt)||0), 0);
-  const displayAmt  = hasTarget ? (sg.actual||0) + loggedAmt : sg.actual||0;
-  const isDone      = hasTarget ? displayAmt >= sg.target : !!sg.checked;
-  const [showLog,   setShowLog]   = useState(false);
-  const [logModal,  setLogModal]  = useState(false);   // add entry
-  const [editEntry, setEditEntry] = useState(null);    // edit existing entry
-  const [editModal, setEditModal] = useState(false);   // edit title/target
-  const [delConfirm,setDelConfirm]= useState(false);
+// ── Sub-goal row — only calls callbacks, NO internal modal rendering ──────────
+// This prevents modals being trapped by ancestor overflow/transform contexts.
+function SubGoalRow({ sg, goalColor, isCur, onUpdate, onRequestLog, onRequestEdit, onRequestDelete }) {
+  const hasTarget=(sg.target||0)>0;
+  const entries=sg.entries||[];
+  const loggedAmt=entries.reduce((s,e)=>s+(Number(e.amt)||0),0);
+  const displayAmt=hasTarget?(sg.actual||0)+loggedAmt:sg.actual||0;
+  const isDone=hasTarget?displayAmt>=sg.target:!!sg.checked;
+  const [showEntries,setShowEntries]=useState(false);
 
-  const stepBtn = (label, onClick) => (
+  const stepBtn=(label,onClick)=>(
     <button onClick={onClick} style={{
       width:20,height:20,borderRadius:5,
       border:`1px solid ${isDone?goalColor+'66':'var(--border)'}`,
@@ -351,233 +345,223 @@ function SubGoalRow({ sg, goalColor, isCur, onUpdate, onDelete }) {
     }}>{label}</button>
   );
 
-  function handleSaveLog(entry) {
-    const updated = editEntry
-      ? entries.map(e=>e.id===entry.id?entry:e)
-      : [...entries, entry];
-    onUpdate({ entries: updated });
-    setLogModal(false); setEditEntry(null);
-  }
-  function handleDeleteEntry(id) {
-    onUpdate({ entries: entries.filter(e=>e.id!==id) });
-  }
-
   return (
-    <>
-      <div style={{
-        padding:'8px 0', borderBottom:'1px solid var(--border)',
-        opacity:isDone?0.72:1, transition:'opacity 0.2s',
-      }}>
-        {/* Main row */}
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          {/* Control */}
-          {hasTarget ? (
-            <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
-              {stepBtn('−',()=>onUpdate({actual:Math.max(0,(sg.actual||0)-1)}))}
-              <span style={{fontFamily:'var(--mono)',fontSize:11,fontWeight:700,color:isDone?'var(--ok)':goalColor,minWidth:44,textAlign:'center'}}>
-                {displayAmt}/{sg.target}
-              </span>
-              {stepBtn('+',()=>onUpdate({actual:(sg.actual||0)+1}))}
-            </div>
-          ) : (
-            <button onClick={()=>onUpdate({checked:!sg.checked})} style={{
-              width:18,height:18,borderRadius:4,flexShrink:0,
-              border:`1.5px solid ${isDone?'var(--ok)':'var(--border-strong)'}`,
-              background:isDone?'var(--ok)':'transparent',
-              display:'flex',alignItems:'center',justifyContent:'center',
-              cursor:'pointer',color:'#fff',
-              transition:'all 0.15s cubic-bezier(0.34,1.4,0.64,1)',
-            }}>
-              {isDone&&<Check size={10} strokeWidth={3}/>}
-            </button>
-          )}
-
-          {/* Title */}
-          <span style={{
-            flex:1,fontSize:13,
-            color:isDone?'var(--ink-3)':'var(--ink)',
-            textDecoration:isDone?'line-through':'none',
-            textDecorationColor:'var(--ink-4)',
-          }}>{sg.title}</span>
-
-          {/* Mini progress bar */}
-          {hasTarget && (
-            <div style={{width:40,flexShrink:0}}>
-              <div style={{height:3,background:'var(--surface-3)',borderRadius:99,overflow:'hidden'}}>
-                <div style={{height:'100%',width:pctRound(displayAmt,sg.target)+'%',background:isDone?'var(--ok)':goalColor,borderRadius:99,transition:'width 0.3s var(--ease-out)'}}/>
-              </div>
-            </div>
-          )}
-
-          {/* Entries toggle */}
-          {entries.length>0 && (
-            <button onClick={()=>setShowLog(v=>!v)} style={{
-              display:'flex',alignItems:'center',gap:3,background:'none',border:'none',
-              cursor:'pointer',fontSize:10.5,color:'var(--ink-3)',flexShrink:0,padding:'2px 4px',
-              borderRadius:4,transition:'background 0.12s',
-            }}
-              onMouseEnter={e=>e.currentTarget.style.background='var(--surface-2)'}
-              onMouseLeave={e=>e.currentTarget.style.background='none'}>
-              <BookOpen size={10}/>{entries.length}
-              {showLog?<ChevronUp size={9}/>:<ChevronDown size={9}/>}
-            </button>
-          )}
-
-          {/* Action buttons — always visible */}
-          <div style={{display:'flex',gap:2,flexShrink:0}}>
-            <button className="icon-btn sm" title="Log entry" onClick={()=>setLogModal(true)}>
-              <Calendar size={11}/>
-            </button>
-            <button className="icon-btn sm" title="Edit" onClick={()=>setEditModal(true)}>
-              <Edit3 size={11}/>
-            </button>
-            <button className="icon-btn sm danger" title="Delete" onClick={()=>setDelConfirm(true)}>
-              <Trash2 size={11}/>
-            </button>
+    <div style={{padding:'8px 0',borderBottom:'1px solid var(--border)',opacity:isDone?0.72:1,transition:'opacity 0.2s'}}>
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        {/* Control */}
+        {hasTarget?(
+          <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
+            {stepBtn('−',()=>onUpdate({actual:Math.max(0,(sg.actual||0)-1)}))}
+            <span style={{fontFamily:'var(--mono)',fontSize:11,fontWeight:700,color:isDone?'var(--ok)':goalColor,minWidth:44,textAlign:'center'}}>
+              {displayAmt}/{sg.target}
+            </span>
+            {stepBtn('+',()=>onUpdate({actual:(sg.actual||0)+1}))}
           </div>
-        </div>
+        ):(
+          <button onClick={()=>onUpdate({checked:!sg.checked})} style={{
+            width:18,height:18,borderRadius:4,flexShrink:0,
+            border:`1.5px solid ${isDone?'var(--ok)':'var(--border-strong)'}`,
+            background:isDone?'var(--ok)':'transparent',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            cursor:'pointer',color:'#fff',
+            transition:'all 0.15s cubic-bezier(0.34,1.4,0.64,1)',
+          }}>
+            {isDone&&<Check size={10} strokeWidth={3}/>}
+          </button>
+        )}
 
-        {/* Log entries */}
-        {showLog && entries.length>0 && (
-          <div style={{marginTop:6,marginLeft:26,display:'flex',flexDirection:'column',gap:2}}>
-            {[...entries].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>(
-              <div key={e.id} style={{display:'flex',alignItems:'center',gap:8,padding:'3px 8px',background:'var(--surface-2)',borderRadius:6}}>
-                <span style={{fontSize:10.5,color:'var(--ink-4)',fontFamily:'var(--mono)',flexShrink:0}}>{e.date}</span>
-                {hasTarget&&<span style={{fontSize:11,fontWeight:700,color:goalColor}}>+{e.amt}</span>}
-                <span style={{flex:1,fontSize:11,color:'var(--ink-3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.note||'—'}</span>
-                <button className="icon-btn sm" style={{width:18,height:18}} onClick={()=>{setEditEntry(e);setLogModal(true);}}>
-                  <Edit3 size={9}/>
-                </button>
-                <button className="icon-btn sm danger" style={{width:18,height:18}} onClick={()=>handleDeleteEntry(e.id)}>
-                  <Trash2 size={9}/>
-                </button>
-              </div>
-            ))}
+        {/* Title */}
+        <span style={{
+          flex:1,fontSize:13,
+          color:isDone?'var(--ink-3)':'var(--ink)',
+          textDecoration:isDone?'line-through':'none',textDecorationColor:'var(--ink-4)',
+        }}>{sg.title}</span>
+
+        {/* Mini progress */}
+        {hasTarget&&(
+          <div style={{width:40,flexShrink:0}}>
+            <div style={{height:3,background:'var(--surface-3)',borderRadius:99,overflow:'hidden'}}>
+              <div style={{height:'100%',width:pctRound(displayAmt,sg.target)+'%',background:isDone?'var(--ok)':goalColor,borderRadius:99,transition:'width 0.3s var(--ease-out)'}}/>
+            </div>
           </div>
         )}
+
+        {/* Entries toggle */}
+        {entries.length>0&&(
+          <button onClick={()=>setShowEntries(v=>!v)} style={{
+            display:'flex',alignItems:'center',gap:3,background:'none',border:'none',
+            cursor:'pointer',fontSize:10.5,color:'var(--ink-3)',flexShrink:0,
+            padding:'2px 5px',borderRadius:4,transition:'background 0.12s',
+          }}
+            onMouseEnter={e=>e.currentTarget.style.background='var(--surface-2)'}
+            onMouseLeave={e=>e.currentTarget.style.background='none'}>
+            <BookOpen size={10}/>{entries.length}
+            {showEntries?<ChevronUp size={9}/>:<ChevronDown size={9}/>}
+          </button>
+        )}
+
+        {/* Action buttons — always visible */}
+        <div style={{display:'flex',gap:2,flexShrink:0}}>
+          <button className="icon-btn sm" title="Add log entry" onClick={()=>onRequestLog(sg)}><Calendar size={11}/></button>
+          <button className="icon-btn sm" title="Edit"          onClick={()=>onRequestEdit(sg)}><Edit3 size={11}/></button>
+          <button className="icon-btn sm danger" title="Delete" onClick={()=>onRequestDelete(sg)}><Trash2 size={11}/></button>
+        </div>
       </div>
 
-      {/* Modals */}
-      {logModal && (
-        <SubGoalLogModal sg={sg} goal={{unit:isCur?'currency':'count'}} editEntry={editEntry||undefined}
-          onSave={handleSaveLog} onClose={()=>{setLogModal(false);setEditEntry(null);}}/>
+      {/* Expanded log entries */}
+      {showEntries&&entries.length>0&&(
+        <div style={{marginTop:6,marginLeft:26,display:'flex',flexDirection:'column',gap:2}}>
+          {[...entries].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>(
+            <div key={e.id} style={{display:'flex',alignItems:'center',gap:8,padding:'3px 8px',background:'var(--surface-2)',borderRadius:6}}>
+              <span style={{fontSize:10.5,color:'var(--ink-4)',fontFamily:'var(--mono)',flexShrink:0}}>{e.date}</span>
+              {hasTarget&&<span style={{fontSize:11,fontWeight:700,color:goalColor}}>+{e.amt}</span>}
+              <span style={{flex:1,fontSize:11,color:'var(--ink-3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.note||'—'}</span>
+              <button className="icon-btn sm" style={{width:18,height:18}} onClick={()=>onRequestLog(sg,e)}><Edit3 size={9}/></button>
+              <button className="icon-btn sm danger" style={{width:18,height:18}}
+                onClick={()=>onUpdate({entries:(sg.entries||[]).filter(x=>x.id!==e.id)})}>
+                <Trash2 size={9}/>
+              </button>
+            </div>
+          ))}
+        </div>
       )}
-      {editModal && (
-        <SubGoalEditModal sg={sg} goal={{unit:isCur?'currency':'count'}}
-          onSave={patch=>{onUpdate(patch);setEditModal(false);}}
-          onClose={()=>setEditModal(false)}/>
-      )}
-      <ConfirmDialog isOpen={delConfirm} onClose={()=>setDelConfirm(false)}
-        onConfirm={()=>{onDelete();setDelConfirm(false);}}
-        title="Delete goal?" message={`Remove "${sg.title}" and all its log entries?`}
-        confirmLabel="Delete"/>
-    </>
+    </div>
   );
 }
 
-// ── Goal Period Block ─────────────────────────────────────────────────────────
+// ── Goal Period Block — manages modal state, renders modals OUTSIDE container ──
 function GoalPeriodBlock({ goal, periodKey, onUpdateSubGoals }) {
   const color    = GOAL_COLORS.find(c=>c.cls===goal.cls)||GOAL_COLORS[0];
   const isCur    = goal.unit==='currency';
-  const subGoals = getSubGoals(goal, periodKey);
+  const subGoals = getSubGoals(goal,periodKey);
   const done     = subGoals.filter(sg=>{
     const hasT=(sg.target||0)>0;
     const logAmt=(sg.entries||[]).reduce((s,e)=>s+(Number(e.amt)||0),0);
     return hasT?(sg.actual||0)+logAmt>=sg.target:!!sg.checked;
   }).length;
 
-  const [adding,   setAdding]   = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newTarget,setNewTarget]= useState('');
+  // Modal state — rendered OUTSIDE the overflow container
+  const [logModal,  setLogModal]  = useState(null); // { sg, editEntry? }
+  const [editModal, setEditModal] = useState(null); // sg
+  const [delModal,  setDelModal]  = useState(null); // sg
+
+  const [adding,    setAdding]    = useState(false);
+  const [newTitle,  setNewTitle]  = useState('');
+  const [newTarget, setNewTarget] = useState('');
 
   function handleAdd() {
-    if(!newTitle.trim()) return;
+    if(!newTitle.trim())return;
     const sg={ id:genId(), title:newTitle.trim(), target:Number(newTarget)||0, unit:goal.unit, actual:0, checked:false, entries:[] };
     onUpdateSubGoals([...subGoals,sg]);
     setNewTitle(''); setNewTarget(''); setAdding(false);
   }
-  function handleUpdate(sgId,patch) {
-    onUpdateSubGoals(subGoals.map(sg=>sg.id===sgId?{...sg,...patch}:sg));
-  }
-  function handleDelete(sgId) {
-    onUpdateSubGoals(subGoals.filter(sg=>sg.id!==sgId));
+  function update(sgId,patch) { onUpdateSubGoals(subGoals.map(sg=>sg.id===sgId?{...sg,...patch}:sg)); }
+  function remove(sgId)       { onUpdateSubGoals(subGoals.filter(sg=>sg.id!==sgId)); }
+
+  function handleSaveLog(sg,entry) {
+    const existing=sg.entries||[];
+    const updated=logModal?.editEntry
+      ? existing.map(e=>e.id===entry.id?entry:e)
+      : [...existing,entry];
+    update(sg.id,{entries:updated});
+    setLogModal(null);
   }
 
   return (
-    <div style={{
-      background:'var(--surface)',
-      border:`1px solid ${subGoals.length>0?color.fg+'33':'var(--border)'}`,
-      borderRadius:'var(--r-lg)',overflow:'hidden',
-      animation:'slideUp 0.18s var(--ease-out) both',
-    }}>
-      {/* Header */}
+    <>
+      {/* ── Main container — overflow:hidden for rounded corners ── */}
       <div style={{
-        display:'flex',alignItems:'center',gap:10,padding:'12px 14px',
-        borderBottom:subGoals.length>0||adding?'1px solid var(--border)':'none',
-        background:subGoals.length>0?color.bg+'44':'transparent',
+        background:'var(--surface)',
+        border:`1px solid ${subGoals.length>0?color.fg+'33':'var(--border)'}`,
+        borderRadius:'var(--r-lg)',
+        /* NOTE: no overflow:hidden here — that trapped fixed modals.
+           We clip with borderRadius only; inner content uses its own radius. */
       }}>
-        <div className={`goal-icon ${goal.cls||'gc0'}`} style={{width:26,height:26,borderRadius:7,fontSize:13,flexShrink:0}}>{goal.glyph}</div>
-        <span style={{flex:1,fontWeight:700,fontSize:13.5,color:'var(--ink)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{goal.label}</span>
+        {/* Header */}
+        <div style={{
+          display:'flex',alignItems:'center',gap:10,padding:'12px 14px',
+          borderBottom:subGoals.length>0||adding?'1px solid var(--border)':'none',
+          background:subGoals.length>0?color.bg+'44':'transparent',
+          borderRadius:subGoals.length>0||adding?'var(--r-lg) var(--r-lg) 0 0':'var(--r-lg)',
+        }}>
+          <div className={`goal-icon ${goal.cls||'gc0'}`} style={{width:26,height:26,borderRadius:7,fontSize:13,flexShrink:0}}>{goal.glyph}</div>
+          <span style={{flex:1,fontWeight:700,fontSize:13.5,color:'var(--ink)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{goal.label}</span>
+          {subGoals.length>0&&<span style={{fontSize:11,color:'var(--ink-3)',flexShrink:0}}>{done}/{subGoals.length} done</span>}
+          <button className="btn ghost sm" style={{gap:4,fontSize:11.5,flexShrink:0}} onClick={()=>setAdding(v=>!v)}>
+            <Plus size={11}/> Add goal
+          </button>
+        </div>
+
+        {/* Sub-goal rows */}
         {subGoals.length>0&&(
-          <span style={{fontSize:11,color:'var(--ink-3)',flexShrink:0}}>{done}/{subGoals.length} done</span>
+          <div style={{padding:'0 14px'}}>
+            {subGoals.map(sg=>(
+              <SubGoalRow key={sg.id} sg={sg} goalColor={color.fg} isCur={isCur}
+                onUpdate={patch=>update(sg.id,patch)}
+                onRequestLog={(sg,editEntry)=>setLogModal({sg,editEntry})}
+                onRequestEdit={sg=>setEditModal(sg)}
+                onRequestDelete={sg=>setDelModal(sg)}
+              />
+            ))}
+          </div>
         )}
-        <button className="btn ghost sm" style={{gap:4,fontSize:11.5,flexShrink:0}} onClick={()=>setAdding(v=>!v)}>
-          <Plus size={11}/> Add goal
-        </button>
+
+        {/* Empty hint */}
+        {subGoals.length===0&&!adding&&(
+          <div style={{padding:'12px 14px',fontSize:12,color:'var(--ink-4)',fontStyle:'italic'}}>
+            No goals set for this period —{' '}
+            <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:12,fontFamily:'inherit',padding:0}}
+              onClick={()=>setAdding(true)}>add one</button>
+          </div>
+        )}
+
+        {/* Add form */}
+        {adding&&(
+          <div style={{padding:'10px 14px',borderTop:'1px solid var(--border)',background:'var(--surface-2)',display:'flex',flexDirection:'column',gap:8,borderRadius:'0 0 var(--r-lg) var(--r-lg)'}}>
+            <div style={{display:'flex',gap:8}}>
+              <input autoFocus value={newTitle} onChange={e=>setNewTitle(e.target.value)}
+                placeholder="e.g. Close 5 deals, Run 3× per week…"
+                onKeyDown={e=>{if(e.key==='Enter')handleAdd();if(e.key==='Escape')setAdding(false);}}
+                style={{...inputStyle,flex:1}} onFocus={focusAccent} onBlur={blurBorder}
+              />
+              <input type="number" value={newTarget} onChange={e=>setNewTarget(e.target.value)}
+                placeholder="Target (opt)"
+                onKeyDown={e=>{if(e.key==='Enter')handleAdd();if(e.key==='Escape')setAdding(false);}}
+                style={{...inputStyle,width:110}} onFocus={focusAccent} onBlur={blurBorder}
+              />
+            </div>
+            <div style={{fontSize:11,color:'var(--ink-3)'}}>Leave target blank for a simple checkbox. Enter a number for a progress stepper.</div>
+            <div style={{display:'flex',gap:6,justifyContent:'flex-end'}}>
+              <button className="btn ghost sm" onClick={()=>{setAdding(false);setNewTitle('');setNewTarget('');}}>Cancel</button>
+              <button className="btn accent sm" disabled={!newTitle.trim()} onClick={handleAdd}>Add</button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Sub-goals list */}
-      {subGoals.length>0 && (
-        <div style={{padding:'0 14px'}}>
-          {subGoals.map(sg=>(
-            <SubGoalRow key={sg.id} sg={sg} goalColor={color.fg} isCur={isCur}
-              onUpdate={patch=>handleUpdate(sg.id,patch)}
-              onDelete={()=>handleDelete(sg.id)}
-            />
-          ))}
-        </div>
+      {/* ── Modals rendered OUTSIDE the container — no overflow/transform issues ── */}
+      {logModal&&(
+        <SubGoalLogModal
+          sg={logModal.sg} isCur={isCur} editEntry={logModal.editEntry}
+          onSave={entry=>handleSaveLog(logModal.sg,entry)}
+          onClose={()=>setLogModal(null)}
+        />
       )}
-
-      {/* Empty hint */}
-      {subGoals.length===0&&!adding&&(
-        <div style={{padding:'12px 14px',fontSize:12,color:'var(--ink-4)',fontStyle:'italic'}}>
-          No goals set for this period —{' '}
-          <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:12,fontFamily:'inherit',padding:0}}
-            onClick={()=>setAdding(true)}>add one</button>
-        </div>
+      {editModal&&(
+        <SubGoalEditModal sg={editModal}
+          onSave={patch=>{update(editModal.id,patch);setEditModal(null);}}
+          onClose={()=>setEditModal(null)}
+        />
       )}
-
-      {/* Add form */}
-      {adding&&(
-        <div style={{
-          padding:'10px 14px',borderTop:'1px solid var(--border)',
-          background:'var(--surface-2)',display:'flex',flexDirection:'column',gap:8,
-          animation:'habitFormSlide 0.15s cubic-bezier(0.23,1,0.32,1)',
-        }}>
-          <div style={{display:'flex',gap:8}}>
-            <input autoFocus value={newTitle} onChange={e=>setNewTitle(e.target.value)}
-              placeholder="e.g. Close 5 deals, Run 3× per week…"
-              onKeyDown={e=>{if(e.key==='Enter')handleAdd();if(e.key==='Escape')setAdding(false);}}
-              style={{flex:1,padding:'7px 10px',border:'1.5px solid var(--border)',borderRadius:'var(--r)',fontSize:13,background:'var(--surface)',color:'var(--ink)',fontFamily:'inherit',outline:'none',transition:'border-color 0.15s'}}
-              onFocus={e=>e.target.style.borderColor='var(--accent)'} onBlur={e=>e.target.style.borderColor='var(--border)'}
-            />
-            <input type="number" value={newTarget} onChange={e=>setNewTarget(e.target.value)}
-              placeholder="Target (opt)"
-              onKeyDown={e=>{if(e.key==='Enter')handleAdd();if(e.key==='Escape')setAdding(false);}}
-              style={{width:110,padding:'7px 10px',border:'1.5px solid var(--border)',borderRadius:'var(--r)',fontSize:13,background:'var(--surface)',color:'var(--ink)',fontFamily:'inherit',outline:'none',transition:'border-color 0.15s'}}
-              onFocus={e=>e.target.style.borderColor='var(--accent)'} onBlur={e=>e.target.style.borderColor='var(--border)'}
-            />
-          </div>
-          <div style={{fontSize:11,color:'var(--ink-3)'}}>
-            Leave target blank for a simple checkbox. Enter a number to track progress with a stepper.
-          </div>
-          <div style={{display:'flex',gap:6,justifyContent:'flex-end'}}>
-            <button className="btn ghost sm" onClick={()=>{setAdding(false);setNewTitle('');setNewTarget('');}}>Cancel</button>
-            <button className="btn accent sm" disabled={!newTitle.trim()} onClick={handleAdd}>Add</button>
-          </div>
-        </div>
-      )}
-    </div>
+      <ConfirmDialog
+        isOpen={!!delModal}
+        onClose={()=>setDelModal(null)}
+        onConfirm={()=>{remove(delModal.id);setDelModal(null);}}
+        title="Delete goal?"
+        message={`Remove "${delModal?.title}"? This will also delete its log entries.`}
+        confirmLabel="Delete"
+      />
+    </>
   );
 }
 
@@ -603,159 +587,227 @@ function PeriodSection({ title, icon, periodLabel, isCurrent, isPast, canGoPrev,
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
         {goals.slice(0,4).map((goal,i)=>(
-          <div key={goal.id} style={{animationDelay:`${i*40}ms`}}>
-            <GoalPeriodBlock
-              goal={goal} periodKey={periodKey}
-              onUpdateSubGoals={sgs=>onUpdateGoalSubGoals(goal,periodKey,sgs)}
-            />
-          </div>
+          <GoalPeriodBlock key={goal.id} goal={goal} periodKey={periodKey}
+            onUpdateSubGoals={sgs=>onUpdateGoalSubGoals(goal,periodKey,sgs)}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-// ── Yearly Goal History Panel ─────────────────────────────────────────────────
-function GoalHistoryPanel({ goal, log, onAddLog, onEditLog, onDeleteLog, onUpdateSubGoals }) {
-  const color        = GOAL_COLORS.find(c=>c.cls===goal.cls)||GOAL_COLORS[0];
-  const isCur        = goal.unit==='currency';
-  const directLogs   = [...log.filter(l=>l.goalId===goal.id)].sort((a,b)=>(b.ts||0)-(a.ts||0));
-  const groups       = getGroupedSubGoals(goal);
+// ── Goal History Drawer ───────────────────────────────────────────────────────
+function GoalHistoryDrawer({ goal, log, onClose, onAddLog, onEditLog, onDeleteLog, onUpdateSubGoals }) {
+  const color     = GOAL_COLORS.find(c=>c.cls===goal.cls)||GOAL_COLORS[0];
+  const isCur     = goal.unit==='currency';
+  const [tab, setTab] = useState('logs'); // 'logs' | 'goals'
+
+  const directLogs = [...log.filter(l=>l.goalId===goal.id)].sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const groups     = getGroupedSubGoals(goal);
+
+  // Sub-goal modal state — also rendered outside the drawer's animated container
+  const [logModal,  setLogModal]  = useState(null);
+  const [editModal, setEditModal] = useState(null);
+  const [delModal,  setDelModal]  = useState(null);
+
+  function handleSgUpdate(group, sgId, patch) {
+    const updated = group.sgs.map(s=>s.id===sgId?{...s,...patch}:s);
+    onUpdateSubGoals(goal, group.key, updated);
+  }
+  function handleSgDelete(group, sgId) {
+    const updated = group.sgs.filter(s=>s.id!==sgId);
+    onUpdateSubGoals(goal, group.key, updated);
+  }
+  function handleSgLog(group, sg, entry) {
+    const existing = sg.entries||[];
+    const updated  = logModal?.editEntry
+      ? existing.map(e=>e.id===entry.id?entry:e)
+      : [...existing, entry];
+    handleSgUpdate(group, sg.id, { entries: updated });
+    setLogModal(null);
+  }
+
+  const tabBtn = (id, label) => (
+    <button onClick={()=>setTab(id)} style={{
+      padding:'7px 16px', fontSize:13, fontWeight:600, borderRadius:'var(--r)',
+      border:'none', cursor:'pointer',
+      background: tab===id ? 'var(--accent-dim)'  : 'transparent',
+      color:       tab===id ? 'var(--accent)'      : 'var(--ink-3)',
+      transition:'background 0.15s,color 0.15s',
+    }}>{label}</button>
+  );
 
   return (
-    <div style={{
-      border:`1px solid ${color.fg}33`,borderRadius:'var(--r-lg)',
-      background:'var(--surface)',overflow:'hidden',
-      marginTop:12,
-      animation:'slideUp 0.2s var(--ease-out)',
-    }}>
-      {/* Direct log entries */}
-      <div style={{padding:'14px 18px',borderBottom:'1px solid var(--border)'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
-          <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.09em',color:color.fg}}>
-            📊 Direct Log Entries
-          </div>
-          <button className="btn sm" onClick={onAddLog}><Plus size={12}/> Log</button>
-        </div>
-        {directLogs.length===0?(
-          <div style={{fontSize:12,color:'var(--ink-4)',fontStyle:'italic',padding:'4px 0'}}>No log entries yet. Hit "Log" to add one.</div>
-        ):(
-          <div style={{display:'flex',flexDirection:'column',gap:1,maxHeight:240,overflowY:'auto'}}>
-            {directLogs.slice(0,50).map(l=>(
-              <div key={l.id} className="log-row" style={{padding:'8px 10px'}}>
-                <div className="log-amount" style={{color:color.fg}}>+{fmt(l.amt,isCur)}</div>
-                <div className="log-note">
-                  {l.note||<span style={{color:'var(--ink-4)',fontStyle:'italic'}}>No note</span>}
-                </div>
-                <div className="log-time" style={{fontSize:11}}>
-                  {l.logDate||new Date(l.ts||Date.now()).toISOString().split('T')[0]}
-                </div>
-                <div style={{display:'flex',gap:3}}>
-                  <button className="icon-btn sm" onClick={()=>onEditLog(l)}><Edit3 size={11}/></button>
-                  <button className="icon-btn sm danger" onClick={()=>onDeleteLog(l.id)}><Trash2 size={11}/></button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+    <>
+      {/* Backdrop */}
+      <div className="drawer-backdrop" onClick={onClose}/>
 
-      {/* Period sub-goals */}
-      <div style={{padding:'14px 18px'}}>
-        <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.09em',color:color.fg,marginBottom:12}}>
-          🎯 All Period Goals
-        </div>
-        {groups.length===0?(
-          <div style={{fontSize:12,color:'var(--ink-4)',fontStyle:'italic'}}>
-            No period goals yet. Use the Quarter / Month / Week sections below to add some.
+      {/* Drawer */}
+      <div className="drawer" style={{width:520}}>
+        <div className="drawer-head">
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <div className={`goal-icon ${goal.cls||'gc0'}`} style={{width:32,height:32,borderRadius:9,fontSize:16,flexShrink:0}}>{goal.glyph}</div>
+            <div>
+              <div style={{fontWeight:700,fontSize:16,color:'var(--ink)'}}>{goal.label}</div>
+              <div style={{fontSize:11,color:'var(--ink-3)',marginTop:1}}>History & all linked goals</div>
+            </div>
           </div>
-        ):(
-          <div style={{display:'flex',flexDirection:'column',gap:14}}>
-            {groups.map(group=>(
-              <div key={group.key}>
-                <div style={{fontSize:11,fontWeight:600,color:'var(--ink-3)',marginBottom:6,display:'flex',alignItems:'center',gap:8}}>
-                  <span>{group.label}</span>
-                  <div style={{flex:1,height:1,background:'var(--border)'}}/>
+          <button className="icon-btn" onClick={onClose}><X size={16}/></button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{display:'flex',gap:2,padding:'10px 20px 0',borderBottom:'1px solid var(--border)',flexShrink:0}}>
+          {tabBtn('logs',  `📊 Log Entries (${directLogs.length})`)}
+          {tabBtn('goals', `🎯 Period Goals (${groups.reduce((s,g)=>s+g.sgs.length,0)})`)}
+        </div>
+
+        <div className="drawer-body" style={{padding:'20px'}}>
+
+          {/* ── LOG ENTRIES TAB ── */}
+          {tab==='logs'&&(
+            <div>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+                <div style={{fontSize:13,color:'var(--ink-2)'}}>All direct entries logged toward <strong>{goal.label}</strong></div>
+                <button className="btn sm accent" onClick={onAddLog}><Plus size={12}/> Log entry</button>
+              </div>
+              {directLogs.length===0?(
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--ink-3)'}}>
+                  <div style={{fontSize:28,marginBottom:10}}>📋</div>
+                  <div style={{fontSize:13}}>No log entries yet.</div>
+                  <button className="btn ghost sm" style={{marginTop:12}} onClick={onAddLog}><Plus size={12}/> Add your first entry</button>
                 </div>
-                <div style={{padding:'0 4px'}}>
-                  {group.sgs.map(sg=>(
-                    <SubGoalRow key={sg.id} sg={sg} goalColor={color.fg} isCur={isCur}
-                      onUpdate={patch=>{
-                        const updated = group.sgs.map(s=>s.id===sg.id?{...s,...patch}:s);
-                        onUpdateSubGoals(goal,group.key,updated);
-                      }}
-                      onDelete={()=>{
-                        const updated = group.sgs.filter(s=>s.id!==sg.id);
-                        onUpdateSubGoals(goal,group.key,updated);
-                      }}
-                    />
+              ):(
+                <div style={{display:'flex',flexDirection:'column',gap:1}}>
+                  {directLogs.map(l=>(
+                    <div key={l.id} className="log-row">
+                      <div className="log-amount" style={{color:color.fg}}>+{fmt(l.amt,isCur)}</div>
+                      <div className="log-note">{l.note||<span style={{color:'var(--ink-4)',fontStyle:'italic'}}>No note</span>}</div>
+                      <div className="log-time">{l.logDate||new Date(l.ts||Date.now()).toISOString().split('T')[0]}</div>
+                      <div style={{display:'flex',gap:3}}>
+                        <button className="icon-btn sm" onClick={()=>onEditLog(l)}><Edit3 size={11}/></button>
+                        <button className="icon-btn sm danger" onClick={()=>onDeleteLog(l.id)}><Trash2 size={11}/></button>
+                      </div>
+                    </div>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* ── PERIOD GOALS TAB ── */}
+          {tab==='goals'&&(
+            <div>
+              <div style={{fontSize:13,color:'var(--ink-2)',marginBottom:16}}>
+                All goals you've set across every quarter, month and week for <strong>{goal.label}</strong>.
+                <br/><span style={{fontSize:11,color:'var(--ink-3)',display:'block',marginTop:4}}>Edit or delete any goal below. To add new goals, use the sections on the main page.</span>
               </div>
-            ))}
-          </div>
-        )}
+              {groups.length===0?(
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--ink-3)'}}>
+                  <div style={{fontSize:28,marginBottom:10}}>📅</div>
+                  <div style={{fontSize:13}}>No period goals yet.</div>
+                  <div style={{fontSize:12,marginTop:6}}>Use the Quarter / Month / Week sections on the main page to add goals.</div>
+                </div>
+              ):(
+                <div style={{display:'flex',flexDirection:'column',gap:20}}>
+                  {groups.map(group=>(
+                    <div key={group.key}>
+                      <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em',color:'var(--ink-3)',marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
+                        <span>{group.label}</span>
+                        <div style={{flex:1,height:1,background:'var(--border)'}}/>
+                        <span style={{fontSize:10,fontWeight:600,color:Date.now()>=group.end?'var(--ink-4)':'var(--accent)'}}>
+                          {Date.now()<group.start?'Upcoming':Date.now()>=group.end?'Completed':'In progress'}
+                        </span>
+                      </div>
+                      {group.sgs.map(sg=>(
+                        <SubGoalRow key={sg.id} sg={sg} goalColor={color.fg} isCur={isCur}
+                          onUpdate={patch=>handleSgUpdate(group,sg.id,patch)}
+                          onRequestLog={(sg,editEntry)=>setLogModal({sg,group,editEntry})}
+                          onRequestEdit={sg=>setEditModal({sg,group})}
+                          onRequestDelete={sg=>setDelModal({sg,group})}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Drawer sub-goal modals — outside the animated drawer container */}
+      {logModal&&(
+        <SubGoalLogModal sg={logModal.sg} isCur={isCur} editEntry={logModal.editEntry}
+          onSave={entry=>handleSgLog(logModal.group,logModal.sg,entry)}
+          onClose={()=>setLogModal(null)}
+        />
+      )}
+      {editModal&&(
+        <SubGoalEditModal sg={editModal.sg}
+          onSave={patch=>{handleSgUpdate(editModal.group,editModal.sg.id,patch);setEditModal(null);}}
+          onClose={()=>setEditModal(null)}
+        />
+      )}
+      <ConfirmDialog
+        isOpen={!!delModal}
+        onClose={()=>setDelModal(null)}
+        onConfirm={()=>{handleSgDelete(delModal.group,delModal.sg.id);setDelModal(null);}}
+        title="Delete goal?"
+        message={`Remove "${delModal?.sg?.title}"?`}
+        confirmLabel="Delete"
+      />
+    </>
   );
 }
 
 // ── Yearly Goal Card ──────────────────────────────────────────────────────────
-function YearlyGoalCard({ goal, log, expanded, onToggleExpand, onEdit, onDelete, onAddLog, onEditLog, onDeleteLog, onUpdateSubGoals }) {
-  const actual = sumLogs(log,goal.id,Y_START,Y_END);
-  const target = goal.year?.target||0;
-  const p      = pctRound(actual,target);
-  const ideal  = windowIdeal(Y_START,Y_END);
-  const status = paceStatus(actual,target,ideal);
-  const color  = GOAL_COLORS.find(c=>c.cls===goal.cls)||GOAL_COLORS[0];
-  const isCur  = goal.unit==='currency';
-  const PaceIcon = status.key==='ahead'?TrendingUp:status.key==='behind'?TrendingDown:Minus;
-  const paceColor = {ahead:'var(--ok)',behind:'var(--danger)',ontrack:'var(--ink-2)'}[status.key];
+function YearlyGoalCard({ goal, log, onEdit, onDelete, onAddLog, onShowHistory }) {
+  const actual=sumLogs(log,goal.id,Y_START,Y_END);
+  const target=goal.year?.target||0;
+  const p=pctRound(actual,target);
+  const ideal=windowIdeal(Y_START,Y_END);
+  const status=paceStatus(actual,target,ideal);
+  const color=GOAL_COLORS.find(c=>c.cls===goal.cls)||GOAL_COLORS[0];
+  const isCur=goal.unit==='currency';
+  const PaceIcon=status.key==='ahead'?TrendingUp:status.key==='behind'?TrendingDown:Minus;
+  const paceColor={ahead:'var(--ok)',behind:'var(--danger)',ontrack:'var(--ink-2)'}[status.key];
+
+  const allSgCount = Object.values(goal.subGoals||{}).reduce((s,arr)=>s+(arr?.length||0),0);
+  const logCount   = log.filter(l=>l.goalId===goal.id).length;
 
   return (
-    <div>
-      <div className="kpi-card" style={{'--kpi-color':color.fg,'--kpi-soft':color.bg,cursor:'default',display:'flex',flexDirection:'column'}}>
-        <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:14,position:'relative',zIndex:1}}>
-          <div className={`kpi-icon ${goal.cls||'gc0'}`} style={{background:color.bg,color:color.fg,fontSize:18}}>{goal.glyph||'🎯'}</div>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontWeight:700,fontSize:14,color:'var(--ink)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{goal.label}</div>
-            <div style={{fontSize:10.5,color:'var(--ink-3)',marginTop:2}}>{goal.type==='northstar'?'🎯 North Star':'⚡ Activity'} · 2026</div>
-          </div>
-          <div style={{display:'flex',gap:2,flexShrink:0}}>
-            <button className="icon-btn sm" onClick={()=>onEdit(goal)}><Edit3 size={12}/></button>
-            <button className="icon-btn sm danger" onClick={()=>onDelete(goal)}><Trash2 size={12}/></button>
-          </div>
+    <div className="kpi-card" style={{'--kpi-color':color.fg,'--kpi-soft':color.bg,cursor:'default',display:'flex',flexDirection:'column'}}>
+      <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:14,position:'relative',zIndex:1}}>
+        <div className={`kpi-icon ${goal.cls||'gc0'}`} style={{background:color.bg,color:color.fg,fontSize:18}}>{goal.glyph||'🎯'}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontWeight:700,fontSize:14,color:'var(--ink)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{goal.label}</div>
+          <div style={{fontSize:10.5,color:'var(--ink-3)',marginTop:2}}>{goal.type==='northstar'?'🎯 North Star':'⚡ Activity'} · 2026</div>
         </div>
-        <div className="kpi-value" style={{color:color.fg,position:'relative',zIndex:1}}>{fmt(actual,isCur)}</div>
-        <div style={{fontSize:11,color:'var(--ink-3)',marginTop:4,marginBottom:12,position:'relative',zIndex:1}}>
-          of {fmt(target,isCur)} · <strong style={{color:p>=ideal?'var(--ok)':'var(--ink-2)'}}>{p}%</strong>
-        </div>
-        <div style={{position:'relative',zIndex:1,marginBottom:10}}>
-          <PaceBar actual={actual} target={target} ideal={ideal} color={color.fg}/>
-        </div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',position:'relative',zIndex:1,gap:4,flexWrap:'wrap'}}>
-          <span style={{fontSize:11,fontWeight:600,color:paceColor,display:'flex',alignItems:'center',gap:4}}>
-            <PaceIcon size={11}/> {status.label}
-          </span>
-          <div style={{display:'flex',gap:4}}>
-            <button className="btn sm" onClick={onAddLog}><Plus size={12}/> Log</button>
-            <button className="btn sm" onClick={onToggleExpand}
-              style={{gap:4,background:expanded?'var(--accent-dim)':undefined,borderColor:expanded?'var(--accent-border)':undefined,color:expanded?'var(--accent)':undefined}}>
-              <BookOpen size={12}/> {expanded?'Hide':'History'}
-              {expanded?<ChevronUp size={10}/>:<ChevronDown size={10}/>}
-            </button>
-          </div>
+        <div style={{display:'flex',gap:2,flexShrink:0}}>
+          <button className="icon-btn sm" onClick={()=>onEdit(goal)}><Edit3 size={12}/></button>
+          <button className="icon-btn sm danger" onClick={()=>onDelete(goal)}><Trash2 size={12}/></button>
         </div>
       </div>
-
-      {/* Expanded history panel */}
-      {expanded&&(
-        <GoalHistoryPanel
-          goal={goal} log={log}
-          onAddLog={onAddLog} onEditLog={onEditLog} onDeleteLog={onDeleteLog}
-          onUpdateSubGoals={onUpdateSubGoals}
-        />
-      )}
+      <div className="kpi-value" style={{color:color.fg,position:'relative',zIndex:1}}>{fmt(actual,isCur)}</div>
+      <div style={{fontSize:11,color:'var(--ink-3)',marginTop:4,marginBottom:12,position:'relative',zIndex:1}}>
+        of {fmt(target,isCur)} · <strong style={{color:p>=ideal?'var(--ok)':'var(--ink-2)'}}>{p}%</strong>
+      </div>
+      <div style={{position:'relative',zIndex:1,marginBottom:10}}>
+        <PaceBar actual={actual} target={target} ideal={ideal} color={color.fg}/>
+      </div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',position:'relative',zIndex:1,gap:6,flexWrap:'wrap'}}>
+        <span style={{fontSize:11,fontWeight:600,color:paceColor,display:'flex',alignItems:'center',gap:4}}>
+          <PaceIcon size={11}/> {status.label}
+        </span>
+        <div style={{display:'flex',gap:5}}>
+          <button className="btn sm" onClick={onAddLog}><Plus size={12}/> Log</button>
+          <button className="btn sm" onClick={onShowHistory} title="View all history">
+            <BookOpen size={12}/>
+            {(logCount+allSgCount)>0&&<span style={{fontSize:10,fontFamily:'var(--mono)',color:'var(--ink-3)'}}>{logCount+allSgCount}</span>}
+            History
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -775,9 +827,7 @@ function AddGoalCard({ onClick, disabled }) {
       <div style={{width:36,height:36,borderRadius:'50%',border:'1.5px dashed var(--border-strong)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ink-3)'}}>
         <Plus size={16}/>
       </div>
-      <div style={{fontSize:12.5,color:'var(--ink-3)',fontWeight:600}}>
-        {disabled?'4 goal maximum':'Add goal'}
-      </div>
+      <div style={{fontSize:12.5,color:'var(--ink-3)',fontWeight:600}}>{disabled?'4 goal maximum':'Add goal'}</div>
     </div>
   );
 }
@@ -791,7 +841,7 @@ export default function Goals() {
   const [logGoal,      setLogGoal]      = useState(null);
   const [editLogEntry, setEditLogEntry] = useState(null);
   const [delGoal,      setDelGoal]      = useState(null);
-  const [expandedId,   setExpandedId]   = useState(null); // which yearly card is expanded
+  const [historyGoal,  setHistoryGoal]  = useState(null); // which goal's drawer is open
 
   const [qIdx,    setQIdx]    = useState(nowQIdx);
   const [mIdx,    setMIdx]    = useState(nowMIdx);
@@ -801,12 +851,15 @@ export default function Goals() {
   const activeGoals = goals.filter(g=>!g.status||g.status==='active');
   const atMax       = activeGoals.length >= 4;
 
+  // Keep historyGoal in sync with latest goal data
+  const historyGoalLive = historyGoal ? activeGoals.find(g=>g.id===historyGoal.id)||null : null;
+
   // ── Handlers ────────────────────────────────────────────────────────────────
   async function handleSaveGoal(data) {
     try {
       if(editGoal){await updateGoal(editGoal.id,data);toast.success('Goal updated');}
       else        {await addGoal(data);toast.success('Goal created!');}
-    } catch { toast.error('Failed to save goal.'); }
+    } catch { toast.error('Failed to save.'); }
     setShowModal(false); setEditGoal(null);
   }
 
@@ -831,7 +884,7 @@ export default function Goals() {
   async function handleDelete(goal) {
     try { await deleteGoal(goal.id); toast.success('Goal deleted.'); }
     catch { toast.error('Failed to delete.'); }
-    if(expandedId===goal.id) setExpandedId(null);
+    if(historyGoal?.id===goal.id) setHistoryGoal(null);
     setDelGoal(null);
   }
 
@@ -846,8 +899,7 @@ export default function Goals() {
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
-  const q = QUARTERS[qIdx];
-  const m = MONTHS_2026[mIdx];
+  const q=QUARTERS[qIdx], m=MONTHS_2026[mIdx];
 
   return (
     <>
@@ -870,36 +922,30 @@ export default function Goals() {
           <div className="empty-state" style={{paddingTop:80}}>
             <div className="empty-icon">🎯</div>
             <h3>No goals yet</h3>
-            <p>Add up to 4 yearly goals for 2026. Then set quarterly, monthly, and weekly targets to break each one down.</p>
+            <p>Add up to 4 yearly goals for 2026. Then break each one down into quarterly, monthly, and weekly targets.</p>
             <button className="btn accent lg" onClick={()=>setShowModal(true)}><Plus size={15}/> Add Your First Goal</button>
           </div>
         ):(
           <>
-            {/* ── YEARLY GOAL CARDS ──────────────────────────────────── */}
-            <div style={{marginBottom:14}}>
+            {/* ── YEARLY GOAL CARDS ─────────────────────────────────── */}
+            <div style={{marginBottom:44}}>
               <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',color:'var(--goals)',marginBottom:14}}>
                 📊 2026 Yearly Goals
               </div>
-              <div style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(activeGoals.length+(atMax?0:1),4)},1fr)`,gap:16,marginBottom:8,alignItems:'start'}}>
+              <div style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(activeGoals.length+(atMax?0:1),4)},1fr)`,gap:16,alignItems:'start'}}>
                 {activeGoals.slice(0,4).map(g=>(
                   <YearlyGoalCard key={g.id} goal={g} log={goalLog}
-                    expanded={expandedId===g.id}
-                    onToggleExpand={()=>setExpandedId(expandedId===g.id?null:g.id)}
                     onEdit={g=>{setEditGoal(g);setShowModal(true);}}
                     onDelete={g=>setDelGoal(g)}
                     onAddLog={()=>setLogGoal(g)}
-                    onEditLog={entry=>setEditLogEntry(entry)}
-                    onDeleteLog={handleDeleteLog}
-                    onUpdateSubGoals={handleUpdateSubGoals}
+                    onShowHistory={()=>setHistoryGoal(g)}
                   />
                 ))}
                 {!atMax&&<AddGoalCard onClick={()=>{setEditGoal(null);setShowModal(true);}}/>}
               </div>
             </div>
 
-            <div style={{height:32}}/>
-
-            {/* ── THIS QUARTER ───────────────────────────────────────── */}
+            {/* ── THIS QUARTER ─────────────────────────────────────── */}
             <PeriodSection
               title="This Quarter" icon="📅"
               periodLabel={`${q.label} · ${q.range} ${YEAR}`}
@@ -910,7 +956,7 @@ export default function Goals() {
               onUpdateGoalSubGoals={handleUpdateSubGoals}
             />
 
-            {/* ── THIS MONTH ─────────────────────────────────────────── */}
+            {/* ── THIS MONTH ───────────────────────────────────────── */}
             <PeriodSection
               title="This Month" icon="🗓"
               periodLabel={`${m.label} ${YEAR}`}
@@ -921,7 +967,7 @@ export default function Goals() {
               onUpdateGoalSubGoals={handleUpdateSubGoals}
             />
 
-            {/* ── THIS WEEK ──────────────────────────────────────────── */}
+            {/* ── THIS WEEK ────────────────────────────────────────── */}
             <PeriodSection
               title="This Week" icon="📆"
               periodLabel={week.label}
@@ -935,7 +981,19 @@ export default function Goals() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* ── History drawer ──────────────────────────────────────────── */}
+      {historyGoalLive&&(
+        <GoalHistoryDrawer
+          goal={historyGoalLive} log={goalLog}
+          onClose={()=>setHistoryGoal(null)}
+          onAddLog={()=>setLogGoal(historyGoalLive)}
+          onEditLog={entry=>setEditLogEntry(entry)}
+          onDeleteLog={handleDeleteLog}
+          onUpdateSubGoals={handleUpdateSubGoals}
+        />
+      )}
+
+      {/* ── Global modals ───────────────────────────────────────────── */}
       {showModal&&(
         <GoalModal editGoal={editGoal} allGoals={activeGoals}
           onSave={handleSaveGoal} onClose={()=>{setShowModal(false);setEditGoal(null);}}/>
