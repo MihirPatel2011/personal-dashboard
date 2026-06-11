@@ -1,22 +1,18 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, CheckSquare, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap } from 'lucide-react';
+import { LayoutDashboard, Target, Timer, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
 import { isToday, isPast } from '../../utils';
 
+// The Focus app (tasks, planning, focus timer) — a standalone PWA.
+const FOCUS_URL = 'https://mihirpatel2011.github.io/focus/';
+
 // ─── Mobile bottom tab bar ─────────────────────────────────────────────────────
 export function MobileNav() {
-  const { logout } = useAuth();
-  const { personalTasks } = useData();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-
-  const inboxCount = personalTasks.filter(t => {
-    if (t.status !== 'inbox' && t.status) return false;
-    return !t.deadline && !t.isToday;
-  }).length;
 
   const isActive = path => {
     if (path === '/dashboard') return pathname === '/dashboard' || pathname === '/';
@@ -26,7 +22,6 @@ export function MobileNav() {
 
   const tabs = [
     { path: '/dashboard',        label: 'Home',     icon: LayoutDashboard },
-    { path: '/tasks',            label: 'Tasks',    icon: CheckSquare     },
     { path: '/notes',            label: 'Notes',    icon: NotebookPen     },
     { path: '/journal',          label: 'Journal',  icon: BookMarked      },
     { path: '/mortgage/pipeline',label: 'Mortgage', icon: Kanban          },
@@ -42,11 +37,16 @@ export function MobileNav() {
         >
           <Icon size={22}/>
           <span>{label}</span>
-          {path === '/tasks' && inboxCount > 0 && (
-            <span className="mobile-nav-badge">{inboxCount > 9 ? '9+' : inboxCount}</span>
-          )}
         </button>
       ))}
+      <button
+        className="mobile-nav-item"
+        onClick={() => window.open(FOCUS_URL, '_blank', 'noopener')}
+        title="Open the Focus app"
+      >
+        <Timer size={22}/>
+        <span>Focus</span>
+      </button>
       <button
         className="mobile-nav-item"
         onClick={toggleTheme}
@@ -61,7 +61,7 @@ export function MobileNav() {
 
 export default function Sidebar() {
   const { logout } = useAuth();
-  const { personalTasks, crmTasks, loading } = useData();
+  const { crmTasks, loading } = useData();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -72,10 +72,6 @@ export default function Sidebar() {
   const overdueCrm = crmTasks.filter(t =>
     !['Done','Cancelled'].includes(t.status) && isPast(t.dueDate) && !isToday(t.dueDate)
   ).length;
-  const inboxCount = personalTasks.filter(t => {
-    if (t.status !== 'inbox' && t.status) return false;
-    return !t.deadline && !t.isToday;
-  }).length;
 
   return (
     <aside className="sidebar">
@@ -110,10 +106,10 @@ export default function Sidebar() {
 
         {/* Tasks */}
         <div className="sidebar-section-label">Focus</div>
-        <button className={`nav-item${active('/tasks') ? ' active' : ''}`} onClick={() => go('/tasks')}>
-          <span className="nav-icon tasks-icon"><CheckSquare size={15}/></span>
-          Task Manager
-          {inboxCount > 0 && <span className="nav-badge warn">{inboxCount}</span>}
+        <button className="nav-item" onClick={() => window.open(FOCUS_URL, '_blank', 'noopener')} title="Opens the Focus app in a new tab">
+          <span className="nav-icon tasks-icon"><Timer size={15}/></span>
+          Focus
+          <ArrowUpRight size={12} style={{ marginLeft: 'auto', opacity: 0.45 }}/>
         </button>
         <button className={`nav-item${active('/notes') ? ' active' : ''}`} onClick={() => go('/notes')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><NotebookPen size={15}/></span>

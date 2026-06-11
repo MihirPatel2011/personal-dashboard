@@ -14,10 +14,6 @@ export function DataProvider({ children }) {
   const [crmTasks,         setCrmTasks]         = useState([]);
   const [goals,            setGoals]            = useState([]);
   const [goalLog,          setGoalLog]          = useState([]);
-  const [personalTasks,    setPersonalTasks]    = useState([]);
-  const [taskCategories,   setTaskCategories]   = useState([]);
-  const [projects,         setProjects]         = useState([]);
-  const [taskAreas,        setTaskAreas]        = useState([]);
   const [mortgageSettings, setMortgageSettings] = useState({});
   const [personalNotes,    setPersonalNotes]    = useState([]);
   const [journalSpreads,   setJournalSpreads]   = useState([]);
@@ -31,15 +27,14 @@ export function DataProvider({ children }) {
   useEffect(() => {
     if (!user) {
       setClients([]); setLoans([]); setNotes([]); setCrmTasks([]);
-      setGoals([]); setGoalLog([]); setPersonalTasks([]); setTaskCategories([]);
-      setProjects([]); setTaskAreas([]); setPersonalNotes([]); setJournalSpreads([]);
+      setGoals([]); setGoalLog([]); setPersonalNotes([]); setJournalSpreads([]);
       setMortgageSettings({});
       setLoading(false);
       return;
     }
     setLoading(true);
     let count = 0;
-    const TOTAL = 13;
+    const TOTAL = 9;
     const done = () => { count++; if (count >= TOTAL) setLoading(false); };
 
     const u1  = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
@@ -48,15 +43,11 @@ export function DataProvider({ children }) {
     const u4  = onValue(ref(db, 'tasks'),            s => { setCrmTasks(toArr(s));              done(); });
     const u5  = onValue(ref(db, 'goals'),            s => { setGoals(toArr(s));                 done(); });
     const u6  = onValue(ref(db, 'goalLog'),          s => { setGoalLog(toArr(s));               done(); });
-    const u7  = onValue(ref(db, 'personalTasks'),    s => { setPersonalTasks(toArr(s));         done(); });
-    const u8  = onValue(ref(db, 'taskCategories'),   s => { setTaskCategories(toArr(s));        done(); });
     const u9  = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
-    const u10 = onValue(ref(db, 'projects'),         s => { setProjects(toArr(s));              done(); });
-    const u11 = onValue(ref(db, 'taskAreas'),        s => { setTaskAreas(toArr(s));             done(); });
     const u12 = onValue(ref(db, 'personalNotes'),    s => { setPersonalNotes(toArr(s));         done(); });
     const u13 = onValue(ref(db, 'journalSpreads'),   s => { setJournalSpreads(toArr(s));        done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); u11(); u12(); u13(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u9(); u12(); u13(); };
   }, [user]);
 
   // ─── Clients ──────────────────────────────────────────────────────────────
@@ -146,26 +137,6 @@ export function DataProvider({ children }) {
   const updateGoalLog = useCallback(async (id, data) => update(ref(db, `goalLog/${id}`), data), []);
   const deleteGoalLog = useCallback(async id => remove(ref(db, `goalLog/${id}`)), []);
 
-  // ─── Personal Tasks ───────────────────────────────────────────────────────
-  const addPersonalTask    = useCallback(async data => { const r = push(ref(db, 'personalTasks')); await set(r, { ...data, createdAt: Date.now(), updatedAt: Date.now() }); return r.key; }, []);
-  const updatePersonalTask = useCallback(async (id, data) => update(ref(db, `personalTasks/${id}`), { ...data, updatedAt: Date.now() }), []);
-  const deletePersonalTask = useCallback(async id => remove(ref(db, `personalTasks/${id}`)), []);
-
-  // ─── Task Categories ──────────────────────────────────────────────────────
-  const addTaskCategory    = useCallback(async data => { const r = push(ref(db, 'taskCategories')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
-  const updateTaskCategory = useCallback(async (id, data) => update(ref(db, `taskCategories/${id}`), data), []);
-  const deleteTaskCategory = useCallback(async id => remove(ref(db, `taskCategories/${id}`)), []);
-
-  // ─── Projects ─────────────────────────────────────────────────────────────
-  const addProject    = useCallback(async data => { const r = push(ref(db, 'projects')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
-  const updateProject = useCallback(async (id, data) => update(ref(db, `projects/${id}`), data), []);
-  const deleteProject = useCallback(async id => remove(ref(db, `projects/${id}`)), []);
-
-  // ─── Task Areas ───────────────────────────────────────────────────────────
-  const addTaskArea    = useCallback(async data => { const r = push(ref(db, 'taskAreas')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
-  const updateTaskArea = useCallback(async (id, data) => update(ref(db, `taskAreas/${id}`), data), []);
-  const deleteTaskArea = useCallback(async id => remove(ref(db, `taskAreas/${id}`)), []);
-
   // ─── Journal Spreads ─────────────────────────────────────────────────────
   const addJournalSpread    = useCallback(async data => {
     const r = push(ref(db, 'journalSpreads'));
@@ -179,8 +150,7 @@ export function DataProvider({ children }) {
   return (
     <DataContext.Provider value={{
       clients, loans, notes, crmTasks,
-      goals, goalLog, personalTasks, taskCategories,
-      projects, taskAreas, personalNotes, journalSpreads,
+      goals, goalLog, personalNotes, journalSpreads,
       mortgageSettings, loading,
       addClient,    updateClient,    deleteClient,
       addLoan,      updateLoan,      deleteLoan,
@@ -189,10 +159,6 @@ export function DataProvider({ children }) {
       saveMortgageSettings,
       addGoal,      updateGoal,      deleteGoal,
       addGoalLog,   updateGoalLog,   deleteGoalLog,
-      addPersonalTask, updatePersonalTask, deletePersonalTask,
-      addTaskCategory, updateTaskCategory, deleteTaskCategory,
-      addProject,   updateProject,   deleteProject,
-      addTaskArea,  updateTaskArea,  deleteTaskArea,
       addPersonalNote, updatePersonalNote, deletePersonalNote,
       addJournalSpread, updateJournalSpread, deleteJournalSpread,
     }}>

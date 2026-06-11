@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, CheckSquare, Building2, TrendingUp, AlertCircle, Calendar, DollarSign, ArrowRight, Plus } from 'lucide-react';
+import { Target, Timer, Building2, TrendingUp, AlertCircle, Calendar, DollarSign, ArrowRight, ArrowUpRight, Plus } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, fmtShortDate, getGreeting, getDayLabel, pctRound, getGoalActuals, getGoalPeriods, paceStatus, getGoalIdeal, isToday, isPast, isWithinDays } from '../utils';
 import { STAGE_COLORS, ACTIVE_STAGES, ACTIVE_STAGES as ACTIVE } from '../constants';
 import { StageBadge } from '../components/common/Badge';
 import HabitsWidget from '../components/habits/HabitsWidget';
+
+// The Focus app (tasks, planning, focus timer) — a standalone PWA.
+const FOCUS_URL = 'https://mihirpatel2011.github.io/focus/';
 
 function KpiCard({ icon: Icon, label, value, sub, color, soft, onClick }) {
   return (
@@ -22,7 +25,7 @@ function KpiCard({ icon: Icon, label, value, sub, color, soft, onClick }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { goals, goalLog, personalTasks, updatePersonalTask, loans, clients, notes, crmTasks, loading } = useData();
+  const { goals, goalLog, loans, clients, notes, crmTasks, loading } = useData();
 
   // ── Goals metrics ──────────────────────────────────────────────────────────
   const activeGoals = goals.filter(g => !g.status || g.status === 'active');
@@ -32,75 +35,6 @@ export default function Dashboard() {
     const ps = paceStatus(act.year, g.year?.target, ideal);
     return ps.key !== 'behind';
   }).length;
-
-  // ── Task metrics ───────────────────────────────────────────────────────────
-  const todayTasks = personalTasks.filter(t => {
-    const s = t.status;
-    if (['logbook', 'done', 'nd', 'someday'].includes(s)) return false;
-    if (s === 'essential' || s === 'secondary') return true;
-    return !!(t.isToday || isToday(t.deadline));
-  });
-
-  // Upcoming tasks (future deadline, not today, not done/someday) — next 5
-  const upcomingDash = personalTasks
-    .filter(t => {
-      if (['logbook', 'done', 'nd', 'someday'].includes(t.status)) return false;
-      if (!t.deadline) return false;
-      const d = new Date(t.deadline + 'T00:00:00');
-      const tod = new Date(); tod.setHours(0, 0, 0, 0);
-      return d > tod;
-    })
-    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
-    .slice(0, 5);
-
-  // Anytime tasks (no deadline, not pinned, not done/someday) — up to 5
-  const anytimeDash = personalTasks
-    .filter(t => {
-      const s = t.status;
-      if (['logbook', 'done', 'nd', 'someday'].includes(s)) return false;
-      if (s === 'essential' || s === 'secondary') return false;
-      if (t.isToday || isToday(t.deadline)) return false;
-      if (t.deadline) return false;
-      return s === 'anytime' || (!s && false); // explicit anytime only
-    })
-    .slice(0, 5);
-
-  // Someday tasks — up to 5
-  const somedayDash = personalTasks
-    .filter(t => t.status === 'nd' || t.status === 'someday')
-    .slice(0, 5);
-
-  // Inbox count: only tasks with no deadline and not pinned to today
-  const inboxCount = personalTasks.filter(t => {
-    if (t.status !== 'inbox' && t.status) return false;
-    return !t.deadline && !t.isToday;
-  }).length;
-  const tasksDueToday = todayTasks.length;
-
-  // ── Focus task — user-selected, persisted in localStorage ─────────────────
-  const [focusTaskId, setFocusTaskId] = useState(() => {
-    try { return localStorage.getItem('apex.focusTaskId') || null; }
-    catch { return null; }
-  });
-  useEffect(() => {
-    try {
-      if (focusTaskId) localStorage.setItem('apex.focusTaskId', focusTaskId);
-      else             localStorage.removeItem('apex.focusTaskId');
-    } catch {}
-  }, [focusTaskId]);
-
-  const focusTask = todayTasks.find(t => t.id === focusTaskId) ?? null;
-  // Auto-clear if the focused task moves out of today
-  useEffect(() => {
-    if (focusTaskId && !focusTask) setFocusTaskId(null);
-  }, [focusTaskId, focusTask]);
-
-  async function handleDashComplete(task) {
-    try {
-      await updatePersonalTask(task.id, { status: 'logbook', completedAt: Date.now() });
-      if (focusTaskId === task.id) setFocusTaskId(null);
-    } catch {}
-  }
 
   // ── Mortgage metrics ────────────────────────────────────────────────────────
   const activeLoans   = loans.filter(l => ACTIVE_STAGES.includes(l.stage));
@@ -136,9 +70,9 @@ export default function Dashboard() {
       <div className="kpi-grid" style={{ marginBottom: 32 }}>
         <KpiCard icon={Target}      label="Goals on Track"    value={`${goalsOnTrack}/${activeGoals.length}`}
           color="var(--goals)" soft="var(--goals-dim)" onClick={() => navigate('/goals')}/>
-        <KpiCard icon={CheckSquare} label="Tasks Due Today"   value={tasksDueToday}
-          sub={inboxCount > 0 ? `${inboxCount} in inbox` : undefined}
-          color="var(--tasks)" soft="var(--tasks-dim)" onClick={() => navigate('/tasks')}/>
+        <KpiCard icon={Timer} label="Focus" value="Open"
+          sub="Tasks · planning · timer"
+          color="var(--tasks)" soft="var(--tasks-dim)" onClick={() => window.open(FOCUS_URL, '_blank', 'noopener')}/>
         <KpiCard icon={TrendingUp}  label="Pipeline Value"    value={formatCurrency(pipelineValue, true)}
           sub={`${activeLoans.length} active loans`}
           color="var(--mortgage)" soft="var(--mortgage-dim)" onClick={() => navigate('/mortgage/pipeline')}/>
@@ -200,112 +134,34 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Tasks column */}
+        {/* Focus column — tasks live in the Focus app now */}
         <div className="dash-section">
           <div className="dash-section-header">
             <div className="dash-section-title">
               <span className="section-pip" style={{ background: 'var(--tasks)' }}/>
-              <span style={{ color: 'var(--tasks)' }}>Tasks</span>
+              <span style={{ color: 'var(--tasks)' }}>Focus</span>
             </div>
-            <button className="btn ghost sm" onClick={() => navigate('/tasks')} style={{ gap: 4 }}>
-              View all <ArrowRight size={12}/>
+            <button className="btn ghost sm" onClick={() => window.open(FOCUS_URL, '_blank', 'noopener')} style={{ gap: 4 }}>
+              Open <ArrowUpRight size={12}/>
             </button>
           </div>
 
-          {/* Focus card — shown when user selects a task */}
-          {focusTask ? (
-            <div className="dash-focus-card" onClick={() => setFocusTaskId(null)} title="Click to clear focus">
-              <div className="ess-label">⭐ Focus</div>
-              <div className="dash-focus-title">{focusTask.title}</div>
-              {focusTask.deadline && (
-                <div style={{ fontSize: 11, color: 'var(--tasks)', marginTop: 4, fontWeight: 600 }}>
-                  Due {fmtShortDate(focusTask.deadline)}
-                </div>
-              )}
+          <div
+            onClick={() => window.open(FOCUS_URL, '_blank', 'noopener')}
+            style={{ cursor: 'pointer', padding: '18px 16px', borderRadius: 'var(--r)', border: '1px solid var(--border)', background: 'var(--tasks-dim)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <Timer size={18} style={{ color: 'var(--tasks)' }}/>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>Focus</span>
             </div>
-          ) : (
-            <div className="dash-focus-hint">
-              Tap a task below to set your focus for today
+            <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+              Tasks, areas and projects, daily planning, and a focus timer that
+              logs where your time goes — in its own app.
             </div>
-          )}
-
-          {/* Today tasks */}
-          {todayTasks.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginBottom: 2 }}>
-              <div className="section-label" style={{ marginBottom: 5 }}>
-                Today &middot; {todayTasks.length}
-              </div>
-              {todayTasks.map(t => (
-                <div
-                  key={t.id}
-                  className={`dash-task-row${focusTaskId === t.id ? ' focus' : ''}`}
-                  onClick={() => setFocusTaskId(t.id === focusTaskId ? null : t.id)}
-                >
-                  <button
-                    className="dash-task-check"
-                    onClick={e => { e.stopPropagation(); handleDashComplete(t); }}
-                    title="Mark complete"
-                  />
-                  <span className="dash-task-title">{t.title}</span>
-                  {t.deadline && !isToday(t.deadline) && (
-                    <span style={{ fontSize: 10, color: 'var(--ink-4)', flexShrink: 0 }}>{fmtShortDate(t.deadline)}</span>
-                  )}
-                  {focusTaskId === t.id && (
-                    <span style={{ fontSize: 10, flexShrink: 0, color: 'var(--tasks)' }}>⭐</span>
-                  )}
-                </div>
-              ))}
+            <div style={{ marginTop: 12, fontSize: 12.5, fontWeight: 600, color: 'var(--tasks)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              Open Focus <ArrowUpRight size={13}/>
             </div>
-          ) : (
-            <div style={{ fontSize: 13, color: 'var(--ink-3)', textAlign: 'center', padding: '8px 0 10px', fontStyle: 'italic' }}>
-              Nothing due today
-            </div>
-          )}
-
-          {/* Upcoming tasks */}
-          {upcomingDash.length > 0 && (
-            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-              <div className="section-label" style={{ marginBottom: 5 }}>Upcoming</div>
-              {upcomingDash.map(t => (
-                <div key={t.id} className="dash-upcoming-row" onClick={() => navigate('/tasks')}>
-                  <span className="dash-task-title" style={{ fontSize: 12.5 }}>{t.title}</span>
-                  <span className="dash-upcoming-date">{fmtShortDate(t.deadline)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Anytime tasks */}
-          {anytimeDash.length > 0 && (
-            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-              <div className="section-label" style={{ marginBottom: 5 }}>Anytime</div>
-              {anytimeDash.map(t => (
-                <div key={t.id} className="dash-upcoming-row" onClick={() => navigate('/tasks')}>
-                  <span className="dash-task-title" style={{ fontSize: 12.5 }}>{t.title}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Someday tasks */}
-          {somedayDash.length > 0 && (
-            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-              <div className="section-label" style={{ marginBottom: 5 }}>Someday</div>
-              {somedayDash.map(t => (
-                <div key={t.id} className="dash-upcoming-row" onClick={() => navigate('/tasks')}>
-                  <span className="dash-task-title" style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{t.title}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Inbox badge */}
-          {inboxCount > 0 && (
-            <div style={{ marginTop: 10, padding: '7px 12px', background: 'var(--tasks-dim)', border: '1px solid var(--tasks-border)', borderRadius: 'var(--r)', fontSize: 12, color: 'var(--tasks)', fontWeight: 600, cursor: 'pointer', textAlign: 'center' }}
-              onClick={() => navigate('/tasks')}>
-              {inboxCount} in inbox →
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Mortgage column */}

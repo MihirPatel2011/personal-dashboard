@@ -6,7 +6,6 @@ import Sidebar, { MobileNav } from './components/layout/Sidebar';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Goals from './pages/Goals';
-import Tasks from './pages/Tasks';
 import MortgageLayout from './pages/mortgage/MortgageLayout';
 import Pipeline from './pages/mortgage/Pipeline';
 import Clients from './pages/mortgage/Clients';
@@ -63,7 +62,6 @@ function AppShell() {
           <Route path="/"                    element={<Navigate to="/dashboard" replace/>}/>
           <Route path="/dashboard"           element={<Dashboard/>}/>
           <Route path="/goals"               element={<Goals/>}/>
-          <Route path="/tasks"               element={<Tasks/>}/>
           <Route path="/notes"               element={<PersonalNotes/>}/>
           <Route path="/journal"             element={<Journal/>}/>
           <Route path="/habits"              element={<Habits/>}/>
