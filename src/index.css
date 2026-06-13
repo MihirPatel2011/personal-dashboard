@@ -2136,3 +2136,48 @@ button[style*="borderRadius: 6px"]:hover {
     height: auto !important;
   }
 }
+
+/* ─── Loan Compliance ─────────────────────────────────────────────────────── */
+.drawer { transition: width .24s var(--ease-out); }
+.drawer.wide { width: 680px; max-width: 94vw; }
+
+.drawer-tabs { display: flex; gap: 2px; padding: 0 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.drawer-tab { padding: 11px 14px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color var(--t), border-color var(--t); }
+.drawer-tab:hover { color: var(--ink); }
+.drawer-tab.active { color: var(--mortgage); border-bottom-color: var(--mortgage); }
+
+.seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; gap: 2px; width: fit-content; }
+.seg-btn { padding: 6px 14px; font-size: 12px; font-weight: 600; border: none; background: transparent; color: var(--ink-3); border-radius: 6px; cursor: pointer; transition: background var(--t), color var(--t); white-space: nowrap; }
+.seg-btn:hover { color: var(--ink); }
+.seg-btn.active { background: var(--mortgage-dim); color: var(--mortgage); }
+.seg.mini .seg-btn { padding: 3px 9px; font-size: 10.5px; letter-spacing: .03em; }
+.seg-btn.active.yes { background: var(--ok-dim); color: var(--ok); }
+.seg-btn.active.no  { background: var(--danger-dim); color: var(--danger); }
+.seg-btn.active.na  { background: var(--surface-3); color: var(--ink-2); }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 5px 13px; border-radius: 99px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--border); background: transparent; color: var(--ink-3); cursor: pointer; transition: border-color var(--t), background var(--t), color var(--t); }
+.chip:hover { border-color: var(--border-strong); color: var(--ink-2); }
+.chip.active { border-color: var(--mortgage-border); background: var(--mortgage-dim); color: var(--mortgage); }
+.chip.sm { padding: 3px 10px; font-size: 11px; }
+
+.cmp-gate-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0 8px; border-bottom: 1px solid var(--border-strong); margin-bottom: 2px; }
+.cmp-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.cmp-row:last-child { border-bottom: none; }
+.cmp-label { font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+.cmp-row.incomplete .cmp-label { color: var(--ink); }
+.cmp-io { font-size: 10px; color: var(--ink-4); margin-top: 2px; }
+.cmp-comment { width: 100%; margin-top: 8px; padding: 7px 10px; font-size: 12.5px; border: 1px solid var(--border); border-radius: var(--r); background: var(--surface-2); color: var(--ink); resize: vertical; }
+.cmp-comment:focus { border-color: var(--mortgage-border); outline: none; box-shadow: 0 0 0 3px var(--mortgage-dim); }
+.cmp-comment::placeholder { color: var(--ink-4); }
+.icon-btn.has-comment { color: var(--mortgage); }
+
+.cmp-bar { height: 6px; background: var(--surface-3); border-radius: 99px; overflow: hidden; }
+.cmp-bar-fill { height: 100%; background: var(--mortgage); border-radius: 99px; transition: width .3s var(--ease-out); }
+
+.bid-card { border: 1px solid var(--mortgage-border); background: var(--mortgage-dim); border-radius: var(--r-lg); padding: 14px 16px; }
+.bid-q { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.bid-q:last-child { border-bottom: none; padding-bottom: 2px; }
+
+.stage-popover-item.locked { opacity: .45; cursor: not-allowed; }
+.stage-popover-item.locked:hover { background: transparent; color: var(--ink-3); }

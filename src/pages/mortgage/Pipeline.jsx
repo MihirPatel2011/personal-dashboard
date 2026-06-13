@@ -9,6 +9,8 @@ import { StageBadge } from '../../components/common/Badge';
 import EmptyState from '../../components/common/EmptyState';
 import { LOAN_STAGES, LOAN_STATUSES, OBJECTIVES, LENDERS, REFERRERS, STAGE_COLORS, ACTIVE_STAGES } from '../../constants';
 import { formatCurrency, fmtDate, fmtRelative } from '../../utils';
+import { progress as complianceProgress, stageBlockedBy, blockingItems } from '../../utils/crmCompliance';
+import LoanCompliance, { ProgressRing } from '../../components/mortgage/LoanCompliance';
 
 const CHANNELS = ['Phone', 'Email', 'In Person', 'Video Call', 'SMS', 'Other'];
 const SETTLED_STAGE = 'Settled';
@@ -170,12 +172,13 @@ function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose })
 }
 
 // ─── Loan Drawer ──────────────────────────────────────────────────────────────
-function LoanDrawer({ loan, clientName, onEdit, onDelete, onClose }) {
+function LoanDrawer({ loan, clientName, onEdit, onDelete, onClose, onUpdate }) {
+  const [tab, setTab] = useState('details');
   if (!loan) return null;
   return (
     <>
       <div className="drawer-backdrop" onClick={onClose}/>
-      <div className="drawer">
+      <div className={`drawer${tab === 'compliance' ? ' wide' : ''}`}>
         <div className="drawer-head">
           <div>
             <h2>{clientName || loan.clientObj || 'Unknown Client'}</h2>
@@ -183,6 +186,17 @@ function LoanDrawer({ loan, clientName, onEdit, onDelete, onClose }) {
           </div>
           <button className="icon-btn" onClick={onClose}>✕</button>
         </div>
+        <div className="drawer-tabs">
+          <button className={`drawer-tab${tab === 'details' ? ' active' : ''}`} onClick={() => setTab('details')}>Details</button>
+          <button className={`drawer-tab${tab === 'compliance' ? ' active' : ''}`} onClick={() => setTab('compliance')}>
+            Compliance · {complianceProgress(loan)}%
+          </button>
+        </div>
+        {tab === 'compliance' ? (
+          <div className="drawer-body">
+            <LoanCompliance loan={loan} clientName={clientName || loan.clientObj || 'Unknown Client'} onUpdate={onUpdate}/>
+          </div>
+        ) : (
         <div className="drawer-body">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <StageBadge stage={loan.stage}/>
@@ -218,6 +232,7 @@ function LoanDrawer({ loan, clientName, onEdit, onDelete, onClose }) {
           )}
           <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>Added {fmtRelative(loan.createdAt)}</div>
         </div>
+        )}
         <div className="drawer-foot">
           <button className="btn danger-ghost" onClick={onDelete}><Trash2 size={14}/> Delete</button>
           <button className="btn primary" onClick={onEdit}><Edit3 size={14}/> Edit</button>
@@ -247,14 +262,21 @@ function StageSelector({ loan, stages, open, onOpen, onSelect }) {
         <div className="stage-popover">
           {stages.map(s => {
             const c = STAGE_COLORS[s] || {};
+            const blockedGate = loan.stage === s ? null : stageBlockedBy(loan, s);
+            const outstanding = blockedGate ? blockingItems(loan, blockedGate) : [];
             return (
               <button
                 key={s}
-                className={`stage-popover-item${loan.stage === s ? ' active' : ''}`}
+                className={`stage-popover-item${loan.stage === s ? ' active' : ''}${blockedGate ? ' locked' : ''}`}
+                disabled={!!blockedGate}
+                title={blockedGate
+                  ? `Locked — Gate ${blockedGate} incomplete (${outstanding.length} outstanding): ${outstanding.slice(0, 4).map(i => i.label).join('; ')}${outstanding.length > 4 ? '…' : ''}`
+                  : undefined}
                 onClick={() => onSelect(s)}
               >
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.text || 'var(--ink-3)', display: 'inline-block', flexShrink: 0 }}/>
                 {s}
+                {blockedGate && <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--ink-4)' }}>🔒 G{blockedGate}</span>}
               </button>
             );
           })}
@@ -296,6 +318,9 @@ export default function Pipeline() {
   }, [editStageId]);
 
   const clientMap = Object.fromEntries(clients.map(c => [c.id, c.name]));
+
+  // Keep the drawer in sync with live Firebase data (compliance edits update in place)
+  const liveViewLoan = viewLoan ? loans.find(x => x.id === viewLoan.id) || null : null;
 
   // Split settled vs active
   const settledLoans = loans.filter(l => l.stage === SETTLED_STAGE);
@@ -443,7 +468,10 @@ export default function Pipeline() {
               const name = l.clientObj || clientMap[l.clientId] || 'Unknown';
               return (
                 <div key={l.id} className="loan-card" onClick={() => setViewLoan(l)}>
-                  <div className="loan-client">{name}</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                    <div className="loan-client">{name}</div>
+                    <span title={`Compliance ${complianceProgress(l)}%`}><ProgressRing value={complianceProgress(l)} size={30}/></span>
+                  </div>
                   <div className="loan-meta">
                     <span>{l.lender || '—'}</span>
                     <span style={{ color: 'var(--border-strong)' }}>·</span>
@@ -491,13 +519,14 @@ export default function Pipeline() {
       {showNoteForm && (
         <QuickNoteModal clients={clients} onSave={handleQuickNote} onClose={() => setShowNoteForm(false)}/>
       )}
-      {viewLoan && (
+      {liveViewLoan && (
         <LoanDrawer
-          loan={viewLoan}
-          clientName={clientMap[viewLoan.clientId] || viewLoan.clientObj}
-          onEdit={() => { setEditLoan(viewLoan); setViewLoan(null); setShowForm(true); }}
-          onDelete={() => setDelLoan(viewLoan)}
+          loan={liveViewLoan}
+          clientName={clientMap[liveViewLoan.clientId] || liveViewLoan.clientObj}
+          onEdit={() => { setEditLoan(liveViewLoan); setViewLoan(null); setShowForm(true); }}
+          onDelete={() => setDelLoan(liveViewLoan)}
           onClose={() => setViewLoan(null)}
+          onUpdate={data => updateLoan(liveViewLoan.id, data).catch(() => toast.error('Failed to save.'))}
         />
       )}
       <ConfirmDialog
