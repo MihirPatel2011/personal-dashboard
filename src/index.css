@@ -2181,3 +2181,39 @@ button[style*="borderRadius: 6px"]:hover {
 
 .stage-popover-item.locked { opacity: .45; cursor: not-allowed; }
 .stage-popover-item.locked:hover { background: transparent; color: var(--ink-3); }
+
+/* ─── Focus (Tasks · Timer · Stats) ───────────────────────────────────────────── */
+.fx-menu-item {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  padding: 7px 10px; border-radius: 6px; border: none; background: none; cursor: pointer;
+  font-size: 13px; color: var(--ink-2); font-family: inherit; transition: background var(--t), color var(--t);
+}
+.fx-menu-item:hover { background: var(--surface-2); color: var(--ink); }
+
+.fx-date-input {
+  width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 6px;
+  background: var(--surface-2); color: var(--ink); font-family: inherit; font-size: 13px;
+}
+.fx-date-input:focus { border-color: var(--accent); outline: none; }
+
+.fx-task-row {
+  position: relative; display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 12px 11px 13px; border-radius: var(--r); background: var(--surface);
+  border: 1px solid var(--border); transition: border-color var(--t), background var(--t);
+}
+.fx-task-row:hover { border-color: var(--border-2); background: var(--surface-2); }
+.fx-task-actions { opacity: 0; transition: opacity var(--t); }
+.fx-task-row:hover .fx-task-actions { opacity: 1; }
+@media (hover: none) { .fx-task-actions { opacity: 1; } }
+
+.fx-rail-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  padding: 8px 10px; border-radius: var(--r); border: none; background: none; cursor: pointer;
+  font-size: 13px; color: var(--ink-2); font-family: inherit; text-align: left;
+  transition: background var(--t), box-shadow var(--t);
+}
+.fx-rail-item:hover { background: var(--surface-2); }
+.fx-rail-menu-btn { opacity: 0; transition: opacity var(--t); }
+.fx-rail-item:hover .fx-rail-menu-btn { opacity: 1; }
+.fx-rail-menu-btn:hover { background: var(--surface-3); color: var(--ink) !important; }
+@media (hover: none) { .fx-rail-menu-btn { opacity: 1; } }

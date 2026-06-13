@@ -1,12 +1,9 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, Timer, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap, ArrowUpRight } from 'lucide-react';
+import { LayoutDashboard, Target, Timer, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap, ListTodo } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
 import { isToday, isPast } from '../../utils';
-
-// The Focus app (tasks, planning, focus timer) — a standalone PWA.
-const FOCUS_URL = 'https://mihirpatel2011.github.io/focus/';
 
 // ─── Mobile bottom tab bar ─────────────────────────────────────────────────────
 export function MobileNav() {
@@ -24,6 +21,7 @@ export function MobileNav() {
     { path: '/dashboard',        label: 'Home',     icon: LayoutDashboard },
     { path: '/notes',            label: 'Notes',    icon: NotebookPen     },
     { path: '/journal',          label: 'Journal',  icon: BookMarked      },
+    { path: '/focus/tasks',      label: 'Focus',    icon: Timer           },
     { path: '/mortgage/pipeline',label: 'Mortgage', icon: Kanban          },
   ];
 
@@ -39,14 +37,6 @@ export function MobileNav() {
           <span>{label}</span>
         </button>
       ))}
-      <button
-        className="mobile-nav-item"
-        onClick={() => window.open(FOCUS_URL, '_blank', 'noopener')}
-        title="Open the Focus app"
-      >
-        <Timer size={22}/>
-        <span>Focus</span>
-      </button>
       <button
         className="mobile-nav-item"
         onClick={toggleTheme}
@@ -104,12 +94,19 @@ export default function Sidebar() {
           Habits
         </button>
 
-        {/* Tasks */}
+        {/* Focus — tasks, timer, stats (native) */}
         <div className="sidebar-section-label">Focus</div>
-        <button className="nav-item" onClick={() => window.open(FOCUS_URL, '_blank', 'noopener')} title="Opens the Focus app in a new tab">
+        <button className={`nav-item${active('/focus/tasks') ? ' active' : ''}`} onClick={() => go('/focus/tasks')}>
+          <span className="nav-icon tasks-icon"><ListTodo size={15}/></span>
+          Tasks
+        </button>
+        <button className={`nav-item${active('/focus/timer') ? ' active' : ''}`} onClick={() => go('/focus/timer')}>
           <span className="nav-icon tasks-icon"><Timer size={15}/></span>
-          Focus
-          <ArrowUpRight size={12} style={{ marginLeft: 'auto', opacity: 0.45 }}/>
+          Focus Timer
+        </button>
+        <button className={`nav-item${active('/focus/stats') ? ' active' : ''}`} onClick={() => go('/focus/stats')}>
+          <span className="nav-icon tasks-icon"><BarChart3 size={15}/></span>
+          Stats
         </button>
         <button className={`nav-item${active('/notes') ? ' active' : ''}`} onClick={() => go('/notes')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><NotebookPen size={15}/></span>

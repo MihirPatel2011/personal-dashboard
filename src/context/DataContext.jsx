@@ -17,6 +17,10 @@ export function DataProvider({ children }) {
   const [mortgageSettings, setMortgageSettings] = useState({});
   const [personalNotes,    setPersonalNotes]    = useState([]);
   const [journalSpreads,   setJournalSpreads]   = useState([]);
+  const [focusAreas,       setFocusAreas]       = useState([]);
+  const [focusProjects,    setFocusProjects]    = useState([]);
+  const [focusTasks,       setFocusTasks]       = useState([]);
+  const [focusSessions,    setFocusSessions]    = useState([]);
   const [loading,          setLoading]          = useState(true);
 
   const toArr = snap => {
@@ -28,13 +32,14 @@ export function DataProvider({ children }) {
     if (!user) {
       setClients([]); setLoans([]); setNotes([]); setCrmTasks([]);
       setGoals([]); setGoalLog([]); setPersonalNotes([]); setJournalSpreads([]);
+      setFocusAreas([]); setFocusProjects([]); setFocusTasks([]); setFocusSessions([]);
       setMortgageSettings({});
       setLoading(false);
       return;
     }
     setLoading(true);
     let count = 0;
-    const TOTAL = 9;
+    const TOTAL = 13;
     const done = () => { count++; if (count >= TOTAL) setLoading(false); };
 
     const u1  = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
@@ -46,8 +51,12 @@ export function DataProvider({ children }) {
     const u9  = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
     const u12 = onValue(ref(db, 'personalNotes'),    s => { setPersonalNotes(toArr(s));         done(); });
     const u13 = onValue(ref(db, 'journalSpreads'),   s => { setJournalSpreads(toArr(s));        done(); });
+    const u14 = onValue(ref(db, 'focusAreas'),       s => { setFocusAreas(toArr(s));            done(); });
+    const u15 = onValue(ref(db, 'focusProjects'),    s => { setFocusProjects(toArr(s));         done(); });
+    const u16 = onValue(ref(db, 'focusTasks'),       s => { setFocusTasks(toArr(s));            done(); });
+    const u17 = onValue(ref(db, 'focusSessions'),    s => { setFocusSessions(toArr(s));         done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u9(); u12(); u13(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u9(); u12(); u13(); u14(); u15(); u16(); u17(); };
   }, [user]);
 
   // ─── Clients ──────────────────────────────────────────────────────────────
@@ -147,10 +156,41 @@ export function DataProvider({ children }) {
     update(ref(db, `journalSpreads/${id}`), { ...data, updatedAt: Date.now() }), []);
   const deleteJournalSpread = useCallback(async id => remove(ref(db, `journalSpreads/${id}`)), []);
 
+  // ─── Focus: Areas ───────────────────────────────────────────────────────────
+  const addFocusArea    = useCallback(async data => { const r = push(ref(db, 'focusAreas')); await set(r, { archived: false, order: Date.now(), ...data, createdAt: Date.now() }); return r.key; }, []);
+  const updateFocusArea = useCallback(async (id, data) => update(ref(db, `focusAreas/${id}`), data), []);
+  const deleteFocusArea = useCallback(async id => {
+    // Cascade: remove this area's projects and detach its tasks (keep the tasks).
+    for (const p of focusProjects.filter(p => p.areaId === id)) await remove(ref(db, `focusProjects/${p.id}`));
+    for (const t of focusTasks.filter(t => t.areaId === id))    await update(ref(db, `focusTasks/${t.id}`), { areaId: '', projectId: '' });
+    await remove(ref(db, `focusAreas/${id}`));
+  }, [focusProjects, focusTasks]);
+
+  // ─── Focus: Projects ──────────────────────────────────────────────────────────
+  const addFocusProject    = useCallback(async data => { const r = push(ref(db, 'focusProjects')); await set(r, { archived: false, ...data, createdAt: Date.now() }); return r.key; }, []);
+  const updateFocusProject = useCallback(async (id, data) => update(ref(db, `focusProjects/${id}`), data), []);
+  const deleteFocusProject = useCallback(async id => {
+    for (const t of focusTasks.filter(t => t.projectId === id)) await update(ref(db, `focusTasks/${t.id}`), { projectId: '' });
+    await remove(ref(db, `focusProjects/${id}`));
+  }, [focusTasks]);
+
+  // ─── Focus: Tasks ─────────────────────────────────────────────────────────────
+  const addFocusTask    = useCallback(async data => { const r = push(ref(db, 'focusTasks')); await set(r, { done: false, priority: 0, order: Date.now(), ...data, createdAt: Date.now() }); return r.key; }, []);
+  const updateFocusTask = useCallback(async (id, data) => update(ref(db, `focusTasks/${id}`), data), []);
+  const deleteFocusTask = useCallback(async id => remove(ref(db, `focusTasks/${id}`)), []);
+  const toggleFocusTask = useCallback(async (id, done) =>
+    update(ref(db, `focusTasks/${id}`), { done, completedAt: done ? Date.now() : null }), []);
+
+  // ─── Focus: Sessions (focus-timer logs) ────────────────────────────────────────
+  const addFocusSession    = useCallback(async data => { const r = push(ref(db, 'focusSessions')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
+  const updateFocusSession = useCallback(async (id, data) => update(ref(db, `focusSessions/${id}`), data), []);
+  const deleteFocusSession = useCallback(async id => remove(ref(db, `focusSessions/${id}`)), []);
+
   return (
     <DataContext.Provider value={{
       clients, loans, notes, crmTasks,
       goals, goalLog, personalNotes, journalSpreads,
+      focusAreas, focusProjects, focusTasks, focusSessions,
       mortgageSettings, loading,
       addClient,    updateClient,    deleteClient,
       addLoan,      updateLoan,      deleteLoan,
@@ -161,6 +201,10 @@ export function DataProvider({ children }) {
       addGoalLog,   updateGoalLog,   deleteGoalLog,
       addPersonalNote, updatePersonalNote, deletePersonalNote,
       addJournalSpread, updateJournalSpread, deleteJournalSpread,
+      addFocusArea,    updateFocusArea,    deleteFocusArea,
+      addFocusProject, updateFocusProject, deleteFocusProject,
+      addFocusTask,    updateFocusTask,    deleteFocusTask, toggleFocusTask,
+      addFocusSession, updateFocusSession, deleteFocusSession,
     }}>
       {children}
     </DataContext.Provider>

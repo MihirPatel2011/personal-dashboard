@@ -16,6 +16,10 @@ import Settings from './pages/mortgage/Settings';
 import PersonalNotes from './pages/PersonalNotes';
 import Journal from './pages/Journal';
 import Habits from './pages/Habits';
+import FocusLayout from './pages/focus/FocusLayout';
+import TasksPage from './pages/focus/TasksPage';
+import FocusTimerPage from './pages/focus/FocusTimerPage';
+import StatsPage from './pages/focus/StatsPage';
 
 function ThemedToaster() {
   const { theme } = useTheme();
@@ -65,6 +69,12 @@ function AppShell() {
           <Route path="/notes"               element={<PersonalNotes/>}/>
           <Route path="/journal"             element={<Journal/>}/>
           <Route path="/habits"              element={<Habits/>}/>
+          <Route path="/focus"               element={<FocusLayout/>}>
+            <Route index                     element={<Navigate to="/focus/tasks" replace/>}/>
+            <Route path="tasks"              element={<TasksPage/>}/>
+            <Route path="timer"             element={<FocusTimerPage/>}/>
+            <Route path="stats"             element={<StatsPage/>}/>
+          </Route>
           <Route path="/mortgage"            element={<MortgageLayout/>}>
             <Route index                     element={<Navigate to="/mortgage/pipeline" replace/>}/>
             <Route path="pipeline"           element={<Pipeline/>}/>
