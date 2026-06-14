@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Zap, Flag, Calendar } from 'lucide-react';
+import { Zap, Flag, Calendar, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useData } from '../../context/DataContext';
 import Modal from '../common/Modal';
@@ -66,6 +66,11 @@ export default function GlobalQuickAdd() {
   const hasMeta = area || p || parsed.dueDate;
 
   return (
+    <>
+    {/* Floating capture button — mobile only (hidden via CSS on desktop) */}
+    <button className="fx-fab" onClick={() => { setText(''); setOpen(true); }} aria-label="Quick add task" title="Quick add task">
+      <Plus size={26}/>
+    </button>
     <Modal isOpen={open} onClose={() => setOpen(false)} title="Quick capture" size="sm">
       <div className="modal-body">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -111,5 +116,6 @@ export default function GlobalQuickAdd() {
         <button className="btn accent" disabled={!(parsed.title.trim() || text.trim())} onClick={submit}>Add task</button>
       </div>
     </Modal>
+    </>
   );
 }

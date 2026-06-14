@@ -2242,8 +2242,23 @@ button[style*="borderRadius: 6px"]:hover {
 .fx-rail-menu-btn:hover { background: var(--surface-3); color: var(--ink) !important; }
 @media (hover: none) { .fx-rail-menu-btn { opacity: 1; } }
 
+/* Floating quick-capture button (mobile only) */
+.fx-fab { display: none; }
+
 /* ─── Focus: mobile ───────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  .fx-fab {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; right: 18px;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 18px);
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--tasks); color: #fff; border: none; cursor: pointer;
+    box-shadow: 0 6px 20px var(--tasks-glow), 0 2px 10px rgba(0,0,0,0.45);
+    z-index: 45; -webkit-tap-highlight-color: transparent;
+    transition: transform 120ms var(--ease-out), filter 120ms;
+  }
+  .fx-fab:active { transform: scale(0.92); filter: brightness(1.06); }
+
   .fx-tasks-layout { flex-direction: column; height: 100%; }
   .fx-tasks-main { padding: 14px 14px 28px; }
   .fx-page { padding: 16px 14px 32px; }
