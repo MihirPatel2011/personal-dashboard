@@ -138,12 +138,12 @@ function AreaProjectPicker({ areas, projects, areaId, projectId, onChange, align
   );
 }
 
-function PriorityPicker({ priority, onChange }) {
+function PriorityPicker({ priority, onChange, align = 'left' }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ position: 'relative' }}>
-      <span onClick={() => setOpen(o => !o)}><PriorityFlag priority={priority} onClick={() => setOpen(o => !o)}/></span>
-      <Popover open={open} onClose={() => setOpen(false)} width={140}>
+      <PriorityFlag priority={priority} onClick={() => setOpen(o => !o)}/>
+      <Popover open={open} onClose={() => setOpen(false)} width={150} align={align}>
         {FOCUS_PRIORITIES.map(p => (
           <button key={p.id} className="fx-menu-item" onClick={() => { onChange(p.id); setOpen(false); }}>
             <Flag size={12} fill={p.color} style={{ color: p.color }}/> {p.label}
@@ -474,9 +474,10 @@ function TaskRow({ task, areas, projects, onToggle, onUpdate, onEdit }) {
         )}
       </div>
 
-      {/* Desktop hover quick-edit cluster */}
+      {/* Always-visible priority setter — works directly on the list */}
+      <div className="fx-task-prio"><PriorityPicker priority={task.priority} onChange={v => onUpdate(task.id, { priority: v })} align="right"/></div>
+      {/* Desktop hover quick-edit cluster: due date + area/project */}
       <div className="fx-task-actions">
-        <PriorityPicker priority={task.priority} onChange={v => onUpdate(task.id, { priority: v })}/>
         <DuePicker dueDate={task.dueDate} onChange={v => onUpdate(task.id, { dueDate: v })}/>
         <AreaProjectPicker areas={areas} projects={projects} areaId={task.areaId} projectId={task.projectId}
           onChange={handleAreaProject} align="right"/>

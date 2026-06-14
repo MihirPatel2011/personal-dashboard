@@ -2204,6 +2204,7 @@ button[style*="borderRadius: 6px"]:hover {
 .fx-task-row:hover { border-color: var(--border-2); background: var(--surface-2); }
 .fx-task-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity var(--t); }
 .fx-task-row:hover .fx-task-actions { opacity: 1; }
+.fx-task-prio { display: flex; align-items: center; flex-shrink: 0; }
 .fx-task-edit { opacity: 0; transition: opacity var(--t); }
 .fx-task-row:hover .fx-task-edit { opacity: 1; }
 @media (hover: none) { .fx-task-actions, .fx-task-edit { opacity: 1; } }
