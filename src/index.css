@@ -2202,9 +2202,32 @@ button[style*="borderRadius: 6px"]:hover {
   border: 1px solid var(--border); transition: border-color var(--t), background var(--t);
 }
 .fx-task-row:hover { border-color: var(--border-2); background: var(--surface-2); }
-.fx-task-actions { opacity: 0; transition: opacity var(--t); }
+.fx-task-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity var(--t); }
 .fx-task-row:hover .fx-task-actions { opacity: 1; }
-@media (hover: none) { .fx-task-actions { opacity: 1; } }
+.fx-task-edit { opacity: 0; transition: opacity var(--t); }
+.fx-task-row:hover .fx-task-edit { opacity: 1; }
+@media (hover: none) { .fx-task-actions, .fx-task-edit { opacity: 1; } }
+
+/* Layout shells */
+.fx-tasks-layout { display: flex; height: 100%; overflow: hidden; }
+.fx-tasks-main { flex: 1; overflow-y: auto; padding: 20px 24px 40px; min-width: 0; }
+.fx-areas-rail { width: 244px; flex-shrink: 0; border-right: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; overflow: hidden; }
+.fx-sortbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.fx-page { padding: 20px 24px 48px; }
+.fx-page-center { padding: 28px 24px 48px; }
+
+/* Responsive grids (replace inline grid templates so the breakpoint can collapse them) */
+.fx-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.fx-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Mobile pill scroller (areas/projects), mirrors .goals-sidebar pattern */
+.fx-pillbar { display: flex; gap: 6px; overflow-x: auto; padding: 10px 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.fx-pillbar::-webkit-scrollbar { display: none; }
+.fx-pill {
+  flex-shrink: 0; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 13px; border-radius: 99px; font-size: 12.5px; font-weight: 500; cursor: pointer;
+  border: 1.5px solid var(--border); background: var(--surface-2); color: var(--ink-3);
+}
 
 .fx-rail-item {
   display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
@@ -2217,3 +2240,23 @@ button[style*="borderRadius: 6px"]:hover {
 .fx-rail-item:hover .fx-rail-menu-btn { opacity: 1; }
 .fx-rail-menu-btn:hover { background: var(--surface-3); color: var(--ink) !important; }
 @media (hover: none) { .fx-rail-menu-btn { opacity: 1; } }
+
+/* ─── Focus: mobile ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .fx-tasks-layout { flex-direction: column; height: 100%; }
+  .fx-tasks-main { padding: 14px 14px 28px; }
+  .fx-page { padding: 16px 14px 32px; }
+  .fx-page-center { padding: 20px 14px 32px; }
+
+  /* Collapse multi-column grids */
+  .fx-grid-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fx-grid-2 { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Task rows: drop the hover quick-edit cluster, keep the always-on edit button */
+  .fx-task-actions { display: none; }
+  .fx-task-edit { opacity: 1; }
+  .fx-task-row { padding: 12px 10px; gap: 11px; }
+
+  /* Quick-add option pickers wrap comfortably */
+  .fx-quickadd-opts { gap: 6px; padding-left: 0; }
+}

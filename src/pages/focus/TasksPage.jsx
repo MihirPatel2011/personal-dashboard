@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Plus, Check, Flag, Calendar, Trash2, Edit3, Archive, ArchiveRestore,
-  X, ChevronDown, Folder, Hash, MoreHorizontal,
+  X, ChevronDown, Folder, Hash, MoreHorizontal, Settings2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useData } from '../../context/DataContext';
@@ -9,6 +9,18 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { AREA_COLORS, AREA_ICONS, FOCUS_PRIORITIES, PRIORITY_MAP } from '../../constants';
 import { isToday, isPast, fmtShortDate } from '../../utils';
+
+// ── Responsive helper ────────────────────────────────────────────────────────────
+function useIsMobile() {
+  const [m, setM] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const h = e => setM(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+  return m;
+}
 
 // ── Small generic popover (click-toggled, closes on outside click) ───────────────
 function Popover({ open, onClose, children, align = 'left', width }) {
@@ -70,7 +82,7 @@ function DueChip({ dueDate, onClick }) {
   const today   = isToday(dueDate);
   const color = overdue ? 'var(--danger)' : today ? 'var(--warn)' : 'var(--ink-3)';
   const bg    = overdue ? 'var(--danger-dim)' : today ? 'var(--warn-dim)' : 'transparent';
-  const label = today ? 'Today' : overdue ? `${fmtShortDate(dueDate)}` : fmtShortDate(dueDate);
+  const label = today ? 'Today' : overdue ? `Overdue · ${fmtShortDate(dueDate)}` : fmtShortDate(dueDate);
   return (
     <span onClick={onClick} style={{
       display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer',
@@ -81,7 +93,7 @@ function DueChip({ dueDate, onClick }) {
   );
 }
 
-// ── Inline option pickers shared by QuickAdd and rows ───────────────────────────
+// ── Inline option pickers (desktop hover quick-edit) ────────────────────────────
 function AreaProjectPicker({ areas, projects, areaId, projectId, onChange, align = 'left' }) {
   const [open, setOpen] = useState(false);
   const area = areas.find(a => a.id === areaId);
@@ -126,15 +138,11 @@ function AreaProjectPicker({ areas, projects, areaId, projectId, onChange, align
   );
 }
 
-function PriorityPicker({ priority, onChange, asFlag = true }) {
+function PriorityPicker({ priority, onChange }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ position: 'relative' }}>
-      <span onClick={() => setOpen(o => !o)}>
-        {asFlag
-          ? <PriorityFlag priority={priority} onClick={() => setOpen(o => !o)}/>
-          : <button className="btn ghost sm"><Flag size={13}/> Priority</button>}
-      </span>
+      <span onClick={() => setOpen(o => !o)}><PriorityFlag priority={priority} onClick={() => setOpen(o => !o)}/></span>
       <Popover open={open} onClose={() => setOpen(false)} width={140}>
         {FOCUS_PRIORITIES.map(p => (
           <button key={p.id} className="fx-menu-item" onClick={() => { onChange(p.id); setOpen(false); }}>
@@ -167,6 +175,27 @@ function DuePicker({ dueDate, onChange }) {
   );
 }
 
+// ── Priority selector row (used in modals) ───────────────────────────────────────
+function PriorityRow({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      {FOCUS_PRIORITIES.map(p => {
+        const on = value === p.id;
+        return (
+          <button key={p.id} type="button" onClick={() => onChange(p.id)} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 99,
+            fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+            border: `1.5px solid ${on ? p.color : 'var(--border)'}`,
+            background: on ? p.dim : 'transparent', color: on ? p.color : 'var(--ink-3)',
+          }}><Flag size={12} fill={on ? p.color : 'none'}/> {p.label}</button>
+        );
+      })}
+      <button type="button" onClick={() => onChange(0)} className="chip"
+        style={!value ? { borderColor: 'var(--ink-3)', color: 'var(--ink)' } : undefined}>None</button>
+    </div>
+  );
+}
+
 // ── Area / Project edit modal ──────────────────────────────────────────────────
 function AreaForm({ initial, onSave, onCancel }) {
   const [name, setName]   = useState(initial?.name || '');
@@ -184,7 +213,7 @@ function AreaForm({ initial, onSave, onCancel }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {AREA_COLORS.map(c => (
               <button key={c} type="button" onClick={() => setColor(c)} style={{
-                width: 26, height: 26, borderRadius: '50%', background: c, cursor: 'pointer', flexShrink: 0,
+                width: 30, height: 30, borderRadius: '50%', background: c, cursor: 'pointer', flexShrink: 0,
                 border: color === c ? '3px solid var(--ink)' : '2px solid transparent',
                 transform: color === c ? 'scale(1.12)' : 'scale(1)', transition: 'transform .12s',
               }}/>
@@ -196,7 +225,7 @@ function AreaForm({ initial, onSave, onCancel }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {AREA_ICONS.map(em => (
               <button key={em} type="button" onClick={() => setIcon(em)} style={{
-                width: 32, height: 32, fontSize: 17, borderRadius: 8, cursor: 'pointer',
+                width: 36, height: 36, fontSize: 18, borderRadius: 8, cursor: 'pointer',
                 border: icon === em ? `2px solid ${color}` : '1.5px solid var(--border)',
                 background: icon === em ? color + '22' : 'var(--surface-2)',
               }}>{em}</button>
@@ -241,6 +270,106 @@ function ProjectForm({ initial, areas, defaultAreaId, onSave, onCancel }) {
   );
 }
 
+// ── Full task edit modal (primary edit surface on mobile) ───────────────────────
+function EditTaskModal({ task, areas, projects, onSave, onDelete, onClose }) {
+  const [title, setTitle]     = useState(task.title);
+  const [areaId, setAreaId]   = useState(task.areaId || '');
+  const [projectId, setProjectId] = useState(task.projectId || '');
+  const [priority, setPriority] = useState(task.priority || 0);
+  const [dueDate, setDueDate] = useState(task.dueDate || '');
+  const areaProjects = projects.filter(p => p.areaId === areaId && !p.archived);
+
+  function chooseProject(pid) {
+    setProjectId(pid);
+    if (pid) { const pr = projects.find(x => x.id === pid); if (pr) setAreaId(pr.areaId); } // project locks area
+  }
+  function save() { if (title.trim()) onSave({ title: title.trim(), areaId, projectId, priority, dueDate }); }
+
+  return (
+    <>
+      <div className="modal-body">
+        <div className="field">
+          <label>Task</label>
+          <input value={title} autoFocus onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') save(); }}/>
+        </div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div className="field" style={{ flex: 1, minWidth: 150 }}>
+            <label>Area</label>
+            <select value={areaId} onChange={e => { setAreaId(e.target.value); setProjectId(''); }}>
+              <option value="">No area</option>
+              {areas.filter(a => !a.archived).map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
+            </select>
+          </div>
+          {areaId && areaProjects.length > 0 && (
+            <div className="field" style={{ flex: 1, minWidth: 150 }}>
+              <label>Project</label>
+              <select value={projectId} onChange={e => chooseProject(e.target.value)}>
+                <option value="">None</option>
+                {areaProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+        <div className="field"><label>Priority</label><PriorityRow value={priority} onChange={setPriority}/></div>
+        <div className="field">
+          <label>Due date</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ flex: 1 }}/>
+            {dueDate && <button className="btn ghost sm" onClick={() => setDueDate('')}><X size={13}/> Clear</button>}
+          </div>
+        </div>
+      </div>
+      <div className="modal-foot" style={{ justifyContent: 'space-between' }}>
+        <button className="btn danger-ghost" onClick={onDelete}><Trash2 size={14}/> Delete</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn ghost" onClick={onClose}>Cancel</button>
+          <button className="btn accent" disabled={!title.trim()} onClick={save}>Save</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Manage areas & projects modal (mobile management surface) ───────────────────
+function ManageAreasModal({ areas, projects, onNewArea, onEditArea, onArchiveArea, onDeleteArea, onNewProject, onEditProject, onArchiveProject, onClose }) {
+  const [showArchived, setShowArchived] = useState(false);
+  const vis = areas.filter(a => showArchived ? a.archived : !a.archived).sort((a,b) => (a.order||0)-(b.order||0));
+  return (
+    <>
+      <div className="modal-body">
+        <button className="btn accent sm" style={{ alignSelf: 'flex-start' }} onClick={onNewArea}><Plus size={13}/> New area</button>
+        {vis.length === 0 && <div style={{ color: 'var(--ink-3)', fontSize: 13, padding: '12px 0' }}>{showArchived ? 'No archived areas.' : 'No areas yet.'}</div>}
+        {vis.map(a => {
+          const pr = projects.filter(p => p.areaId === a.id && (showArchived ? true : !p.archived));
+          return (
+            <div key={a.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 26, height: 26, borderRadius: 7, background: a.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>{a.icon}</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{a.name}</span>
+                <button className="icon-btn sm" title="Add project" onClick={() => onNewProject(a.id)}><Plus size={15}/></button>
+                <button className="icon-btn sm" title="Edit" onClick={() => onEditArea(a)}><Edit3 size={14}/></button>
+                <button className="icon-btn sm" title={a.archived ? 'Restore' : 'Archive'} onClick={() => onArchiveArea(a)}>{a.archived ? <ArchiveRestore size={14}/> : <Archive size={14}/>}</button>
+                <button className="icon-btn sm danger" title="Delete" onClick={() => onDeleteArea(a)}><Trash2 size={14}/></button>
+              </div>
+              {pr.map(p => (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0 0 34px' }}>
+                  <Hash size={12} style={{ color: a.color }}/>
+                  <span style={{ flex: 1, fontSize: 13, color: p.archived ? 'var(--ink-3)' : 'var(--ink-2)' }}>{p.name}</span>
+                  <button className="icon-btn sm" title="Edit" onClick={() => onEditProject(p)}><Edit3 size={13}/></button>
+                  <button className="icon-btn sm" title={p.archived ? 'Restore' : 'Archive'} onClick={() => onArchiveProject(p)}>{p.archived ? <ArchiveRestore size={13}/> : <Archive size={13}/>}</button>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+        <button className="btn ghost sm" style={{ alignSelf: 'flex-start' }} onClick={() => setShowArchived(v => !v)}>{showArchived ? 'Show active' : 'Show archived'}</button>
+      </div>
+      <div className="modal-foot"><button className="btn ghost" onClick={onClose}>Done</button></div>
+    </>
+  );
+}
+
 // ── Quick add bar ────────────────────────────────────────────────────────────────
 function QuickAdd({ areas, projects, presetAreaId, presetProjectId, onAdd }) {
   const [title, setTitle]     = useState('');
@@ -258,19 +387,19 @@ function QuickAdd({ areas, projects, presetAreaId, presetProjectId, onAdd }) {
   }
 
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-lg)', padding: '12px 14px', marginBottom: 18 }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-lg)', padding: '12px 14px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <Plus size={18} style={{ color: 'var(--tasks)', flexShrink: 0 }}/>
         <input
           value={title}
           onChange={e => setTitle(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') submit(); }}
-          placeholder="Add a task…  (just type and press Enter)"
-          style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 15, color: 'var(--ink)', fontFamily: 'inherit' }}
+          placeholder="Add a task…"
+          style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 15, color: 'var(--ink)', fontFamily: 'inherit' }}
         />
         <button className="btn accent sm" disabled={!title.trim()} onClick={submit}>Add</button>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, paddingLeft: 28, flexWrap: 'wrap' }}>
+      <div className="fx-quickadd-opts" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, paddingLeft: 28, flexWrap: 'wrap' }}>
         <AreaProjectPicker areas={areas} projects={projects} areaId={areaId} projectId={projectId}
           onChange={({ areaId, projectId }) => { setAreaId(areaId); setProj(projectId); }}/>
         <PriorityPicker priority={priority} onChange={setPrio}/>
@@ -280,14 +409,13 @@ function QuickAdd({ areas, projects, presetAreaId, presetProjectId, onAdd }) {
   );
 }
 
-// ── Task row (inline editable) ───────────────────────────────────────────────────
-function TaskRow({ task, areas, projects, onToggle, onUpdate, onDelete }) {
+// ── Task row ─────────────────────────────────────────────────────────────────────
+function TaskRow({ task, areas, projects, onToggle, onUpdate, onEdit }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
   const area = areas.find(a => a.id === task.areaId);
   const project = projects.find(p => p.id === task.projectId);
   const p = PRIORITY_MAP[task.priority];
-  const overdue = !task.done && isPast(task.dueDate) && !isToday(task.dueDate);
 
   useEffect(() => { setDraft(task.title); }, [task.title]);
 
@@ -298,7 +426,6 @@ function TaskRow({ task, areas, projects, onToggle, onUpdate, onDelete }) {
     else setDraft(task.title);
   }
 
-  // selecting a project locks the area to that project's area
   function handleAreaProject({ areaId, projectId }) {
     if (projectId) {
       const pr = projects.find(x => x.id === projectId);
@@ -314,7 +441,7 @@ function TaskRow({ task, areas, projects, onToggle, onUpdate, onDelete }) {
         onClick={() => onToggle(task)}
         title={task.done ? 'Mark not done' : 'Complete'}
         style={{
-          width: 22, height: 22, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+          width: 22, height: 22, borderRadius: '50%', flexShrink: 0, cursor: 'pointer', marginTop: 1,
           border: `2px solid ${task.done ? 'var(--ok)' : (p ? p.color : 'var(--border-strong)')}`,
           background: task.done ? 'var(--ok)' : 'transparent', color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s',
@@ -338,27 +465,29 @@ function TaskRow({ task, areas, projects, onToggle, onUpdate, onDelete }) {
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{task.title}</div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-          {area && <AreaChip area={area} small/>}
-          {project && <span style={{ fontSize: 11, color: 'var(--ink-3)', display: 'inline-flex', alignItems: 'center', gap: 3 }}><Hash size={10}/>{project.name}</span>}
-          {task.dueDate && <DueChip dueDate={task.dueDate}/>}
-        </div>
+        {(area || project || task.dueDate) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
+            {area && <AreaChip area={area} small/>}
+            {project && <span style={{ fontSize: 11, color: 'var(--ink-3)', display: 'inline-flex', alignItems: 'center', gap: 3 }}><Hash size={10}/>{project.name}</span>}
+            {task.dueDate && <DueChip dueDate={task.dueDate}/>}
+          </div>
+        )}
       </div>
 
-      {/* Inline controls (appear on hover via CSS) */}
-      <div className="fx-task-actions" style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+      {/* Desktop hover quick-edit cluster */}
+      <div className="fx-task-actions">
         <PriorityPicker priority={task.priority} onChange={v => onUpdate(task.id, { priority: v })}/>
         <DuePicker dueDate={task.dueDate} onChange={v => onUpdate(task.id, { dueDate: v })}/>
         <AreaProjectPicker areas={areas} projects={projects} areaId={task.areaId} projectId={task.projectId}
           onChange={handleAreaProject} align="right"/>
-        <button className="icon-btn sm" onClick={() => onDelete(task)} title="Delete"><Trash2 size={13}/></button>
       </div>
-      {overdue && <span style={{ position: 'absolute', right: 8, top: 8, fontSize: 9, fontWeight: 700, color: 'var(--danger)', letterSpacing: '.05em' }}>OVERDUE</span>}
+      {/* Always-visible edit affordance (primary on touch) */}
+      <button className="icon-btn sm fx-task-edit" onClick={() => onEdit(task)} title="Edit task" style={{ flexShrink: 0 }}><Edit3 size={14}/></button>
     </div>
   );
 }
 
-// ── Areas & Projects rail ────────────────────────────────────────────────────────
+// ── Desktop areas rail ───────────────────────────────────────────────────────────
 function AreasRail({ areas, projects, tasks, selAreaId, selProjectId, onSelect, onNewArea, onEditArea, onArchiveArea, onDeleteArea, onNewProject, onEditProject, onArchiveProject }) {
   const [showArchived, setShowArchived] = useState(false);
   const [menuArea, setMenuArea] = useState(null);
@@ -367,14 +496,13 @@ function AreasRail({ areas, projects, tasks, selAreaId, selProjectId, onSelect, 
   const openAll = tasks.filter(t => !t.done).length;
 
   return (
-    <div style={{ width: 244, flexShrink: 0, borderRight: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className="fx-areas-rail">
       <div style={{ padding: '12px 12px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--ink-3)' }}>Areas</span>
         <button className="icon-btn sm" onClick={onNewArea} title="New area"><Plus size={15}/></button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px 8px' }}>
-        {/* All tasks */}
         <button className="fx-rail-item" onClick={() => onSelect(null, null)}
           style={{ background: !selAreaId ? 'var(--surface-3)' : 'transparent', boxShadow: !selAreaId ? 'inset 3px 0 0 var(--tasks)' : 'none' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -410,7 +538,6 @@ function AreasRail({ areas, projects, tasks, selAreaId, selProjectId, onSelect, 
                   <button className="fx-menu-item" onClick={() => { setMenuArea(null); onDeleteArea(a); }} style={{ color: 'var(--danger)' }}><Trash2 size={12}/> Delete</button>
                 </Popover>
               </div>
-              {/* Projects */}
               {pr.map(p => {
                 const psel = selProjectId === p.id;
                 return (
@@ -451,6 +578,38 @@ function AreasRail({ areas, projects, tasks, selAreaId, selProjectId, onSelect, 
   );
 }
 
+// ── Mobile area/project pill bar ─────────────────────────────────────────────────
+function MobileAreaBar({ areas, projects, tasks, selAreaId, selProjectId, onSelect, onNewArea, onManage }) {
+  const visAreas = areas.filter(a => !a.archived).sort((a,b) => (a.order||0)-(b.order||0));
+  const area = areas.find(a => a.id === selAreaId);
+  const projs = area ? projects.filter(p => p.areaId === area.id && !p.archived) : [];
+  const openAll = tasks.filter(t => !t.done).length;
+
+  const pill = (active, color, children, onClick, key) => (
+    <button key={key} onClick={onClick} className="fx-pill"
+      style={active ? { borderColor: color, color, background: color + '22', fontWeight: 600 } : undefined}>
+      {children}
+    </button>
+  );
+
+  return (
+    <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
+      <div className="fx-pillbar">
+        {pill(!selAreaId, 'var(--tasks)', <>All <span style={{ opacity: .6 }}>{openAll}</span></>, () => onSelect(null, null), 'all')}
+        {visAreas.map(a => pill(selAreaId === a.id, a.color, <>{a.icon} {a.name}</>, () => onSelect(a.id, null), a.id))}
+        <button className="fx-pill" onClick={onNewArea} title="New area" style={{ flexShrink: 0 }}><Plus size={13}/></button>
+        <button className="fx-pill" onClick={onManage} title="Manage areas" style={{ flexShrink: 0 }}><Settings2 size={13}/></button>
+      </div>
+      {area && projs.length > 0 && (
+        <div className="fx-pillbar" style={{ paddingTop: 0 }}>
+          {pill(!selProjectId, area.color, 'All', () => onSelect(area.id, null), 'allp')}
+          {projs.map(p => pill(selProjectId === p.id, area.color, <><Hash size={10}/> {p.name}</>, () => onSelect(area.id, p.id), p.id))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────────
 export default function TasksPage() {
   const {
@@ -459,17 +618,19 @@ export default function TasksPage() {
     addFocusProject, updateFocusProject,
     addFocusTask, updateFocusTask, deleteFocusTask, toggleFocusTask,
   } = useData();
+  const isMobile = useIsMobile();
 
   const [selAreaId, setSelAreaId]     = useState(null);
   const [selProjectId, setSelProjectId] = useState(null);
-  const [sortBy, setSortBy]   = useState('created'); // created | due | priority
+  const [sortBy, setSortBy]   = useState('created');
   const [showDone, setShowDone] = useState(false);
 
-  const [areaModal, setAreaModal] = useState(null);     // { initial } | null
-  const [projectModal, setProjectModal] = useState(null); // { initial, defaultAreaId } | null
+  const [areaModal, setAreaModal] = useState(null);
+  const [projectModal, setProjectModal] = useState(null);
+  const [taskModal, setTaskModal] = useState(null);
+  const [manageOpen, setManageOpen] = useState(false);
   const [confirm, setConfirm] = useState(null);
 
-  // ── Filtering ───────────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let list = tasks.filter(t => {
       if (selProjectId) return t.projectId === selProjectId;
@@ -481,7 +642,7 @@ export default function TasksPage() {
     const prioVal = t => (t.priority || 0);
     const dueVal  = t => t.dueDate ? new Date(t.dueDate).getTime() : Infinity;
     list = [...list].sort((a, b) => {
-      if (a.done !== b.done) return a.done ? 1 : -1;       // done sink to bottom
+      if (a.done !== b.done) return a.done ? 1 : -1;
       if (sortBy === 'priority') return prioVal(b) - prioVal(a) || (b.createdAt||0) - (a.createdAt||0);
       if (sortBy === 'due')      return dueVal(a) - dueVal(b)   || (b.createdAt||0) - (a.createdAt||0);
       return (b.createdAt || 0) - (a.createdAt || 0);
@@ -491,15 +652,8 @@ export default function TasksPage() {
 
   const openCount = filtered.filter(t => !t.done).length;
 
-  // ── Handlers ──────────────────────────────────────────────────────────────────
-  function handleAdd(data) {
-    addFocusTask(data);
-    toast.success('Task added');
-  }
-  function handleToggle(task) {
-    toggleFocusTask(task.id, !task.done);
-    if (!task.done) toast.success('Completed ✓');
-  }
+  function handleAdd(data) { addFocusTask(data); toast.success('Task added'); }
+  function handleToggle(task) { toggleFocusTask(task.id, !task.done); if (!task.done) toast.success('Completed ✓'); }
 
   const saveArea = (data) => {
     if (areaModal?.initial) { updateFocusArea(areaModal.initial.id, data); toast.success('Area updated'); }
@@ -512,26 +666,35 @@ export default function TasksPage() {
     setProjectModal(null);
   };
 
-  return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-      <AreasRail
-        areas={areas} projects={projects} tasks={tasks}
-        selAreaId={selAreaId} selProjectId={selProjectId}
-        onSelect={(a, p) => { setSelAreaId(a); setSelProjectId(p); }}
-        onNewArea={() => setAreaModal({ initial: null })}
-        onEditArea={a => setAreaModal({ initial: a })}
-        onArchiveArea={a => { updateFocusArea(a.id, { archived: !a.archived }); }}
-        onDeleteArea={a => setConfirm({
-          title: `Delete "${a.name}"?`,
-          message: 'Its projects will be deleted and its tasks moved to Unassigned. This cannot be undone.',
-          onConfirm: () => { deleteFocusArea(a.id); if (selAreaId === a.id) { setSelAreaId(null); setSelProjectId(null); } },
-        })}
-        onNewProject={areaId => setProjectModal({ initial: null, defaultAreaId: areaId })}
-        onEditProject={p => setProjectModal({ initial: p })}
-        onArchiveProject={p => updateFocusProject(p.id, { archived: !p.archived })}
-      />
+  const railHandlers = {
+    onNewArea: () => setAreaModal({ initial: null }),
+    onEditArea: a => setAreaModal({ initial: a }),
+    onArchiveArea: a => updateFocusArea(a.id, { archived: !a.archived }),
+    onDeleteArea: a => setConfirm({
+      title: `Delete "${a.name}"?`,
+      message: 'Its projects will be deleted and its tasks moved to Unassigned. This cannot be undone.',
+      onConfirm: () => { deleteFocusArea(a.id); if (selAreaId === a.id) { setSelAreaId(null); setSelProjectId(null); } },
+    }),
+    onNewProject: areaId => setProjectModal({ initial: null, defaultAreaId: areaId }),
+    onEditProject: p => setProjectModal({ initial: p }),
+    onArchiveProject: p => updateFocusProject(p.id, { archived: !p.archived }),
+  };
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 40px' }}>
+  return (
+    <div className="fx-tasks-layout">
+      {isMobile ? (
+        <MobileAreaBar areas={areas} projects={projects} tasks={tasks}
+          selAreaId={selAreaId} selProjectId={selProjectId}
+          onSelect={(a, p) => { setSelAreaId(a); setSelProjectId(p); }}
+          onNewArea={railHandlers.onNewArea} onManage={() => setManageOpen(true)}/>
+      ) : (
+        <AreasRail areas={areas} projects={projects} tasks={tasks}
+          selAreaId={selAreaId} selProjectId={selProjectId}
+          onSelect={(a, p) => { setSelAreaId(a); setSelProjectId(p); }}
+          {...railHandlers}/>
+      )}
+
+      <div className="fx-tasks-main">
         <QuickAdd
           areas={areas} projects={projects}
           presetAreaId={selProjectId ? (projects.find(p => p.id === selProjectId)?.areaId || '') : (selAreaId || '')}
@@ -539,8 +702,7 @@ export default function TasksPage() {
           onAdd={handleAdd}
         />
 
-        {/* Sort / filter bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+        <div className="fx-sortbar">
           <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{openCount} open</span>
           <div style={{ flex: 1 }}/>
           <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>Sort</span>
@@ -550,11 +712,10 @@ export default function TasksPage() {
           ))}
           <button className="chip" onClick={() => setShowDone(v => !v)}
             style={showDone ? { borderColor: 'var(--tasks)', color: 'var(--tasks)', background: 'var(--tasks-dim)' } : undefined}>
-            {showDone ? 'Hiding nothing' : 'Show done'}
+            {showDone ? 'Done shown' : 'Show done'}
           </button>
         </div>
 
-        {/* List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--ink-3)' }}>
@@ -565,7 +726,7 @@ export default function TasksPage() {
             <TaskRow key={t.id} task={t} areas={areas} projects={projects}
               onToggle={handleToggle}
               onUpdate={updateFocusTask}
-              onDelete={task => setConfirm({ title: 'Delete task?', message: `"${task.title}" will be permanently removed.`, onConfirm: () => deleteFocusTask(task.id) })}/>
+              onEdit={task => setTaskModal(task)}/>
           ))}
         </div>
       </div>
@@ -576,6 +737,15 @@ export default function TasksPage() {
       </Modal>
       <Modal isOpen={!!projectModal} onClose={() => setProjectModal(null)} title={projectModal?.initial ? 'Edit project' : 'New project'} size="sm">
         {projectModal && <ProjectForm initial={projectModal.initial} areas={areas} defaultAreaId={projectModal.defaultAreaId} onSave={saveProject} onCancel={() => setProjectModal(null)}/>}
+      </Modal>
+      <Modal isOpen={!!taskModal} onClose={() => setTaskModal(null)} title="Edit task" size="sm">
+        {taskModal && <EditTaskModal task={taskModal} areas={areas} projects={projects}
+          onSave={data => { updateFocusTask(taskModal.id, data); setTaskModal(null); toast.success('Task saved'); }}
+          onDelete={() => { const t = taskModal; setTaskModal(null); setConfirm({ title: 'Delete task?', message: `"${t.title}" will be permanently removed.`, onConfirm: () => deleteFocusTask(t.id) }); }}
+          onClose={() => setTaskModal(null)}/>}
+      </Modal>
+      <Modal isOpen={manageOpen} onClose={() => setManageOpen(false)} title="Manage areas & projects" size="md">
+        {manageOpen && <ManageAreasModal areas={areas} projects={projects} {...railHandlers} onClose={() => setManageOpen(false)}/>}
       </Modal>
       <ConfirmDialog isOpen={!!confirm} onClose={() => setConfirm(null)}
         title={confirm?.title} message={confirm?.message}

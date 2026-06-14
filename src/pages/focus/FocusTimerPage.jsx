@@ -116,10 +116,10 @@ function ManualLogModal({ areas, projects, tasks, onSave, onCancel }) {
             </select>
           </div>
         )}
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div className="field" style={{ flex: 1 }}><label>Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)}/></div>
-          <div className="field" style={{ width: 120 }}><label>Start</label><input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}/></div>
-          <div className="field" style={{ width: 110 }}><label>Minutes</label><input type="number" min={1} value={minutes} onChange={e => setMinutes(e.target.value)}/></div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div className="field" style={{ flex: '1 1 130px', minWidth: 120 }}><label>Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)}/></div>
+          <div className="field" style={{ flex: '1 1 90px', minWidth: 90 }}><label>Start</label><input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}/></div>
+          <div className="field" style={{ flex: '1 1 80px', minWidth: 80 }}><label>Minutes</label><input type="number" min={1} value={minutes} onChange={e => setMinutes(e.target.value)}/></div>
         </div>
         {candidateTasks.length > 0 && (
           <div className="field">
@@ -251,7 +251,7 @@ export default function FocusTimerPage() {
   const clockColor = status === 'running' ? 'var(--tasks)' : status === 'paused' ? 'var(--warn)' : 'var(--ink)';
 
   return (
-    <div style={{ padding: '28px 24px 48px', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100%' }}>
+    <div className="fx-page-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100%' }}>
       {/* Manual log shortcut */}
       <div style={{ width: '100%', maxWidth: 560, display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
         <button className="btn ghost sm" onClick={() => setShowManual(true)}><PencilLine size={13}/> Log past session</button>

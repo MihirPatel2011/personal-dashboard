@@ -80,16 +80,17 @@ function SessionRow({ s, areas, projects, tasks, onDelete }) {
 
   return (
     <div style={{ borderBottom: '1px solid var(--border)' }}>
-      <div onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 4px', cursor: 'pointer' }}>
+      <div onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 4px', cursor: 'pointer' }}>
         <span style={{ color: 'var(--ink-4)', flexShrink: 0 }}>{open ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</span>
-        <span style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--mono)', minWidth: 92, flexShrink: 0 }}>
+        <span style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
           {d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })} {d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
         </span>
-        {area && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 99, fontSize: 11.5, fontWeight: 600, background: area.color + '22', color: area.color, flexShrink: 0 }}>{area.icon} {area.name}</span>}
-        {project && <span style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>/ {project.name}</span>}
-        <span style={{ flex: 1 }}/>
+        <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+          {area && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 99, fontSize: 11.5, fontWeight: 600, background: area.color + '22', color: area.color, flexShrink: 0, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{area.icon} {area.name}</span>}
+          {project && <span style={{ fontSize: 11.5, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>/ {project.name}</span>}
+        </span>
         {completedCount > 0 && <span style={{ fontSize: 11.5, color: 'var(--ok)', flexShrink: 0 }}>✓ {completedCount}</span>}
-        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--tasks)', minWidth: 56, textAlign: 'right', flexShrink: 0 }}>{fmtDuration(s.durationSeconds)}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--tasks)', minWidth: 52, textAlign: 'right', flexShrink: 0 }}>{fmtDuration(s.durationSeconds)}</span>
       </div>
       {open && (
         <div style={{ padding: '4px 4px 14px 38px', fontSize: 12.5, color: 'var(--ink-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -135,9 +136,9 @@ export default function StatsPage() {
   const rangeLabels = { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days', '365d': 'Last year' };
 
   return (
-    <div style={{ padding: '20px 24px 48px' }}>
+    <div className="fx-page">
       {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div className="fx-grid-4" style={{ marginBottom: 24 }}>
         <SummaryCard icon={Clock}        label="Today's focus"  value={fmtDuration(today.seconds)} sub={`${today.sessionCount} session${today.sessionCount===1?'':'s'}`} color="var(--tasks)"/>
         <SummaryCard icon={CheckCircle2} label="Done today"      value={today.tasksDone} sub="tasks completed" color="var(--ok)"/>
         <SummaryCard icon={Timer}        label={rangeLabels[rangeKey]} value={fmtDuration(rangeTotal)} sub={`${ranged.length} sessions`} color="var(--goals)"/>
@@ -160,7 +161,7 @@ export default function StatsPage() {
       </div>
 
       {/* Time by area / project */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="fx-grid-2" style={{ marginBottom: 16 }}>
         <Panel title="Time by area"><BarList rows={byArea} total={rangeTotal}/></Panel>
         <Panel title="Time by project"><BarList rows={byProject} total={rangeTotal}/></Panel>
       </div>
