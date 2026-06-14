@@ -9,6 +9,7 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { AREA_COLORS, AREA_ICONS, FOCUS_PRIORITIES, PRIORITY_MAP } from '../../constants';
 import { isToday, isPast, fmtShortDate } from '../../utils';
+import { parseTaskInput } from '../../utils/parseTask';
 
 // ── Responsive helper ────────────────────────────────────────────────────────────
 function useIsMobile() {
@@ -382,7 +383,17 @@ function QuickAdd({ areas, projects, presetAreaId, presetProjectId, onAdd }) {
 
   function submit() {
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), areaId, projectId, priority, dueDate });
+    // Natural-language tokens in the title win over the inline pickers.
+    const parsed = parseTaskInput(title, areas);
+    const finalArea = parsed.areaId || areaId;
+    onAdd({
+      title: parsed.title.trim() || title.trim(),
+      areaId: finalArea,
+      // If parsing reassigned the area, the preset project no longer belongs.
+      projectId: parsed.areaId && parsed.areaId !== areaId ? '' : projectId,
+      priority: parsed.priority || priority,
+      dueDate: parsed.dueDate || dueDate,
+    });
     setTitle(''); setPrio(0); setDue('');
   }
 

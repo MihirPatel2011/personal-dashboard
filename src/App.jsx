@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
 import Sidebar, { MobileNav } from './components/layout/Sidebar';
+import GlobalQuickAdd from './components/focus/GlobalQuickAdd';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Goals from './pages/Goals';
@@ -88,6 +89,7 @@ function AppShell() {
         </Routes>
       </main>
       <MobileNav/>
+      <GlobalQuickAdd/>
     </div>
   );
 }
