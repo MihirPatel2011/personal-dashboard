@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, Timer, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap, ListTodo } from 'lucide-react';
+import { LayoutDashboard, Target, Timer, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap, ListTodo, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -7,9 +8,11 @@ import { isToday, isPast } from '../../utils';
 
 // ─── Mobile bottom tab bar ─────────────────────────────────────────────────────
 export function MobileNav() {
+  const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [showMore, setShowMore] = useState(false);
 
   const isActive = path => {
     if (path === '/dashboard') return pathname === '/dashboard' || pathname === '/';
@@ -17,35 +20,72 @@ export function MobileNav() {
     return pathname.startsWith(base);
   };
 
-  const tabs = [
+  const morePaths = ['/goals', '/notes', '/journal'];
+  const moreActive = morePaths.some(p => pathname.startsWith(p));
+
+  const primaryTabs = [
     { path: '/dashboard',        label: 'Home',     icon: LayoutDashboard },
-    { path: '/notes',            label: 'Notes',    icon: NotebookPen     },
-    { path: '/journal',          label: 'Journal',  icon: BookMarked      },
     { path: '/focus/tasks',      label: 'Focus',    icon: Timer           },
+    { path: '/habits',           label: 'Habits',   icon: Zap             },
     { path: '/mortgage/pipeline',label: 'Mortgage', icon: Kanban          },
   ];
 
+  const moreItems = [
+    { path: '/goals',   label: 'Goals',   icon: Target     },
+    { path: '/notes',   label: 'Notes',   icon: NotebookPen },
+    { path: '/journal', label: 'Journal', icon: BookMarked  },
+  ];
+
   return (
-    <nav className="mobile-nav" aria-label="Main navigation">
-      {tabs.map(({ path, label, icon: Icon }) => (
+    <>
+      {showMore && (
+        <div className="mobile-more-backdrop" onClick={() => setShowMore(false)}>
+          <div className="mobile-more-sheet" onClick={e => e.stopPropagation()}>
+            <div className="mobile-more-handle"/>
+            <div className="mobile-more-nav">
+              {moreItems.map(({ path, label, icon: Icon }) => (
+                <button
+                  key={path}
+                  className={`mobile-more-item${pathname.startsWith(path) ? ' active' : ''}`}
+                  onClick={() => { navigate(path); setShowMore(false); }}
+                >
+                  <Icon size={20}/>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="mobile-more-sep"/>
+            <button className="mobile-more-item" onClick={() => { toggleTheme(); }}>
+              {theme === 'dark' ? <Sun size={20}/> : <Moon size={20}/>}
+              <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+            <button className="mobile-more-item danger" onClick={logout}>
+              <LogOut size={20}/>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+      )}
+      <nav className="mobile-nav" aria-label="Main navigation">
+        {primaryTabs.map(({ path, label, icon: Icon }) => (
+          <button
+            key={path}
+            className={`mobile-nav-item${isActive(path) ? ' active' : ''}`}
+            onClick={() => navigate(path)}
+          >
+            <Icon size={22}/>
+            <span>{label}</span>
+          </button>
+        ))}
         <button
-          key={path}
-          className={`mobile-nav-item${isActive(path) ? ' active' : ''}`}
-          onClick={() => navigate(path)}
+          className={`mobile-nav-item${moreActive ? ' active' : ''}`}
+          onClick={() => setShowMore(v => !v)}
         >
-          <Icon size={22}/>
-          <span>{label}</span>
+          <MoreHorizontal size={22}/>
+          <span>More</span>
         </button>
-      ))}
-      <button
-        className="mobile-nav-item"
-        onClick={toggleTheme}
-        title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-      >
-        {theme === 'dark' ? <Sun size={22}/> : <Moon size={22}/>}
-        <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
-      </button>
-    </nav>
+      </nav>
+    </>
   );
 }
 

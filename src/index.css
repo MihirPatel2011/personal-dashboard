@@ -1476,8 +1476,9 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
   .crm-body { padding: 12px 16px !important; }
 
   /* ── CRM sub-nav tabs ── */
-  .crm-sub-nav { padding: 0 12px; }
-  .crm-sub-btn { padding: 12px 10px; font-size: 12px; }
+  .crm-sub-nav { padding: 0 12px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .crm-sub-nav::-webkit-scrollbar { display: none; }
+  .crm-sub-btn { padding: 11px 12px; font-size: 12px; flex-shrink: 0; }
 
   /* ── Pipeline status tabs ── */
   .pipeline-status-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
@@ -1489,16 +1490,126 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
   .info-val  { font-size: 14px; }
 
   /* ── Buttons: better touch targets on mobile ── */
-  .btn     { padding: 9px 16px; min-height: 40px; }
-  .btn.sm  { padding: 7px 12px; min-height: 34px; }
-  .icon-btn { width: 36px; height: 36px; }
-  .icon-btn.sm { width: 32px; height: 32px; }
+  .btn     { padding: 9px 16px; min-height: 44px; }
+  .btn.sm  { padding: 7px 12px; min-height: 36px; }
+  .icon-btn { width: 40px; height: 40px; }
+  .icon-btn.sm { width: 36px; height: 36px; }
+
+  /* ── Task check circles: bigger tap targets ── */
+  .task-item-check { width: 22px; height: 22px; }
+  .dash-task-check { width: 22px; height: 22px; }
+  .tasks-detail-check { width: 26px; height: 26px; }
+  .tasks-ci-check { width: 18px; height: 18px; }
+
+  /* ── KPI cards: tighter padding on phone ── */
+  .kpi-card { padding: 12px 12px 14px; }
+  .kpi-icon { width: 28px; height: 28px; border-radius: 8px; margin-bottom: 10px; }
+  .kpi-value { font-size: 18px; }
+  .kpi-label { font-size: 9.5px; }
+  .kpi-sub   { font-size: 10px; }
+
+  /* ── Dashboard ── */
+  .dash-greeting-text { font-size: 22px; }
+  .dash-greeting-sub  { font-size: 13px; }
+  .dash-section { padding: 12px 14px 14px; }
+  .dash-grid-2  { grid-template-columns: 1fr !important; }
+  .dash-main-grid { gap: 12px !important; }
+
+  /* ── Loan / Client grids: single column on mobile ── */
+  .loan-grid   { grid-template-columns: 1fr !important; }
+  .client-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Goals detail: reduce padding ── */
+  .goals-main { padding: 14px 16px; }
+  .metric-card { padding: 12px 14px; }
+  .metric-value { font-size: 18px; }
+  .week-grid { gap: 6px; }
+  .week-cell { padding: 8px 4px; }
+  .week-value { font-size: 13px; }
+  .week-label { font-size: 9px; }
+
+  /* ── Page header: prevent action overflow ── */
+  .page-header { flex-wrap: wrap; gap: 8px; }
+  .page-actions { gap: 6px; flex-shrink: 0; }
+
+  /* ── Journal: reduce whitespace ── */
+  .jnl-book-wrap { padding: 16px 10px 60px; }
+  .jnl-topbar    { padding: 8px 16px; }
+  .jnl-month-title { font-size: 18px; }
+  .jnl-free-body { padding: 0 14px 32px 78px; font-size: 16px; }
+  .jnl-free-body.right { padding-left: 14px; padding-right: 78px; }
+
+  /* ── Tasks proj grid: 2 cols on mobile ── */
+  .tasks-proj-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* ── CRM compliance drawer: full width ── */
+  .drawer.wide { width: 100%; }
+
+  /* ── Pipeline status tabs: prevent label squeeze ── */
+  .status-tab { font-size: 11px; padding: 5px 10px; }
 }
 
 /* slideUpSheet animation (used by drawers + modals on mobile) */
 @keyframes slideUpSheet {
   from { transform: translateY(100%); opacity: 1; }
   to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ══ MOBILE MORE SHEET ══════════════════════════════════════════ */
+.mobile-more-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0,0,0,0.45);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: fadeIn .16s var(--ease-out);
+}
+.mobile-more-sheet {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border-2);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 0 calc(56px + env(safe-area-inset-bottom, 0px) + 8px);
+  animation: slideUpSheet .24s var(--ease-out);
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.4);
+}
+.mobile-more-handle {
+  width: 36px; height: 4px;
+  border-radius: 99px;
+  background: var(--border-strong);
+  margin: 0 auto 14px;
+}
+.mobile-more-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.mobile-more-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--t), color var(--t);
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-more-item:hover, .mobile-more-item:active { background: var(--surface-2); }
+.mobile-more-item.active { color: var(--accent); font-weight: 600; }
+.mobile-more-item.danger { color: var(--danger); }
+.mobile-more-item.danger:active { background: var(--danger-dim); }
+.mobile-more-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
