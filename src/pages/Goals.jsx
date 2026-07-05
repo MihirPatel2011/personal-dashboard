@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import NumberInput from '../components/common/NumberInput';
 import {
   formatCurrency, formatNumber, pctRound,
-  tsToDateInput, dateInputToTs, fmtShortDate,
+  tsToDateInput, dateInputToTs,
   paceStatus,
 } from '../utils';
 import { GOAL_COLORS, GOAL_GLYPHS } from '../constants';
@@ -326,7 +326,7 @@ function SubGoalEditModal({ sg, onSave, onClose }) {
 
 // ── Sub-goal row — only calls callbacks, NO internal modal rendering ──────────
 // This prevents modals being trapped by ancestor overflow/transform contexts.
-function SubGoalRow({ sg, goalColor, isCur, onUpdate, onRequestLog, onRequestEdit, onRequestDelete }) {
+function SubGoalRow({ sg, goalColor, onUpdate, onRequestLog, onRequestEdit, onRequestDelete }) {
   const hasTarget=(sg.target||0)>0;
   const entries=sg.entries||[];
   const loggedAmt=entries.reduce((s,e)=>s+(Number(e.amt)||0),0);
@@ -587,7 +587,7 @@ function PeriodSection({ title, icon, periodLabel, isCurrent, isPast, canGoPrev,
         </div>
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
-        {goals.slice(0,4).map((goal,i)=>(
+        {goals.slice(0,4).map(goal=>(
           <GoalPeriodBlock key={goal.id} goal={goal} periodKey={periodKey}
             onUpdateSubGoals={sgs=>onUpdateGoalSubGoals(goal,periodKey,sgs)}
           />

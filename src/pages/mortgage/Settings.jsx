@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Edit3, Check, X, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Edit3, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useData } from '../../context/DataContext';
 import { LENDERS, LOAN_STAGES, LOAN_STATUSES } from '../../constants';

@@ -199,21 +199,6 @@ export function paceStatus(progress, target, ideal) {
   return                   { key: 'ontrack', label: 'On pace', delta };
 }
 
-export function getCycleWeeks(goal, logArr) {
-  const gp  = getGoalPeriods(goal);
-  const now = Date.now();
-  return Array.from({ length: 6 }, (_, i) => {
-    const start  = gp.cycleStart + i * WEEK_MS;
-    const end    = start + WEEK_MS;
-    const status = end <= now ? 'done' : start <= now ? 'now' : 'next';
-    const actual = logArr.filter(l => l.goalId === goal.id && l.ts >= start && l.ts < end).reduce((s, l) => s + (l.amt || 0), 0);
-    const target = goal.cycle?.target > 0 ? Math.round(goal.cycle.target / 6) : 0;
-    const ws = new Date(start), we = new Date(end - 1);
-    const range  = `${MONTHS[ws.getMonth()]} ${ws.getDate()}–${we.getDate()}`;
-    return { label: `W${i + 1}`, range, actual, target, status };
-  });
-}
-
 // ─── IDs ─────────────────────────────────────────────────────────────────────
 export function genId(prefix = 'id') {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -228,11 +213,4 @@ export function toArr(snap) {
 // ─── Misc ─────────────────────────────────────────────────────────────────────
 export function initials(name = '') {
   return name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-}
-
-export function fmtFocus(ms) {
-  const totalSecs = Math.floor(ms / 1000);
-  const mins = Math.floor(totalSecs / 60);
-  const secs = totalSecs % 60;
-  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
