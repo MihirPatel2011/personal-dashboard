@@ -16,14 +16,7 @@ export function DataProvider({ children }) {
   const [goalLog,          setGoalLog]          = useState([]);
   const [mortgageSettings, setMortgageSettings] = useState({});
   const [personalNotes,    setPersonalNotes]    = useState([]);
-  const [bujoEntries,      setBujoEntries]      = useState([]);
-  const [bujoCollections,  setBujoCollections]  = useState([]);
-  const [bujoWeeklyGoals,  setBujoWeeklyGoals]  = useState([]);
   const [followups,        setFollowups]        = useState([]);
-  const [focusAreas,       setFocusAreas]       = useState([]);
-  const [focusProjects,    setFocusProjects]    = useState([]);
-  const [focusTasks,       setFocusTasks]       = useState([]);
-  const [focusSessions,    setFocusSessions]    = useState([]);
   const [loading,          setLoading]          = useState(true);
 
   const toArr = snap => {
@@ -34,19 +27,15 @@ export function DataProvider({ children }) {
   useEffect(() => {
     if (!user) {
       setClients([]); setLoans([]); setNotes([]); setCrmTasks([]);
-      setGoals([]); setGoalLog([]); setPersonalNotes([]); setBujoEntries([]); setBujoCollections([]); setBujoWeeklyGoals([]); setFollowups([]);
-      setFocusAreas([]); setFocusProjects([]); setFocusTasks([]); setFocusSessions([]);
+      setGoals([]); setGoalLog([]); setPersonalNotes([]); setFollowups([]);
       setMortgageSettings({});
       setLoading(false);
       return;
     }
     setLoading(true);
     let count = 0;
-    const TOTAL = 16;
+    const TOTAL = 9;
     const done = () => { count++; if (count >= TOTAL) setLoading(false); };
-
-    // One-time cleanup: the old book-style Journal node is retired by the BuJo module.
-    remove(ref(db, 'journalSpreads')).catch(() => {});
 
     const u1  = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
     const u2  = onValue(ref(db, 'loans'),            s => { setLoans(toArr(s));                 done(); });
@@ -54,18 +43,11 @@ export function DataProvider({ children }) {
     const u4  = onValue(ref(db, 'tasks'),            s => { setCrmTasks(toArr(s));              done(); });
     const u5  = onValue(ref(db, 'goals'),            s => { setGoals(toArr(s));                 done(); });
     const u6  = onValue(ref(db, 'goalLog'),          s => { setGoalLog(toArr(s));               done(); });
-    const u9  = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
-    const u12 = onValue(ref(db, 'personalNotes'),    s => { setPersonalNotes(toArr(s));         done(); });
-    const u13 = onValue(ref(db, 'bujoEntries'),      s => { setBujoEntries(toArr(s));           done(); });
-    const u18 = onValue(ref(db, 'bujoCollections'),  s => { setBujoCollections(toArr(s));       done(); });
-    const u19 = onValue(ref(db, 'bujoWeeklyGoals'),  s => { setBujoWeeklyGoals(toArr(s));       done(); });
-    const u20 = onValue(ref(db, 'followups'),        s => { setFollowups(toArr(s));             done(); });
-    const u14 = onValue(ref(db, 'focusAreas'),       s => { setFocusAreas(toArr(s));            done(); });
-    const u15 = onValue(ref(db, 'focusProjects'),    s => { setFocusProjects(toArr(s));         done(); });
-    const u16 = onValue(ref(db, 'focusTasks'),       s => { setFocusTasks(toArr(s));            done(); });
-    const u17 = onValue(ref(db, 'focusSessions'),    s => { setFocusSessions(toArr(s));         done(); });
+    const u7  = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
+    const u8  = onValue(ref(db, 'personalNotes'),    s => { setPersonalNotes(toArr(s));         done(); });
+    const u9  = onValue(ref(db, 'followups'),        s => { setFollowups(toArr(s));             done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u9(); u12(); u13(); u18(); u19(); u20(); u14(); u15(); u16(); u17(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); };
   }, [user]);
 
   // ─── Clients ──────────────────────────────────────────────────────────────
@@ -172,77 +154,10 @@ export function DataProvider({ children }) {
   const updateGoalLog = useCallback(async (id, data) => update(ref(db, `goalLog/${id}`), data), []);
   const deleteGoalLog = useCallback(async id => remove(ref(db, `goalLog/${id}`)), []);
 
-  // ─── Bullet Journal: entries ────────────────────────────────────────────────
-  const addBujoEntry    = useCallback(async data => {
-    const r = push(ref(db, 'bujoEntries'));
-    await set(r, { signifiers: {}, migration: [], ...data, createdAt: Date.now(), updatedAt: Date.now() });
-    return r.key;
-  }, []);
-  const updateBujoEntry = useCallback(async (id, data) =>
-    update(ref(db, `bujoEntries/${id}`), { ...data, updatedAt: Date.now() }), []);
-  const deleteBujoEntry = useCallback(async id => remove(ref(db, `bujoEntries/${id}`)), []);
-
-  // ─── Bullet Journal: collections ────────────────────────────────────────────
-  const addBujoCollection    = useCallback(async data => {
-    const r = push(ref(db, 'bujoCollections'));
-    await set(r, { order: Date.now(), ...data, createdAt: Date.now(), updatedAt: Date.now() });
-    return r.key;
-  }, []);
-  const updateBujoCollection = useCallback(async (id, data) =>
-    update(ref(db, `bujoCollections/${id}`), { ...data, updatedAt: Date.now() }), []);
-  const deleteBujoCollection = useCallback(async (id, entries = []) => {
-    // Cascade: remove all entries that live on this collection page.
-    for (const e of entries.filter(x => x.logType === 'collection' && x.logKey === id)) {
-      await remove(ref(db, `bujoEntries/${e.id}`));
-    }
-    await remove(ref(db, `bujoCollections/${id}`));
-  }, []);
-
-  // ─── Bullet Journal: weekly goals ───────────────────────────────────────────
-  const addBujoWeeklyGoal    = useCallback(async data => {
-    const r = push(ref(db, 'bujoWeeklyGoals'));
-    await set(r, { done: false, order: Date.now(), ...data, createdAt: Date.now(), updatedAt: Date.now() });
-    return r.key;
-  }, []);
-  const updateBujoWeeklyGoal = useCallback(async (id, data) =>
-    update(ref(db, `bujoWeeklyGoals/${id}`), { ...data, updatedAt: Date.now() }), []);
-  const deleteBujoWeeklyGoal = useCallback(async id => remove(ref(db, `bujoWeeklyGoals/${id}`)), []);
-
-  // ─── Focus: Areas ───────────────────────────────────────────────────────────
-  const addFocusArea    = useCallback(async data => { const r = push(ref(db, 'focusAreas')); await set(r, { archived: false, order: Date.now(), ...data, createdAt: Date.now() }); return r.key; }, []);
-  const updateFocusArea = useCallback(async (id, data) => update(ref(db, `focusAreas/${id}`), data), []);
-  const deleteFocusArea = useCallback(async id => {
-    // Cascade: remove this area's projects and detach its tasks (keep the tasks).
-    for (const p of focusProjects.filter(p => p.areaId === id)) await remove(ref(db, `focusProjects/${p.id}`));
-    for (const t of focusTasks.filter(t => t.areaId === id))    await update(ref(db, `focusTasks/${t.id}`), { areaId: '', projectId: '' });
-    await remove(ref(db, `focusAreas/${id}`));
-  }, [focusProjects, focusTasks]);
-
-  // ─── Focus: Projects ──────────────────────────────────────────────────────────
-  const addFocusProject    = useCallback(async data => { const r = push(ref(db, 'focusProjects')); await set(r, { archived: false, ...data, createdAt: Date.now() }); return r.key; }, []);
-  const updateFocusProject = useCallback(async (id, data) => update(ref(db, `focusProjects/${id}`), data), []);
-  const deleteFocusProject = useCallback(async id => {
-    for (const t of focusTasks.filter(t => t.projectId === id)) await update(ref(db, `focusTasks/${t.id}`), { projectId: '' });
-    await remove(ref(db, `focusProjects/${id}`));
-  }, [focusTasks]);
-
-  // ─── Focus: Tasks ─────────────────────────────────────────────────────────────
-  const addFocusTask    = useCallback(async data => { const r = push(ref(db, 'focusTasks')); await set(r, { done: false, priority: 0, order: Date.now(), ...data, createdAt: Date.now() }); return r.key; }, []);
-  const updateFocusTask = useCallback(async (id, data) => update(ref(db, `focusTasks/${id}`), data), []);
-  const deleteFocusTask = useCallback(async id => remove(ref(db, `focusTasks/${id}`)), []);
-  const toggleFocusTask = useCallback(async (id, done) =>
-    update(ref(db, `focusTasks/${id}`), { done, completedAt: done ? Date.now() : null }), []);
-
-  // ─── Focus: Sessions (focus-timer logs) ────────────────────────────────────────
-  const addFocusSession    = useCallback(async data => { const r = push(ref(db, 'focusSessions')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
-  const updateFocusSession = useCallback(async (id, data) => update(ref(db, `focusSessions/${id}`), data), []);
-  const deleteFocusSession = useCallback(async id => remove(ref(db, `focusSessions/${id}`)), []);
-
   return (
     <DataContext.Provider value={{
       clients, loans, notes, crmTasks, followups,
-      goals, goalLog, personalNotes, bujoEntries, bujoCollections, bujoWeeklyGoals,
-      focusAreas, focusProjects, focusTasks, focusSessions,
+      goals, goalLog, personalNotes,
       mortgageSettings, loading,
       addClient,    updateClient,    deleteClient,
       addLoan,      updateLoan,      deleteLoan,
@@ -253,13 +168,6 @@ export function DataProvider({ children }) {
       addGoal,      updateGoal,      deleteGoal,
       addGoalLog,   updateGoalLog,   deleteGoalLog,
       addPersonalNote, updatePersonalNote, deletePersonalNote,
-      addBujoEntry,       updateBujoEntry,       deleteBujoEntry,
-      addBujoCollection,  updateBujoCollection,  deleteBujoCollection,
-      addBujoWeeklyGoal,  updateBujoWeeklyGoal,  deleteBujoWeeklyGoal,
-      addFocusArea,    updateFocusArea,    deleteFocusArea,
-      addFocusProject, updateFocusProject, deleteFocusProject,
-      addFocusTask,    updateFocusTask,    deleteFocusTask, toggleFocusTask,
-      addFocusSession, updateFocusSession, deleteFocusSession,
     }}>
       {children}
     </DataContext.Provider>

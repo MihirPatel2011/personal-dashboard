@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, Timer, Kanban, Users, Reply, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap, ListTodo, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Target, Kanban, Users, Reply, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, ListTodo, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -21,20 +21,17 @@ export function MobileNav() {
     return pathname.startsWith(base);
   };
 
-  const morePaths = ['/goals', '/notes', '/journal'];
+  const morePaths = ['/notes'];
   const moreActive = morePaths.some(p => pathname.startsWith(p));
 
   const primaryTabs = [
-    { path: '/dashboard',        label: 'Home',     icon: LayoutDashboard },
-    { path: '/focus/tasks',      label: 'Focus',    icon: Timer           },
-    { path: '/habits',           label: 'Habits',   icon: Zap             },
-    { path: '/mortgage/pipeline',label: 'Mortgage', icon: Kanban          },
+    { path: '/dashboard',         label: 'Home',     icon: LayoutDashboard },
+    { path: '/goals',             label: 'Goals',    icon: Target          },
+    { path: '/mortgage/pipeline', label: 'Mortgage', icon: Kanban          },
   ];
 
   const moreItems = [
-    { path: '/goals',   label: 'Goals',   icon: Target     },
-    { path: '/notes',   label: 'Notes',   icon: NotebookPen },
-    { path: '/journal', label: 'Bullet Journal', icon: BookMarked  },
+    { path: '/notes', label: 'Notes & Ideas', icon: NotebookPen },
   ];
 
   return (
@@ -129,34 +126,11 @@ export default function Sidebar() {
           Goals Tracker
         </button>
 
-        {/* Habits */}
-        <div className="sidebar-section-label">Wellness</div>
-        <button className={`nav-item${active('/habits') ? ' active' : ''}`} onClick={() => go('/habits')}>
-          <span className="nav-icon habits-icon"><Zap size={15}/></span>
-          Habits
-        </button>
-
-        {/* Focus — tasks, timer, stats (native) */}
-        <div className="sidebar-section-label">Focus</div>
-        <button className={`nav-item${active('/focus/tasks') ? ' active' : ''}`} onClick={() => go('/focus/tasks')}>
-          <span className="nav-icon tasks-icon"><ListTodo size={15}/></span>
-          Tasks
-        </button>
-        <button className={`nav-item${active('/focus/timer') ? ' active' : ''}`} onClick={() => go('/focus/timer')}>
-          <span className="nav-icon tasks-icon"><Timer size={15}/></span>
-          Focus Timer
-        </button>
-        <button className={`nav-item${active('/focus/stats') ? ' active' : ''}`} onClick={() => go('/focus/stats')}>
-          <span className="nav-icon tasks-icon"><BarChart3 size={15}/></span>
-          Stats
-        </button>
+        {/* Capture */}
+        <div className="sidebar-section-label">Capture</div>
         <button className={`nav-item${active('/notes') ? ' active' : ''}`} onClick={() => go('/notes')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><NotebookPen size={15}/></span>
           Notes &amp; Ideas
-        </button>
-        <button className={`nav-item${active('/journal') ? ' active' : ''}`} onClick={() => go('/journal/daily')}>
-          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><BookMarked size={15}/></span>
-          Bullet Journal
         </button>
 
         {/* Mortgage */}
@@ -173,6 +147,11 @@ export default function Sidebar() {
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><Reply size={15}/></span>
           Follow-ups
           {followupsDue > 0 && <span className="nav-badge">{followupsDue}</span>}
+        </button>
+        <button className={`nav-item${active('/mortgage/tasks') ? ' active' : ''}`} onClick={() => go('/mortgage/tasks')}>
+          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><ListTodo size={15}/></span>
+          Tasks
+          {overdueCrm > 0 && <span className="nav-badge">{overdueCrm}</span>}
         </button>
         <button className={`nav-item${active('/mortgage/notes') ? ' active' : ''}`} onClick={() => go('/mortgage/notes')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><FileText size={15}/></span>

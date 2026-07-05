@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Timer, TrendingUp, AlertCircle, ArrowRight, Plus } from 'lucide-react';
+import { Target, TrendingUp, AlertCircle, ArrowRight, Plus } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { formatCurrency, fmtShortDate, getGreeting, getDayLabel, pctRound, getGoalActuals, getGoalPeriods, paceStatus, getGoalIdeal, isToday, isPast, isWithinDays } from '../utils';
-import { fmtDuration, todaySummary } from '../utils/focusStats';
-import { STAGE_COLORS, ACTIVE_STAGES, ACTIVE_STAGES as ACTIVE, PRIORITY_MAP } from '../constants';
+import { formatCurrency, getGreeting, getDayLabel, pctRound, getGoalActuals, paceStatus, getGoalIdeal, isToday, isPast, isWithinDays } from '../utils';
+import { STAGE_COLORS, ACTIVE_STAGES } from '../constants';
 import { StageBadge } from '../components/common/Badge';
-import HabitsWidget from '../components/habits/HabitsWidget';
 
 function KpiCard({ icon: Icon, label, value, sub, color, soft, onClick }) {
   return (
@@ -23,20 +21,7 @@ function KpiCard({ icon: Icon, label, value, sub, color, soft, onClick }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { goals, goalLog, loans, clients, notes, crmTasks, focusTasks, focusSessions, focusAreas, loading } = useData();
-
-  // ── Focus metrics ────────────────────────────────────────────────────────────
-  const focusToday   = todaySummary(focusSessions, focusTasks);
-  const openTasks    = focusTasks.filter(t => !t.done);
-  const overdueTasks = openTasks.filter(t => isPast(t.dueDate) && !isToday(t.dueDate)).length;
-  const upcomingTasks = [...openTasks]
-    .sort((a, b) => {
-      const av = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-      const bv = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-      return av - bv || (b.priority || 0) - (a.priority || 0);
-    })
-    .slice(0, 5);
-  const areaById = Object.fromEntries(focusAreas.map(a => [a.id, a]));
+  const { goals, goalLog, loans, clients, notes, crmTasks, loading } = useData();
 
   // ── Goals metrics ──────────────────────────────────────────────────────────
   const activeGoals = goals.filter(g => !g.status || g.status === 'active');
@@ -81,9 +66,6 @@ export default function Dashboard() {
       <div className="kpi-grid" style={{ marginBottom: 32 }}>
         <KpiCard icon={Target}      label="Goals on Track"    value={`${goalsOnTrack}/${activeGoals.length}`}
           color="var(--goals)" soft="var(--goals-dim)" onClick={() => navigate('/goals')}/>
-        <KpiCard icon={Timer} label="Focus Today" value={fmtDuration(focusToday.seconds)}
-          sub={`${focusToday.tasksDone} tasks done · ${openTasks.length} open`}
-          color="var(--tasks)" soft="var(--tasks-dim)" onClick={() => navigate('/focus/timer')}/>
         <KpiCard icon={TrendingUp}  label="Pipeline Value"    value={formatCurrency(pipelineValue, true)}
           sub={`${activeLoans.length} active loans`}
           color="var(--mortgage)" soft="var(--mortgage-dim)" onClick={() => navigate('/mortgage/pipeline')}/>
@@ -93,13 +75,8 @@ export default function Dashboard() {
           onClick={() => navigate('/mortgage/tasks')}/>
       </div>
 
-      {/* Habits widget — full width above the 3-column grid */}
-      <div style={{ marginBottom: 20 }}>
-        <HabitsWidget/>
-      </div>
-
-      {/* 3-column content */}
-      <div className="dash-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+      {/* 2-column content (interim — rebuilt in dashboard overhaul Task 6) */}
+      <div className="dash-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
         {/* Goals column */}
         <div className="dash-section">
@@ -142,68 +119,6 @@ export default function Dashboard() {
           </div>
           <button className="btn ghost sm" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={() => navigate('/goals')}>
             <Plus size={13}/> Add Goal
-          </button>
-        </div>
-
-        {/* Focus column — native tasks + today's focus */}
-        <div className="dash-section">
-          <div className="dash-section-header">
-            <div className="dash-section-title">
-              <span className="section-pip" style={{ background: 'var(--tasks)' }}/>
-              <span style={{ color: 'var(--tasks)' }}>Focus</span>
-            </div>
-            <button className="btn ghost sm" onClick={() => navigate('/focus/tasks')} style={{ gap: 4 }}>
-              View all <ArrowRight size={12}/>
-            </button>
-          </div>
-
-          {/* Today's focus summary */}
-          <div
-            onClick={() => navigate('/focus/timer')}
-            style={{ cursor: 'pointer', padding: '14px 16px', borderRadius: 'var(--r)', border: '1px solid var(--border)', background: 'var(--tasks-dim)', marginBottom: 12 }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--tasks)', letterSpacing: '-.03em', lineHeight: 1 }}>{fmtDuration(focusToday.seconds)}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>focused today</div>
-              </div>
-              <div style={{ width: 1, height: 30, background: 'var(--border-2)' }}/>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ok)', letterSpacing: '-.03em', lineHeight: 1 }}>{focusToday.tasksDone}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>tasks done</div>
-              </div>
-              <div style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: 'var(--tasks)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Timer size={14}/> Start
-              </div>
-            </div>
-          </div>
-
-          {/* Upcoming tasks */}
-          {upcomingTasks.length === 0 ? (
-            <div style={{ color: 'var(--ink-3)', fontSize: 13, padding: '16px 0', textAlign: 'center' }}>
-              No open tasks. <span style={{ color: 'var(--tasks)', cursor: 'pointer' }} onClick={() => navigate('/focus/tasks')}>Add one →</span>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {overdueTasks > 0 && (
-                <div style={{ fontSize: 11, color: 'var(--danger)', fontWeight: 600, marginBottom: 4 }}>{overdueTasks} overdue</div>
-              )}
-              {upcomingTasks.map(t => {
-                const area = areaById[t.areaId];
-                const p = PRIORITY_MAP[t.priority];
-                const overdue = isPast(t.dueDate) && !isToday(t.dueDate);
-                return (
-                  <div key={t.id} className="dash-task-row" onClick={() => navigate('/focus/tasks')}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: p ? p.color : (area ? area.color : 'var(--border-strong)') }}/>
-                    <span className="dash-task-title" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
-                    {t.dueDate && <span style={{ fontSize: 10.5, color: overdue ? 'var(--danger)' : isToday(t.dueDate) ? 'var(--warn)' : 'var(--ink-3)', flexShrink: 0 }}>{isToday(t.dueDate) ? 'Today' : fmtShortDate(t.dueDate)}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <button className="btn ghost sm" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={() => navigate('/focus/tasks')}>
-            <Plus size={13}/> Add Task
           </button>
         </div>
 
