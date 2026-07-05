@@ -7,6 +7,7 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { StageBadge } from '../../components/common/Badge';
 import EmptyState from '../../components/common/EmptyState';
+import NumberInput from '../../components/common/NumberInput';
 import { LOAN_STAGES, LOAN_STATUSES, OBJECTIVES, LENDERS, REFERRERS, STAGE_COLORS, ACTIVE_STAGES } from '../../constants';
 import { formatCurrency, fmtDate, fmtRelative } from '../../utils';
 import { progress as complianceProgress, stageBlockedBy, blockingItems } from '../../utils/crmCompliance';
@@ -112,7 +113,7 @@ function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose })
           </div>
           <div className="field">
             <label>Loan Value ($)</label>
-            <input type="number" value={f.value} onChange={e => sf('value', e.target.value)} placeholder="500000"/>
+            <NumberInput value={f.value} onChange={v => sf('value', v)} placeholder="500,000"/>
           </div>
         </div>
         <div className="form-grid form-2">
@@ -149,7 +150,7 @@ function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose })
         <div className="form-grid form-2">
           <div className="field">
             <label>Commission ($)</label>
-            <input type="number" value={f.comms} onChange={e => sf('comms', e.target.value)} placeholder="2750"/>
+            <NumberInput value={f.comms} onChange={v => sf('comms', v)} placeholder="2,750"/>
           </div>
           <div className="field">
             <label>Commission Paid Date</label>
