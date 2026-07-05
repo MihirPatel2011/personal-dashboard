@@ -2469,3 +2469,35 @@ html[data-theme="light"] .bujo-migrate-fwd-date { color-scheme: light; }
 /* Comment row delete reveal */
 .fu-comment .fu-comment-del { opacity: 0; transition: opacity var(--t); }
 .fu-comment:hover .fu-comment-del { opacity: .7; }
+
+/* ─── Dashboard: Today list ─────────────────────────────────────────────── */
+.today-list { display: flex; flex-direction: column; gap: 6px; }
+.today-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r); cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.today-row:hover { border-color: var(--border-strong); }
+.today-row.overdue { border-color: var(--danger-dim); }
+.today-kind {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; padding: 2px 8px; border-radius: 99px; flex-shrink: 0;
+}
+
+/* ─── Dashboard: AM/PM check-in ─────────────────────────────────────────── */
+.checkin-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.checkin-pill {
+  display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+  border-radius: 99px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--ink-3); font-size: 12.5px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: background .15s, border-color .15s, color .15s;
+}
+.checkin-pill:hover { border-color: var(--border-strong); }
+.checkin-pill.done { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
+.checkin-days { display: flex; gap: 4px; align-items: center; margin-left: 2px; }
+.checkin-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--border-strong); }
+.checkin-dot.half { border-color: var(--accent); background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); }
+.checkin-dot.full { border-color: var(--accent); background: var(--accent); }
+.checkin-dot.today { outline: 2px solid var(--accent-dim); outline-offset: 1px; }
+.checkin-streak { display: flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--warn); }
