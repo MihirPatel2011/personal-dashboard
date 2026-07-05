@@ -17,6 +17,7 @@ export function DataProvider({ children }) {
   const [mortgageSettings, setMortgageSettings] = useState({});
   const [personalNotes,    setPersonalNotes]    = useState([]);
   const [followups,        setFollowups]        = useState([]);
+  const [checkins,         setCheckins]         = useState({});   // { 'YYYY-MM-DD': { am: ts|null, pm: ts|null } }
   const [loading,          setLoading]          = useState(true);
 
   const toArr = snap => {
@@ -28,13 +29,14 @@ export function DataProvider({ children }) {
     if (!user) {
       setClients([]); setLoans([]); setNotes([]); setCrmTasks([]);
       setGoals([]); setGoalLog([]); setPersonalNotes([]); setFollowups([]);
+      setCheckins({});
       setMortgageSettings({});
       setLoading(false);
       return;
     }
     setLoading(true);
     let count = 0;
-    const TOTAL = 9;
+    const TOTAL = 10;
     const done = () => { count++; if (count >= TOTAL) setLoading(false); };
 
     const u1  = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
@@ -46,8 +48,9 @@ export function DataProvider({ children }) {
     const u7  = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
     const u8  = onValue(ref(db, 'personalNotes'),    s => { setPersonalNotes(toArr(s));         done(); });
     const u9  = onValue(ref(db, 'followups'),        s => { setFollowups(toArr(s));             done(); });
+    const u10 = onValue(ref(db, 'checkins'),         s => { setCheckins(s.val() || {});         done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); };
   }, [user]);
 
   // ─── Clients ──────────────────────────────────────────────────────────────
@@ -146,6 +149,11 @@ export function DataProvider({ children }) {
     await set(ref(db, `mortgageSettings/${section}`), arr);
   }, []);
 
+  // ─── Daily review check-ins ───────────────────────────────────────────────
+  // value=true stamps now; value=false clears (mis-tap undo).
+  const setCheckin = useCallback(async (dateKey, part, value) =>
+    set(ref(db, `checkins/${dateKey}/${part}`), value ? Date.now() : null), []);
+
   // ─── Goals ───────────────────────────────────────────────────────────────
   const addGoal       = useCallback(async data => { const r = push(ref(db, 'goals')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
   const updateGoal    = useCallback(async (id, data) => update(ref(db, `goals/${id}`), data), []);
@@ -157,7 +165,7 @@ export function DataProvider({ children }) {
   return (
     <DataContext.Provider value={{
       clients, loans, notes, crmTasks, followups,
-      goals, goalLog, personalNotes,
+      goals, goalLog, personalNotes, checkins,
       mortgageSettings, loading,
       addClient,    updateClient,    deleteClient,
       addLoan,      updateLoan,      deleteLoan,
@@ -168,6 +176,7 @@ export function DataProvider({ children }) {
       addGoal,      updateGoal,      deleteGoal,
       addGoalLog,   updateGoalLog,   deleteGoalLog,
       addPersonalNote, updatePersonalNote, deletePersonalNote,
+      setCheckin,
     }}>
       {children}
     </DataContext.Provider>
