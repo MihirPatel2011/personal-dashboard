@@ -33,7 +33,8 @@ export default function Dashboard() {
   // ── Today action list: due/overdue CRM tasks + follow-ups on me ────────────
   const openCrm  = crmTasks.filter(t => !['Done', 'Cancelled'].includes(t.status));
   const dueTasks = openCrm.filter(t => t.dueDate && (isPast(t.dueDate) || isToday(t.dueDate)));
-  const dueFups  = followups.filter(actionNeeded);
+  // Orphaned follow-ups (deleted client) don't count — matches the Follow-ups page.
+  const dueFups  = followups.filter(f => clientMap[f.clientId] && actionNeeded(f));
   const dueVal   = x => x.due ? new Date(x.due).getTime() : Number.MAX_SAFE_INTEGER;
   const todayItems = [
     ...dueTasks.map(t => ({

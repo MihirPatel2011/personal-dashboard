@@ -66,19 +66,20 @@ function ClientForm({ client, onSave, onClose }) {
 }
 
 // ─── Quick Note Form (modal, opened from within client drawer) ─────────────────
-function QuickNoteForm({ clientId, clients, onSave, onClose }) {
+function QuickNoteForm({ note, clientId, clients, onSave, onClose }) {
+  const isEdit = !!note;
   const [f, setF] = useState({
-    clientId: clientId || '',
-    title:    '',
-    channel:  '',
-    type:     '',
-    date:     '',
-    body:     '',
+    clientId: note?.clientId || clientId || '',
+    title:    note?.title    || '',
+    channel:  note?.channel  || '',
+    type:     note?.type     || '',
+    date:     note?.date     || '',
+    body:     note?.body     || '',
   });
   const sf = (k, v) => setF(p => ({ ...p, [k]: v }));
 
   return (
-    <Modal isOpen={true} onClose={onClose} title="Add Note" size="md">
+    <Modal isOpen={true} onClose={onClose} title={isEdit ? 'Edit Note' : 'Add Note'} size="md">
       <div className="modal-body">
         <div className="form-grid form-2">
           <div className="field">
@@ -121,7 +122,7 @@ function QuickNoteForm({ clientId, clients, onSave, onClose }) {
       <div className="modal-foot">
         <button className="btn ghost" onClick={onClose}>Cancel</button>
         <button className="btn accent" disabled={!f.title.trim() || !f.body.trim()} onClick={() => onSave(f)}>
-          Add Note
+          {isEdit ? 'Save Changes' : 'Add Note'}
         </button>
       </div>
     </Modal>
@@ -537,6 +538,7 @@ export default function Clients() {
       {/* ── Quick Note Form Modal ── */}
       {showNoteForm && (
         <QuickNoteForm
+          note={editNote}
           clientId={noteClientId}
           clients={clients}
           onSave={handleNoteSave}
@@ -548,7 +550,7 @@ export default function Clients() {
       <ConfirmDialog
         isOpen={!!delClient} onClose={() => setDelClient(null)}
         onConfirm={() => handleDelete(delClient?.id)}
-        title="Delete Client?" message={`Delete "${delClient?.name}"? This won't delete their loans.`}
+        title="Delete Client?" message={`Delete "${delClient?.name}"? This also removes their loans, notes, tasks and follow-ups.`}
         confirmLabel="Delete Client"
       />
       <ConfirmDialog

@@ -4,7 +4,7 @@ import {
   LineChart, Line, CartesianGrid, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { useData } from '../../context/DataContext';
-import { formatCurrency, fmtShortDate, isThisYear, isThisMonth } from '../../utils';
+import { formatCurrency, isThisYear, isThisMonth } from '../../utils';
 import { ACTIVE_STAGES } from '../../constants';
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

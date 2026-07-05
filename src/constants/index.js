@@ -26,13 +26,6 @@ export const REFERRERS = [
   'Baljinder Singh', 'Vipul - Friend', 'Existing',
 ];
 
-export const CLIENT_TYPES = ['Lead', 'Active', 'Settled', 'Returning'];
-export const NOTE_CHANNELS = ['Call', 'Email', 'In-person', 'SMS', 'Other'];
-export const NOTE_TYPES = ['General', 'Pre-app', 'Follow-up', 'Compliance'];
-export const TASK_PRIORITIES = ['High', 'Medium', 'Low'];
-export const TASK_STATUSES = ['To do', 'In progress', 'Done', 'Cancelled'];
-export const TASK_CATEGORIES = ['Chase docs', 'Follow-up', 'Compliance', 'Admin'];
-
 export const ACTIVE_STAGES = [
   'New Client', 'Opt. & Servicing', 'Collection', 'Prepare App.', 'Audit Checklist',
   'CPR Signing', 'App. Signing', 'Lodged', 'Conditional', 'Pre-approval',

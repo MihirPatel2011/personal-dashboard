@@ -11,6 +11,7 @@ export function StageBadge({ stage }) {
 
 export function PriorityBadge({ priority }) {
   const map = {
+    Urgent: { bg: 'rgba(220,38,38,0.20)',  text: '#DC2626' },
     High:   { bg: 'rgba(239,68,68,0.14)',  text: '#EF4444' },
     Medium: { bg: 'rgba(245,158,11,0.14)', text: '#F59E0B' },
     Low:    { bg: 'rgba(34,197,94,0.14)',  text: '#22C55E' },
@@ -19,21 +20,6 @@ export function PriorityBadge({ priority }) {
   return (
     <span style={{ background: c.bg, color: c.text, display: 'inline-flex', padding: '2px 8px', borderRadius: 99, fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
       {priority}
-    </span>
-  );
-}
-
-export function StatusBadge({ status }) {
-  const map = {
-    'To do':      { bg: 'var(--surface-3)',           text: 'var(--ink-3)' },
-    'In progress':{ bg: 'rgba(96,165,250,0.14)',      text: '#60A5FA'       },
-    Done:         { bg: 'rgba(34,197,94,0.14)',       text: '#22C55E'       },
-    Cancelled:    { bg: 'rgba(239,68,68,0.14)',       text: '#EF4444'       },
-  };
-  const c = map[status] || { bg: 'var(--surface-3)', text: 'var(--ink-3)' };
-  return (
-    <span style={{ background: c.bg, color: c.text, display: 'inline-flex', padding: '2px 8px', borderRadius: 99, fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
-      {status}
     </span>
   );
 }

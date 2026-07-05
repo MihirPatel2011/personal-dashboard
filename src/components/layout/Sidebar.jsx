@@ -89,18 +89,19 @@ export function MobileNav() {
 
 export default function Sidebar() {
   const { logout } = useAuth();
-  const { crmTasks, followups, loading } = useData();
+  const { crmTasks, followups, clients, loading } = useData();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const go = path => navigate(path);
   const active = path => pathname === path || pathname.startsWith(path + '/');
 
-  // Badges
+  // Badges — match the page logic: orphaned follow-ups (deleted client) don't count.
+  const clientIds  = new Set(clients.map(c => c.id));
   const overdueCrm = crmTasks.filter(t =>
     !['Done','Cancelled'].includes(t.status) && isPast(t.dueDate) && !isToday(t.dueDate)
   ).length;
-  const followupsDue = followups.filter(actionNeeded).length;
+  const followupsDue = followups.filter(f => clientIds.has(f.clientId) && actionNeeded(f)).length;
 
   return (
     <aside className="sidebar">
