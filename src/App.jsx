@@ -10,12 +10,19 @@ import Goals from './pages/Goals';
 import MortgageLayout from './pages/mortgage/MortgageLayout';
 import Pipeline from './pages/mortgage/Pipeline';
 import Clients from './pages/mortgage/Clients';
+import Followups from './pages/mortgage/Followups';
 import Notes from './pages/mortgage/Notes';
 import CRMTasks from './pages/mortgage/CRMTasks';
 import Performance from './pages/mortgage/Performance';
 import Settings from './pages/mortgage/Settings';
 import PersonalNotes from './pages/PersonalNotes';
-import Journal from './pages/Journal';
+import BujoLayout from './pages/bujo/BujoLayout';
+import IndexPage from './pages/bujo/IndexPage';
+import FutureLog from './pages/bujo/FutureLog';
+import MonthlyLog from './pages/bujo/MonthlyLog';
+import DailyLog from './pages/bujo/DailyLog';
+import Collections from './pages/bujo/Collections';
+import BujoFocusTimer from './pages/bujo/FocusTimer';
 import Habits from './pages/Habits';
 import FocusLayout from './pages/focus/FocusLayout';
 import TasksPage from './pages/focus/TasksPage';
@@ -68,7 +75,15 @@ function AppShell() {
           <Route path="/dashboard"           element={<Dashboard/>}/>
           <Route path="/goals"               element={<Goals/>}/>
           <Route path="/notes"               element={<PersonalNotes/>}/>
-          <Route path="/journal"             element={<Journal/>}/>
+          <Route path="/journal"             element={<BujoLayout/>}>
+            <Route index                     element={<Navigate to="/journal/daily" replace/>}/>
+            <Route path="index"              element={<IndexPage/>}/>
+            <Route path="future"             element={<FutureLog/>}/>
+            <Route path="monthly"            element={<MonthlyLog/>}/>
+            <Route path="daily"              element={<DailyLog/>}/>
+            <Route path="focus"              element={<BujoFocusTimer/>}/>
+            <Route path="collections"        element={<Collections/>}/>
+          </Route>
           <Route path="/habits"              element={<Habits/>}/>
           <Route path="/focus"               element={<FocusLayout/>}>
             <Route index                     element={<Navigate to="/focus/tasks" replace/>}/>
@@ -80,6 +95,7 @@ function AppShell() {
             <Route index                     element={<Navigate to="/mortgage/pipeline" replace/>}/>
             <Route path="pipeline"           element={<Pipeline/>}/>
             <Route path="clients"            element={<Clients/>}/>
+            <Route path="followups"          element={<Followups/>}/>
             <Route path="notes"              element={<Notes/>}/>
             <Route path="tasks"              element={<CRMTasks/>}/>
             <Route path="performance"        element={<Performance/>}/>

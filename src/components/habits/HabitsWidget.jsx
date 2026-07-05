@@ -159,7 +159,7 @@ export default function HabitsWidget() {
                 {habit.type === 'count' || habit.type === 'duration' ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                     <button onClick={e => handleUpdateCount(e, habit, -1)} style={{
-                      width: 18, height: 18, borderRadius: 4, border: '1px solid var(--border)',
+                      width: 22, height: 22, borderRadius: 4, border: '1px solid var(--border)',
                       background: 'var(--surface-2)', color: 'var(--ink-3)', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, lineHeight: 1,
                     }}>−</button>
@@ -167,7 +167,7 @@ export default function HabitsWidget() {
                       {val}{habit.type === 'duration' ? 'm' : ''}
                     </span>
                     <button onClick={e => handleUpdateCount(e, habit, habit.type === 'duration' ? 5 : 1)} style={{
-                      width: 18, height: 18, borderRadius: 4,
+                      width: 22, height: 22, borderRadius: 4,
                       border: `1px solid ${success ? (habit.color || 'var(--accent)') : 'var(--border)'}`,
                       background: success ? ((habit.color || '#00C896') + '22') : 'var(--surface-2)',
                       color: success ? (habit.color || 'var(--accent)') : 'var(--ink-3)',
@@ -176,7 +176,7 @@ export default function HabitsWidget() {
                   </div>
                 ) : (
                   <button onClick={e => handleToggle(e, habit)} style={{
-                    width: 20, height: 20, borderRadius: '50%',
+                    width: 26, height: 26, borderRadius: '50%',
                     border: `2px solid ${success ? (habit.color || 'var(--accent)') : 'var(--border-strong)'}`,
                     background: success ? (habit.color || 'var(--accent)') : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',

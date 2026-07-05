@@ -359,7 +359,7 @@ function SubGoalRow({ sg, goalColor, isCur, onUpdate, onRequestLog, onRequestEdi
           </div>
         ):(
           <button onClick={()=>onUpdate({checked:!sg.checked})} style={{
-            width:18,height:18,borderRadius:4,flexShrink:0,
+            width:22,height:22,borderRadius:4,flexShrink:0,
             border:`1.5px solid ${isDone?'var(--ok)':'var(--border-strong)'}`,
             background:isDone?'var(--ok)':'transparent',
             display:'flex',alignItems:'center',justifyContent:'center',
@@ -518,7 +518,7 @@ function GoalPeriodBlock({ goal, periodKey, onUpdateSubGoals }) {
         {/* Add form */}
         {adding&&(
           <div style={{padding:'10px 14px',borderTop:'1px solid var(--border)',background:'var(--surface-2)',display:'flex',flexDirection:'column',gap:8,borderRadius:'0 0 var(--r-lg) var(--r-lg)'}}>
-            <div style={{display:'flex',gap:8}}>
+            <div className="goal-add-inputs" style={{display:'flex',gap:8}}>
               <input autoFocus value={newTitle} onChange={e=>setNewTitle(e.target.value)}
                 placeholder="e.g. Close 5 deals, Run 3× per week…"
                 onKeyDown={e=>{if(e.key==='Enter')handleAdd();if(e.key==='Escape')setAdding(false);}}
@@ -570,14 +570,14 @@ function PeriodSection({ title, icon, periodLabel, isCurrent, isPast, canGoPrev,
                          onPrev, onNext, goals, periodKey, onUpdateGoalSubGoals }) {
   return (
     <div style={{marginBottom:40}}>
-      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
+      <div className="goals-period-nav-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
         <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',color:'var(--goals)',whiteSpace:'nowrap'}}>
           {icon} {title}
         </div>
         <div style={{flex:1,height:1,background:'var(--border)'}}/>
         <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
           <button className="icon-btn sm" onClick={onPrev} disabled={!canGoPrev}><ChevronLeft size={13}/></button>
-          <div style={{display:'flex',alignItems:'center',gap:8,minWidth:200,justifyContent:'center'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0,justifyContent:'center'}}>
             <span style={{fontSize:13,fontWeight:600,color:'var(--ink)'}}>{periodLabel}</span>
             {isCurrent&&<span style={{fontSize:9.5,fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',background:'var(--accent-dim)',color:'var(--accent)',padding:'2px 7px',borderRadius:99,border:'1px solid var(--accent-border)'}}>Now</span>}
             {isPast&&!isCurrent&&<span style={{fontSize:9.5,color:'var(--ink-4)',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Past</span>}
@@ -932,7 +932,7 @@ export default function Goals() {
               <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',color:'var(--goals)',marginBottom:14}}>
                 📊 2026 Yearly Goals
               </div>
-              <div style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(activeGoals.length+(atMax?0:1),4)},1fr)`,gap:16,alignItems:'start'}}>
+              <div className="goals-yearly-grid" style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(activeGoals.length+(atMax?0:1),4)},1fr)`,gap:16,alignItems:'start'}}>
                 {activeGoals.slice(0,4).map(g=>(
                   <YearlyGoalCard key={g.id} goal={g} log={goalLog}
                     onEdit={g=>{setEditGoal(g);setShowModal(true);}}

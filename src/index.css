@@ -1,5 +1,7 @@
 /* ── PREMIUM FONT ─────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,opsz,wght@0,6..18,300..800;1,6..18,300..800&display=swap');
+/* ── BULLET JOURNAL FONTS — handwriting feel ─────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Patrick+Hand&display=swap');
 
 /* ═══════════════════════════════════════════════════════════
    APEX — PERSONAL DASHBOARD  |  Cool Graphite + Teal System
@@ -1461,7 +1463,7 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
   .pnotes-tb-btn { font-size: 11px; padding: 4px 7px; }
 
   /* ── Dashboard 3-col content grid ── */
-  .dash-main-grid { grid-template-columns: 1fr !important; gap: 0 !important; }
+  .dash-main-grid { grid-template-columns: 1fr !important; }
 
   /* ── CRM toolbar (Pipeline / Clients / Notes) ── */
   .crm-toolbar {
@@ -1532,13 +1534,6 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
   .page-header { flex-wrap: wrap; gap: 8px; }
   .page-actions { gap: 6px; flex-shrink: 0; }
 
-  /* ── Journal: reduce whitespace ── */
-  .jnl-book-wrap { padding: 16px 10px 60px; }
-  .jnl-topbar    { padding: 8px 16px; }
-  .jnl-month-title { font-size: 18px; }
-  .jnl-free-body { padding: 0 14px 32px 78px; font-size: 16px; }
-  .jnl-free-body.right { padding-left: 14px; padding-right: 78px; }
-
   /* ── Tasks proj grid: 2 cols on mobile ── */
   .tasks-proj-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
 
@@ -1547,6 +1542,31 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 
   /* ── Pipeline status tabs: prevent label squeeze ── */
   .status-tab { font-size: 11px; padding: 5px 10px; }
+
+  /* ── Drawer: force full-width on mobile (overrides inline style={{width:520}}) ── */
+  .drawer { width: 100% !important; max-width: 100% !important; }
+
+  /* ── Goals: yearly cards grid → 2-column ── */
+  .goals-yearly-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+
+  /* ── Goals: period nav row → wrap so nav controls go below title on small screens ── */
+  .goals-period-nav-row { flex-wrap: wrap !important; row-gap: 4px; }
+
+  /* ── Goals: add-goal sub-goal inputs → stack vertically ── */
+  .goal-add-inputs { flex-direction: column !important; }
+  .goal-add-inputs > input[type="number"] { width: 100% !important; }
+
+  /* ── Habits page: 3-col panel layout → vertical stack ── */
+  .habits-3col { flex-direction: column !important; height: auto !important; }
+  .habits-left-panel { width: 100% !important; height: 260px !important; border-right: none !important; border-bottom: 1px solid var(--border); }
+  .habits-center-panel { flex: none !important; height: auto !important; overflow: visible !important; padding: 14px 16px !important; }
+  .habits-right-panel { width: 100% !important; flex: none !important; height: auto !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
+  .habits-right-empty { display: none !important; }
+
+  /* ── Habits: overview stats 5-col → 2-col, charts 3-col → 1-col ── */
+  .habits-overview-section { padding: 16px 16px 28px !important; }
+  .habits-overview-stats { grid-template-columns: 1fr 1fr !important; }
+  .habits-charts-row { grid-template-columns: 1fr !important; }
 }
 
 /* slideUpSheet animation (used by drawers + modals on mobile) */
@@ -1614,575 +1634,6 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   JOURNAL & HABIT TRACKER — physical book aesthetic
-   LINE_H = 32px everywhere: rules, rows, inputs all share this baseline
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── Root — dark desk surface ── */
-.jnl-root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  background: #100e0b;
-  overflow-y: auto;
-}
-
-/* ── Top bar ── */
-.jnl-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 22px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  background: var(--surface);
-  flex-shrink: 0;
-  position: relative;
-  z-index: 20;
-}
-
-/* Add-spread dropdown */
-.jnl-add-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: var(--surface);
-  border: 1px solid var(--border-2);
-  border-radius: var(--r-lg);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
-  z-index: 300;
-  overflow: hidden;
-  min-width: 230px;
-}
-.jnl-add-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  padding: 12px 16px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--ink);
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 600;
-  text-align: left;
-  transition: background var(--t);
-}
-.jnl-add-item:hover { background: var(--surface-2); }
-.jnl-add-sub { font-size: 11px; color: var(--ink-3); font-weight: 400; }
-
-/* ── Book wrapper — scrollable, dark ambient ── */
-.jnl-book-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 36px 20px 56px;
-  gap: 18px;
-  /* desk texture: radial vignette over dark wood */
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(40,30,18,0.7) 0%, transparent 70%),
-    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0,0,0,0.5) 0%, transparent 60%),
-    #100e0b;
-}
-
-/* ── Navigation ── */
-.jnl-nav {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex-shrink: 0;
-}
-.jnl-nav-btn {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.55);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
-}
-.jnl-nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.12); color: #fff; }
-.jnl-nav-btn:disabled { opacity: 0.2; cursor: not-allowed; }
-.jnl-nav-label {
-  font-size: 11px;
-  color: rgba(255,255,255,0.3);
-  font-weight: 600;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-.jnl-nav-del {
-  margin-left: 8px;
-  color: rgba(255,255,255,0.35);
-}
-.jnl-nav-del:hover {
-  background: rgba(240,96,96,0.18) !important;
-  border-color: rgba(240,96,96,0.5) !important;
-  color: var(--danger) !important;
-}
-
-/* ── The open book ── */
-.jnl-book {
-  display: flex;
-  width: 100%;
-  max-width: 1180px;
-  /* Realistic multi-layer book shadow on a dark surface */
-  box-shadow:
-    0 1px 2px  rgba(0,0,0,0.9),
-    0 4px 12px rgba(0,0,0,0.8),
-    0 16px 40px rgba(0,0,0,0.7),
-    0 40px 100px rgba(0,0,0,0.6),
-    0 80px 160px rgba(0,0,0,0.4);
-  border-radius: 2px 4px 4px 2px;
-  position: relative;
-}
-
-/* Subtle page-stack illusion — right edge */
-.jnl-book::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  right: -3px;
-  bottom: -2px;
-  width: 6px;
-  background: linear-gradient(to right, #d4c9a8, #c4b898);
-  border-radius: 0 2px 2px 0;
-  z-index: -1;
-}
-.jnl-book::before {
-  content: '';
-  position: absolute;
-  top: 5px;
-  right: -6px;
-  bottom: -4px;
-  width: 6px;
-  background: linear-gradient(to right, #bdb09a, #aca38a);
-  border-radius: 0 2px 2px 0;
-  z-index: -2;
-}
-
-/* ── Page turn animation ── */
-@keyframes jnlCurlNext {
-  0%   { transform: perspective(1800px) rotateY(0deg);    box-shadow: -4px 0 18px rgba(0,0,0,0.18); }
-  35%  { box-shadow: -24px 0 48px rgba(0,0,0,0.5), inset -12px 0 30px rgba(0,0,0,0.15); }
-  100% { transform: perspective(1800px) rotateY(-180deg); box-shadow: none; }
-}
-@keyframes jnlCurlPrev {
-  0%   { transform: perspective(1800px) rotateY(0deg);   box-shadow:  4px 0 18px rgba(0,0,0,0.18); }
-  35%  { box-shadow:  24px 0 48px rgba(0,0,0,0.5), inset  12px 0 30px rgba(0,0,0,0.15); }
-  100% { transform: perspective(1800px) rotateY(180deg); box-shadow: none; }
-}
-.jnl-turning-next .jnl-book-right-side {
-  transform-origin: left center;
-  animation: jnlCurlNext 0.18s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-  z-index: 10;
-  position: relative;
-}
-.jnl-turning-prev .jnl-book-left-side {
-  transform-origin: right center;
-  animation: jnlCurlPrev 0.18s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-  z-index: 10;
-  position: relative;
-}
-
-/* ── Book halves ── */
-.jnl-book-side { flex: 1; overflow: visible; min-width: 0; }
-.jnl-book-left-side  { border-radius: 2px 0 0 2px; }
-.jnl-book-right-side { border-radius: 0 4px 4px 0; }
-
-/* ── Spine — leather-look ── */
-.jnl-spine {
-  width: 18px;
-  flex-shrink: 0;
-  background: linear-gradient(to right,
-    #1a1208 0%,
-    #2e2010 15%,
-    #3d2b16 30%,
-    #4a3520 50%,
-    #3d2b16 70%,
-    #2e2010 85%,
-    #1a1208 100%
-  );
-  position: relative;
-  z-index: 5;
-}
-/* Spine stitching highlight */
-.jnl-spine-inner {
-  width: 2px;
-  height: 100%;
-  margin: 0 auto;
-  background: linear-gradient(to bottom,
-    transparent 0%,
-    rgba(255,220,140,0.10) 8%,
-    rgba(255,220,140,0.16) 50%,
-    rgba(255,220,140,0.10) 92%,
-    transparent 100%
-  );
-}
-
-/* ═══════════════════════════════════════════════════
-   THE PAPER PAGE
-   background-position is set inline per component
-   to align ruled lines with content rows
-   ═══════════════════════════════════════════════════ */
-.jnl-page {
-  width: 100%;
-  /* Height = auto: book expands to fit all rows, whole page scrolls */
-  min-height: 400px;
-  position: relative;
-  font-family: 'Caveat', 'Kalam', cursive;
-  font-size: 17px;
-  color: #2a1f10;
-  /* Warm parchment */
-  background-color: #faf6ed;
-  /* Subtle paper-grain shadow on inner edge */
-}
-/* Right-page slight shadow on left edge (spine side) */
-.jnl-page-right { box-shadow: inset 8px 0 18px rgba(0,0,0,0.07); }
-/* Left-page slight shadow on right edge */
-.jnl-page-left  { box-shadow: inset -8px 0 18px rgba(0,0,0,0.07); }
-
-/* Dark-mode paper */
-[data-theme='dark'] .jnl-page {
-  background-color: #1c170f;
-  color: #d4c8a0;
-}
-
-/* ── Margin line ── */
-.jnl-margin {
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 68px;
-  width: 1.5px;
-  background: rgba(210,80,60,0.28);
-  pointer-events: none;
-  z-index: 2;
-}
-.jnl-margin-right {
-  left: auto;
-  right: 68px;
-}
-
-/* ══════════════════════════════════════════
-   DAILY HIGHLIGHTS (left page)
-   Header = 64px = 2 × LINE_H
-   Rows   = 32px = 1 × LINE_H  (exact match)
-   ══════════════════════════════════════════ */
-
-/* Header block — exactly 64px */
-.jnl-hl-header {
-  height: 64px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-left: 76px;
-  position: relative;
-  z-index: 3;
-}
-.jnl-month-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-}
-.jnl-month-title {
-  font-family: 'Caveat', cursive;
-  font-size: 21px;
-  font-weight: 700;
-  color: #5a3e20;
-  letter-spacing: 0.01em;
-}
-[data-theme='dark'] .jnl-month-title { color: #c8a87a; }
-.jnl-col-label {
-  height: 28px;
-  font-family: 'Caveat', cursive;
-  font-size: 12px;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: #b08060;
-  display: flex;
-  align-items: center;
-}
-.jnl-arrow {
-  background: none; border: none; cursor: pointer;
-  color: #b08060; padding: 2px;
-  display: flex; align-items: center;
-  opacity: 0.7; transition: opacity 0.15s;
-}
-.jnl-arrow:hover { opacity: 1; }
-
-/* Each highlight row — exactly 32px, sits on a ruled line */
-.jnl-hl-row {
-  display: flex;
-  align-items: center;
-  height: 32px;
-  cursor: text;
-  position: relative;
-}
-.jnl-hl-row:hover { background: rgba(160,112,60,0.04); }
-
-.jnl-hl-date {
-  position: absolute;
-  left: 0;
-  width: 66px;
-  display: flex;
-  align-items: baseline;
-  justify-content: flex-end;
-  gap: 3px;
-  padding-right: 8px;
-  z-index: 3;
-  pointer-events: none;
-}
-.jnl-hl-dd {
-  font-family: 'Caveat', cursive;
-  font-size: 15px; font-weight: 700;
-  color: #5a3e20; line-height: 1;
-}
-[data-theme='dark'] .jnl-hl-dd { color: #c8a87a; }
-.jnl-hl-dy {
-  font-family: 'Caveat', cursive;
-  font-size: 11px; color: #b08060; line-height: 1;
-}
-
-.jnl-hl-input,
-.jnl-hl-text {
-  display: block;
-  width: 100%;
-  height: 32px;
-  line-height: 32px;
-  padding: 0 12px 0 80px;
-  font-family: 'Caveat', cursive;
-  font-size: 17px;
-  color: inherit;
-  background: none; border: none; outline: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-sizing: border-box;
-}
-.jnl-hl-input { caret-color: #b08060; }
-
-/* ══════════════════════════════════════════
-   HABIT TRACKER (right page)
-   Header = 32px = 1 × LINE_H  (exact match)
-   Rows   = 32px = 1 × LINE_H  (exact match)
-   ══════════════════════════════════════════ */
-
-/* Column header row — exactly 32px */
-.jnl-trk-header {
-  display: flex;
-  align-items: center;
-  height: 32px;
-  padding: 0 6px;
-  border-bottom: 1.5px solid rgba(160,100,50,0.30);
-  position: relative;
-  z-index: 4;
-  background: inherit;
-  gap: 1px;
-}
-.jnl-trk-day-col { width: 52px; flex-shrink: 0; }
-.jnl-trk-col-head {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  position: relative;
-  height: 32px;
-  border-left: 1px solid rgba(160,100,50,0.15);
-}
-.jnl-trk-head-label {
-  font-family: 'Caveat', cursive;
-  font-size: 13px; font-weight: 700;
-  color: #5a3e20;
-  cursor: pointer;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  max-width: calc(100% - 16px);
-  text-align: center;
-}
-[data-theme='dark'] .jnl-trk-head-label { color: #c8a87a; }
-.jnl-trk-head-input {
-  font-family: 'Caveat', cursive;
-  font-size: 13px; font-weight: 700;
-  background: none; border: none;
-  border-bottom: 1.5px solid rgba(160,100,50,0.5);
-  outline: none; text-align: center;
-  color: inherit; width: 100%;
-}
-.jnl-trk-del {
-  position: absolute; top: 50%; right: 1px;
-  transform: translateY(-50%);
-  font-size: 14px; background: none; border: none;
-  cursor: pointer; color: rgba(200,60,60,0.4);
-  line-height: 1; padding: 0 2px;
-  transition: color 0.15s;
-}
-.jnl-trk-del:hover { color: rgba(200,60,60,0.9); }
-.jnl-trk-add {
-  width: 26px; height: 26px;
-  background: none;
-  border: 1.5px dashed rgba(160,100,50,0.35);
-  border-radius: 50%;
-  cursor: pointer; color: #b08060;
-  font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.15s;
-}
-.jnl-trk-add:hover { background: rgba(160,100,50,0.10); border-color: rgba(160,100,50,0.7); }
-
-/* Each tracker row — exactly 32px, sits on a ruled line */
-.jnl-trk-row {
-  display: flex;
-  align-items: center;
-  height: 32px;
-  padding: 0 6px;
-  gap: 1px;
-}
-.jnl-trk-day-cell {
-  width: 52px; flex-shrink: 0;
-  display: flex; align-items: baseline; gap: 3px;
-}
-.jnl-trk-dd {
-  font-family: 'Caveat', cursive;
-  font-size: 15px; font-weight: 700; color: #5a3e20;
-}
-[data-theme='dark'] .jnl-trk-dd { color: #c8a87a; }
-.jnl-trk-dl {
-  font-family: 'Caveat', cursive;
-  font-size: 11px; color: #b08060;
-}
-/* Tracker cell — exactly 32px tall, full-width in its column */
-.jnl-trk-cell {
-  flex: 1;
-  height: 32px;
-  line-height: 32px;
-  background: none; border: none;
-  border-left: 1px solid rgba(160,100,50,0.13);
-  outline: none;
-  font-family: 'Caveat', cursive;
-  font-size: 16px; color: inherit;
-  text-align: center;
-  padding: 0 4px;
-  min-width: 0;
-  box-sizing: border-box;
-}
-.jnl-trk-cell::placeholder { color: rgba(160,100,50,0.25); font-size: 12px; }
-.jnl-trk-add-spacer { width: 28px; flex-shrink: 0; }
-
-/* ══════════════════════════════════════════
-   FREE JOURNAL PAGE
-   Toolbar = 32px = 1 × LINE_H
-   Writing area starts at line 2
-   ══════════════════════════════════════════ */
-
-/* Toolbar — exactly 32px */
-.jnl-free-toolbar {
-  height: 32px;
-  display: flex;
-  align-items: center;
-  padding: 0 8px 0 80px;
-  position: relative;
-  z-index: 3;
-}
-.jnl-date-wrap { position: relative; }
-.jnl-date-btn {
-  display: flex; align-items: center; gap: 4px;
-  padding: 2px 10px;
-  background: none;
-  border: 1px solid rgba(160,100,50,0.30);
-  border-radius: 99px;
-  cursor: pointer;
-  font-family: 'Caveat', cursive;
-  font-size: 13px; color: #b08060;
-  transition: all 0.15s;
-}
-.jnl-date-btn:hover { background: rgba(160,100,50,0.10); }
-.jnl-date-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  background: var(--surface);
-  border: 1px solid var(--border-2);
-  border-radius: var(--r);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
-  z-index: 300; overflow: hidden; min-width: 200px;
-}
-.jnl-date-item {
-  display: block; width: 100%;
-  padding: 9px 14px;
-  background: none; border: none; cursor: pointer;
-  font-family: var(--font); font-size: 13px;
-  color: var(--ink); text-align: left;
-  transition: background var(--t);
-}
-.jnl-date-item:hover { background: var(--surface-2); }
-
-/* Writing body — lines from toolbar onward, no inner scroll */
-.jnl-free-body {
-  min-height: calc(31 * 32px); /* room for ~31 lines */
-  outline: none;
-  font-family: 'Caveat', 'Kalam', cursive;
-  font-size: 18px;
-  line-height: 32px;
-  color: inherit;
-  padding: 0 20px 32px 80px;
-  word-break: break-word;
-  caret-color: #b08060;
-}
-.jnl-free-body.right { padding-left: 20px; padding-right: 80px; }
-.jnl-free-body:empty::before {
-  content: attr(data-placeholder);
-  color: rgba(160,100,50,0.30);
-  pointer-events: none;
-  font-style: italic;
-}
-
-/* ── Spread actions ── */
-.jnl-spread-actions {
-  display: flex;
-  justify-content: center;
-}
-.jnl-del-btn {
-  display: flex; align-items: center; gap: 5px;
-  background: none; border: 1px solid transparent;
-  cursor: pointer; font-size: 11px;
-  color: rgba(255,255,255,0.2);
-  padding: 4px 12px; border-radius: 99px;
-  transition: all 0.15s;
-  font-family: var(--font);
-}
-.jnl-del-btn:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-dim); }
-
-/* ── Empty state ── */
-.jnl-empty {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  height: 100%; gap: 8px; padding: 48px;
-  text-align: center;
-  background: #100e0b;
-}
-.jnl-empty-title { font-size: 19px; font-weight: 700; color: rgba(255,255,255,0.7); }
-.jnl-empty-sub   { font-size: 13px; color: rgba(255,255,255,0.3); max-width: 340px; line-height: 1.7; margin-bottom: 8px; }
-.jnl-empty-btns  { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-
-/* ── Responsive ── */
-@media (max-width: 860px) {
-  .jnl-book { flex-direction: column; max-width: 480px; }
-  .jnl-book-left-side, .jnl-book-right-side { border-radius: 0; }
-  .jnl-book-left-side  { border-radius: 2px 2px 0 0; }
-  .jnl-book-right-side { border-radius: 0 0 4px 4px; }
-  .jnl-spine { width: 100%; height: 12px; flex-direction: row; }
-  .jnl-spine-inner { width: 100%; height: 2px; margin: auto 0; }
-  .jnl-margin-right { left: 68px; right: auto; }
-  .jnl-free-body.right { padding-left: 80px; padding-right: 20px; }
-  .jnl-book::before, .jnl-book::after { display: none; }
 }
 
 /* ══ HABITS PAGE ══════════════════════════════════════════════ */
@@ -2387,3 +1838,634 @@ button[style*="borderRadius: 6px"]:hover {
   /* Quick-add option pickers wrap comfortably */
   .fx-quickadd-opts { gap: 6px; padding-left: 0; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BULLET JOURNAL (BuJo) — calm, paper-like, dot-grid motif, crisp glyphs
+   Built entirely on existing design tokens.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Subtle dot-grid background — a nod to a real BuJo, rendered crisp + modern */
+.bujo-page {
+  padding: 22px 28px 96px;
+  min-height: 100%;
+  background-image: radial-gradient(var(--border-2) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: -1px -1px;
+}
+.bujo-collections {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 100%;
+}
+
+/* ── Section + day headers ── */
+.bujo-section-head { margin-bottom: 18px; }
+.bujo-section-head h2 { font-size: 22px; font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
+.bujo-section-sub { font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+
+.bujo-day-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 18px; flex-wrap: wrap;
+}
+.bujo-day-nav { display: flex; gap: 4px; }
+.bujo-nav-btn {
+  width: 30px; height: 30px; border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); border: 1px solid var(--border-2);
+  color: var(--ink-2); transition: background var(--t), color var(--t), border-color var(--t);
+}
+.bujo-nav-btn:hover { background: var(--surface-3); color: var(--ink); border-color: var(--border-strong); }
+.bujo-day-title { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.bujo-day-title h2 { font-size: 21px; font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
+.bujo-today-pill {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  padding: 3px 9px; border-radius: 99px; background: var(--accent-dim); color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+.bujo-day-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.bujo-date-picker {
+  padding: 6px 10px; border: 1px solid var(--border-2); border-radius: var(--r);
+  background: var(--surface-2); color: var(--ink-2); font-size: 12.5px;
+  font-family: inherit; color-scheme: dark; cursor: pointer;
+}
+html[data-theme="light"] .bujo-date-picker { color-scheme: light; }
+.bujo-date-picker:focus { border-color: var(--accent); }
+
+.bujo-col-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--ink-4); margin: 4px 0 8px;
+}
+
+/* ── Entry rows ── */
+.bujo-entries { display: flex; flex-direction: column; }
+.bujo-entry {
+  display: flex; align-items: flex-start; gap: 4px;
+  padding: 3px 6px; border-radius: var(--r);
+  transition: background var(--t);
+}
+.bujo-entry:hover { background: var(--surface-2); }
+.bujo-entry:hover .bujo-entry-del { opacity: .6; }
+
+.bujo-sig {
+  width: 18px; flex-shrink: 0; font-size: 13px; line-height: 26px;
+  color: transparent; text-align: center; transition: color var(--t), transform 120ms var(--ease-spring);
+}
+.bujo-entry:hover .bujo-sig { color: var(--ink-4); }
+.bujo-sig.on { color: var(--warn); }
+.bujo-sig:hover { transform: scale(1.25); }
+
+.bujo-bullet {
+  width: 22px; flex-shrink: 0; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; transition: background var(--t);
+}
+.bujo-bullet.cyclable:hover { background: var(--surface-3); }
+
+.bujo-glyph {
+  font-size: 15px; line-height: 1; font-weight: 700;
+  display: inline-block; animation: bujoPop .22s var(--ease-spring);
+}
+@keyframes bujoPop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Glyph colours by type */
+.bujo-glyph-task       { color: var(--accent); }
+.bujo-glyph-note       { color: var(--ink-3); font-weight: 800; }
+.bujo-glyph-event      { color: var(--info); }
+.bujo-glyph-idea       { color: var(--warn); }
+.bujo-glyph-inProgress { color: var(--accent-bright); }
+.bujo-glyph-happened   { color: var(--goals); }
+.bujo-glyph-mood       { color: var(--tasks); }
+/* Task states */
+.bujo-glyph-task.is-complete  { color: var(--ok); }
+.bujo-glyph-task.is-migrated  { color: var(--ink-3); }
+.bujo-glyph-task.is-scheduled { color: var(--ink-3); }
+.bujo-glyph.abandoned         { color: var(--ink-4); }
+
+.bujo-entry-text {
+  flex: 1; min-width: 0; font-size: 14px; line-height: 26px; color: var(--ink);
+  cursor: text; padding: 0 4px; word-break: break-word;
+}
+.bujo-entry.abandoned .bujo-entry-text { text-decoration: line-through; color: var(--ink-4); }
+.bujo-entry-empty { color: var(--ink-4); font-style: italic; }
+.bujo-origin { font-size: 11px; color: var(--ink-4); margin-left: 8px; white-space: nowrap; }
+.bujo-entry-input {
+  flex: 1; min-width: 0; font-size: 14px; line-height: 26px;
+  background: var(--surface-3); border: 1px solid var(--accent-border);
+  border-radius: 6px; padding: 0 8px; color: var(--ink);
+}
+.bujo-entry-del {
+  width: 26px; height: 26px; flex-shrink: 0; opacity: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-3); border-radius: 6px; transition: opacity var(--t), background var(--t), color var(--t);
+}
+.bujo-entry-del:hover { background: var(--danger-dim); color: var(--danger); }
+
+.bujo-empty-line { font-size: 13px; color: var(--ink-3); font-style: italic; padding: 10px 8px; }
+.bujo-empty-line.dim { color: var(--ink-4); }
+
+/* ── Quick-add ── */
+.bujo-quickadd {
+  display: flex; align-items: center; gap: 8px; margin-top: 12px;
+  padding: 9px 12px; background: var(--surface-2);
+  border: 1.5px solid var(--border-2); border-radius: var(--r-lg);
+  transition: border-color var(--t), box-shadow var(--t);
+}
+.bujo-quickadd:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.bujo-quickadd-type {
+  width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-3); border: 1px solid var(--border-2);
+  transition: border-color var(--t), background var(--t);
+}
+.bujo-quickadd-type:hover { border-color: var(--accent-border); background: var(--surface-hover); }
+.bujo-quickadd-input {
+  flex: 1; background: none; border: none; outline: none;
+  font-size: 14.5px; color: var(--ink); font-family: inherit;
+}
+.bujo-quickadd-input::placeholder { color: var(--ink-4); }
+.bujo-quickadd-hint { font-size: 10.5px; color: var(--ink-4); white-space: nowrap; flex-shrink: 0; }
+
+/* ── Monthly log ── */
+.bujo-month-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.bujo-month-col {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 16px 18px;
+}
+.bujo-cal { display: flex; flex-direction: column; }
+.bujo-cal-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 3px 6px; border-radius: 6px; min-height: 28px;
+  border-bottom: 1px solid var(--border);
+}
+.bujo-cal-row:last-child { border-bottom: none; }
+.bujo-cal-row.weekend { background: var(--surface-2); }
+.bujo-cal-date { font-size: 13px; font-weight: 700; color: var(--ink); font-family: var(--mono); width: 22px; }
+.bujo-cal-dow  { font-size: 11px; font-weight: 700; color: var(--ink-4); width: 14px; text-transform: uppercase; }
+.bujo-cal-events { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.bujo-cal-event { font-size: 12.5px; color: var(--info); }
+
+/* ── Future log ── */
+.bujo-future-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;
+}
+.bujo-future-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 14px 16px;
+}
+.bujo-future-month {
+  font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 8px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border); letter-spacing: -.01em;
+}
+
+/* ── Index ── */
+.bujo-index { display: flex; flex-direction: column; gap: 22px; max-width: 620px; }
+.bujo-index-group { display: flex; flex-direction: column; gap: 4px; }
+.bujo-index-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 11px 14px; border-radius: var(--r);
+  background: var(--surface); border: 1px solid var(--border);
+  transition: border-color var(--t), background var(--t), transform 120ms var(--ease-out);
+}
+.bujo-index-row:hover { border-color: var(--border-strong); background: var(--surface-2); transform: translateX(2px); }
+.bujo-index-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--ink); }
+.bujo-index-sub { font-size: 11.5px; color: var(--ink-4); font-family: var(--mono); }
+.bujo-index-arrow { color: var(--ink-4); }
+
+/* ── Collections ── */
+.bujo-col-rail {
+  border-right: 1px solid var(--border); background: var(--surface);
+  padding: 16px 12px; display: flex; flex-direction: column; gap: 3px; overflow-y: auto;
+}
+.bujo-col-newrow { display: flex; gap: 6px; margin-bottom: 10px; }
+.bujo-col-newinput {
+  flex: 1; min-width: 0; padding: 7px 10px; font-size: 13px;
+  background: var(--surface-2); border: 1px solid var(--border-2);
+  border-radius: var(--r); color: var(--ink);
+}
+.bujo-col-newinput:focus { border-color: var(--accent); }
+.bujo-col-newbtn {
+  width: 32px; flex-shrink: 0; border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border);
+  transition: background var(--t);
+}
+.bujo-col-newbtn:hover { background: var(--accent-border); }
+.bujo-col-item {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: var(--r); font-size: 13.5px; font-weight: 500;
+  color: var(--ink-3); transition: background var(--t), color var(--t), box-shadow var(--t);
+}
+.bujo-col-item:hover { background: var(--surface-2); color: var(--ink-2); }
+.bujo-col-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
+.bujo-col-dot { font-size: 11px; color: var(--ink-4); }
+.bujo-col-item.active .bujo-col-dot { color: var(--accent); }
+.bujo-col-detail { padding: 22px 28px 96px; overflow-y: auto; }
+.bujo-col-detail-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+}
+.bujo-col-detail-head h2 { font-size: 21px; font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
+.bujo-col-rename { display: flex; align-items: center; gap: 6px; }
+.bujo-col-rename input {
+  font-size: 18px; font-weight: 700; padding: 4px 10px;
+  background: var(--surface-2); border: 1px solid var(--accent-border);
+  border-radius: var(--r); color: var(--ink);
+}
+
+/* ── End-of-Month Migration modal ── */
+.bujo-migrate-intro { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
+.bujo-migrate-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 40px 24px; text-align: center; color: var(--ink-3);
+}
+.bujo-migrate-empty svg { color: var(--ok); }
+.bujo-migrate-list { display: flex; flex-direction: column; gap: 8px; }
+.bujo-migrate-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+}
+.bujo-migrate-bullet { font-size: 15px; color: var(--accent); }
+.bujo-migrate-text { flex: 1; min-width: 140px; font-size: 14px; color: var(--ink); }
+.bujo-migrate-star { color: var(--warn); margin-right: 6px; }
+.bujo-migrate-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.bujo-mig-schedule { display: flex; align-items: center; gap: 4px; }
+.bujo-mig-select {
+  padding: 5px 8px; font-size: 12px; border-radius: 6px;
+  background: var(--surface-3); border: 1px solid var(--border-2); color: var(--ink-2);
+  color-scheme: dark; cursor: pointer;
+}
+html[data-theme="light"] .bujo-mig-select { color-scheme: light; }
+.bujo-mig-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; font-size: 12px; font-weight: 600; border-radius: 6px;
+  border: 1px solid var(--border-2); background: var(--surface); color: var(--ink-2);
+  transition: background var(--t), color var(--t), border-color var(--t);
+}
+.bujo-mig-btn:hover { background: var(--surface-3); color: var(--ink); }
+.bujo-mig-btn.complete:hover { background: var(--ok-dim); color: var(--ok); border-color: var(--ok); }
+.bujo-mig-btn.migrate:hover  { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
+.bujo-mig-btn.schedule:hover { background: var(--info-dim); color: var(--info); border-color: var(--info); }
+.bujo-mig-btn.strike:hover   { background: var(--danger-dim); color: var(--danger); border-color: var(--danger); }
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .bujo-page { padding: 16px 14px 96px; }
+  .bujo-month-grid { grid-template-columns: 1fr; gap: 16px; }
+  .bujo-collections { grid-template-columns: 1fr; }
+  .bujo-col-rail { border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; }
+  .bujo-col-detail { padding: 16px 14px 96px; }
+  .bujo-day-tools { width: 100%; margin-left: 0; }
+}
+
+/* ── BuJo legend dropdown ── */
+.bujo-legend-wrap { position: relative; }
+.bujo-legend-backdrop { position: fixed; inset: 0; z-index: 60; }
+.bujo-legend-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 61;
+  width: 280px; max-height: 70vh; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border-2);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-lg);
+  padding: 10px; animation: scaleIn .16s var(--ease-out);
+}
+.bujo-legend-section {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--ink-4); padding: 10px 8px 5px;
+}
+.bujo-legend-section:first-child { padding-top: 4px; }
+.bujo-legend-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 4px 8px; border-radius: 6px;
+}
+.bujo-legend-row:hover { background: var(--surface-2); }
+.bujo-legend-glyph {
+  width: 22px; flex-shrink: 0; text-align: center;
+  font-size: 15px; font-weight: 700; line-height: 1;
+}
+.bujo-legend-star { color: var(--warn); }
+.bujo-legend-label { font-size: 13px; color: var(--ink-2); }
+.bujo-legend-tip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px; font-size: 12.5px; color: var(--ink-3);
+}
+.bujo-legend-tip kbd {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  padding: 2px 7px; border-radius: 5px; color: var(--ink-2);
+  background: var(--surface-3); border: 1px solid var(--border-2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BULLET JOURNAL — completed strikethrough, handwriting fonts, paper theme
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Completed task: keep the ✕ glyph (green) and strike through the text */
+.bujo-entry.completed .bujo-entry-text { text-decoration: line-through; color: var(--ink-3); }
+
+/* Handwriting feel for the things you actually write */
+:root { --bujo-hand: 'Patrick Hand', var(--font); --bujo-display: 'Caveat', var(--font); }
+.bujo-entry-text,
+.bujo-entry-input,
+.bujo-quickadd-input,
+.bujo-cal-event,
+.bujo-migrate-text {
+  font-family: var(--bujo-hand);
+  font-size: 16.5px;
+  letter-spacing: .01em;
+}
+.bujo-entry-text, .bujo-entry-input { line-height: 26px; }
+.bujo-quickadd-input::placeholder { font-family: var(--font); font-size: 14px; }
+
+/* Display headings in a journaling hand */
+.bujo-root .page-title { font-family: var(--bujo-display); font-size: 30px; font-weight: 700; letter-spacing: 0; }
+.bujo-day-title h2,
+.bujo-section-head h2,
+.bujo-col-detail-head h2 { font-family: var(--bujo-display); font-weight: 700; letter-spacing: 0; }
+.bujo-day-title h2 { font-size: 30px; }
+.bujo-section-head h2, .bujo-col-detail-head h2 { font-size: 28px; }
+.bujo-future-month { font-family: var(--bujo-display); font-size: 18px; font-weight: 700; }
+
+/* Fill the section background so the paper theme reads edge-to-edge */
+.bujo-root { background: var(--bg); }
+
+/* ── LIGHT MODE: warm "real journal" paper theme (scoped to the section) ── */
+html[data-theme="light"] .bujo-root {
+  --bg:            #F4EBD7;   /* warm cream desk */
+  --surface:       #FFFCF4;   /* page / card paper */
+  --surface-2:     #F1E6CF;
+  --surface-3:     #E9DBBE;
+  --surface-hover: #E1CFAC;
+  --surface-glass: rgba(244,235,215,0.90);
+
+  --border:        rgba(120,90,48,0.16);
+  --border-2:      rgba(120,90,48,0.24);
+  --border-strong: rgba(120,90,48,0.40);
+
+  --ink:           #463925;
+  --ink-2:         rgba(70,57,37,0.80);
+  --ink-3:         rgba(70,57,37,0.52);
+  --ink-4:         rgba(70,57,37,0.30);
+
+  /* Accent — deep ink-teal, classic against cream */
+  --accent:        #0E7A5E;
+  --accent-bright: #11946F;
+  --accent-dim:    rgba(14,122,94,0.13);
+  --accent-border: rgba(14,122,94,0.32);
+  --accent-gradient: linear-gradient(145deg, #0E7A5E 0%, #0A5C46 100%);
+  --accent-glow:   rgba(14,122,94,0.30);
+
+  /* Glyph colours retuned for warm paper */
+  --info:    #2F6CA8;   /* event */
+  --info-dim:rgba(47,108,168,0.12);
+  --warn:    #A9741A;   /* idea (ochre) */
+  --warn-dim:rgba(169,116,26,0.14);
+  --tasks:   #C05A45;   /* mood (terracotta) */
+  --tasks-dim:rgba(192,90,69,0.12);
+  --goals:   #6A5DB8;   /* happened (muted indigo) */
+  --goals-dim:rgba(106,93,184,0.12);
+  --mortgage:#0E7A5E;
+  --ok:      #0E7A5E; --ok-dim: rgba(14,122,94,0.13);
+  --danger:  #B23A2E; --danger-dim: rgba(178,58,46,0.12);
+
+  --shadow-sm: 0 1px 3px rgba(90,60,20,0.10);
+  --shadow:    0 2px 10px rgba(90,60,20,0.12), 0 1px 3px rgba(90,60,20,0.08);
+  --shadow-lg: 0 10px 28px rgba(90,60,20,0.16), 0 2px 8px rgba(90,60,20,0.10);
+}
+
+/* A touch warmer paper grain on the writing surfaces in light mode */
+html[data-theme="light"] .bujo-month-col,
+html[data-theme="light"] .bujo-future-card,
+html[data-theme="light"] .bujo-index-row {
+  background: var(--surface);
+}
+
+/* ── BuJo: blend the header + sub-nav into the page (no white bar) ── */
+.bujo-root .page-header {
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.bujo-root .crm-sub-nav {
+  background: transparent;
+  border-bottom-color: var(--border-2);
+  padding-top: 2px;
+}
+.bujo-root .crm-sub-btn { border-radius: var(--r); }
+.bujo-root .crm-sub-btn:hover { background: var(--surface-2); }
+
+/* ── BuJo: entry descriptions (notes) + multi-line quick-add ── */
+.bujo-entry-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.bujo-entry-body > .bujo-entry-text { flex: none; }
+/* The description reads exactly like the main text — same font, size and colour,
+   just sitting indented on the next line. No box, no separate styling. */
+.bujo-entry-note {
+  font-family: var(--bujo-hand);
+  font-size: 16.5px; line-height: 26px; color: var(--ink);
+  white-space: pre-wrap; word-break: break-word;
+  padding: 0 4px; cursor: text;
+}
+.bujo-entry.completed .bujo-entry-note { text-decoration: line-through; color: var(--ink-3); }
+.bujo-entry.abandoned .bujo-entry-note { text-decoration: line-through; color: var(--ink-4); }
+/* Editing is one seamless, borderless text — first line is the entry, lines below
+   are the indented description. No box, no separator. */
+.bujo-entry-edit {
+  font-family: var(--bujo-hand);
+  font-size: 16.5px; line-height: 26px; color: var(--ink);
+  background: none; border: none; outline: none;
+  padding: 0 4px; margin: 0; resize: none; overflow: hidden;
+  width: 100%; white-space: pre-wrap; display: block;
+}
+
+/* Quick-add: type chip + a single auto-growing textarea (Shift+Enter = new line) */
+.bujo-quickadd { display: flex; flex-direction: row; align-items: flex-start; gap: 8px; }
+.bujo-quickadd .bujo-quickadd-input {
+  font-family: var(--bujo-hand);
+  font-size: 16.5px; line-height: 26px; color: var(--ink);
+  flex: 1; min-width: 0; background: none; border: none; outline: none;
+  padding: 2px 0; margin: 0; resize: none; overflow: hidden;
+  white-space: pre-wrap; display: block;
+}
+.bujo-quickadd .bujo-quickadd-input::placeholder { font-family: var(--font); font-size: 14px; color: var(--ink-4); }
+
+/* ── BuJo: monthly review — daily-task dates, overdue, migrate-forward ── */
+.bujo-col-label-mt { margin-top: 20px; }
+
+.bujo-entry-date {
+  flex-shrink: 0; width: 50px; text-align: right;
+  font-size: 11.5px; font-weight: 600; color: var(--ink-3);
+  line-height: 26px; padding-right: 2px;
+}
+.bujo-entry-date.overdue { color: var(--danger); }
+
+.bujo-mtask { display: flex; flex-direction: column; }
+.bujo-migrate-fwd {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 1px 4px 6px 58px;            /* indent under the entry text */
+}
+.bujo-migrate-fwd-label { font-size: 11.5px; color: var(--ink-3); }
+.bujo-migrate-fwd-date {
+  padding: 3px 8px; font-size: 12px; font-family: var(--font);
+  border: 1px solid var(--border-2); border-radius: 6px;
+  background: var(--surface-2); color: var(--ink-2);
+  color-scheme: dark; cursor: pointer; outline: none;
+}
+html[data-theme="light"] .bujo-migrate-fwd-date { color-scheme: light; }
+.bujo-migrate-fwd-date:focus { border-color: var(--accent); }
+.bujo-migrate-fwd-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 10px; font-size: 12px; font-weight: 600;
+  border-radius: 6px; border: 1px solid var(--accent-border);
+  background: var(--accent-dim); color: var(--accent);
+  transition: background var(--t), color var(--t);
+}
+.bujo-migrate-fwd-btn:hover { background: var(--accent-border); color: var(--ink); }
+.bujo-migrate-fwd-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Fix: a priority (★) signifier must stay yellow even while the entry is hovered.
+   The .bujo-entry:hover .bujo-sig rule outranked .bujo-sig.on by specificity. */
+.bujo-entry:hover .bujo-sig.on { color: var(--warn); }
+
+/* ── BuJo: Weekly Goals ── */
+.bujo-weekly { margin-top: 28px; }
+.bujo-week-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px;
+}
+.bujo-week-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 13px 15px; display: flex; flex-direction: column;
+}
+.bujo-week-card.current { border-color: var(--accent-border); box-shadow: 0 0 0 1px var(--accent-border); }
+.bujo-week-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.bujo-week-label { font-family: var(--bujo-display); font-size: 18px; font-weight: 700; color: var(--ink); }
+.bujo-week-count { font-size: 11.5px; font-family: var(--mono); color: var(--ink-3); }
+.bujo-week-now { margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 99px; padding: 2px 8px; }
+.bujo-week-goals { display: flex; flex-direction: column; gap: 1px; }
+.bujo-week-goal { display: flex; align-items: center; gap: 9px; padding: 4px 2px; border-radius: 6px; }
+.bujo-week-goal:hover { background: var(--surface-2); }
+.bujo-week-goal:hover .bujo-week-del { opacity: .6; }
+.bujo-week-check {
+  width: 18px; height: 18px; flex-shrink: 0; border-radius: 6px;
+  border: 1.5px solid var(--border-strong); background: transparent; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--t), border-color var(--t);
+}
+.bujo-week-check:hover { border-color: var(--accent); }
+.bujo-week-check.on { background: var(--accent); border-color: var(--accent); }
+.bujo-week-text { flex: 1; font-family: var(--bujo-hand); font-size: 15.5px; line-height: 1.4; color: var(--ink); word-break: break-word; }
+.bujo-week-goal.done .bujo-week-text { text-decoration: line-through; color: var(--ink-3); }
+.bujo-week-del { width: 22px; flex-shrink: 0; opacity: 0; color: var(--ink-3); display: flex; justify-content: center; transition: opacity var(--t), color var(--t); }
+.bujo-week-del:hover { color: var(--danger); }
+.bujo-week-add { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 5px 2px 0; color: var(--ink-4); border-top: 1px dashed var(--border-2); }
+.bujo-week-add input { flex: 1; background: none; border: none; outline: none; font-family: var(--bujo-hand); font-size: 15px; color: var(--ink); }
+.bujo-week-add input::placeholder { font-family: var(--font); font-size: 13px; color: var(--ink-4); }
+
+/* ── BuJo: Focus Timer — sits on the paper, hand-drawn dial, warm controls ── */
+.bujo-focus {
+  max-width: 420px; margin: 18px auto 0;
+  display: flex; flex-direction: column; align-items: center; gap: 26px;
+}
+.bujo-focus-task { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.bujo-focus-task-label { font-family: var(--bujo-hand); font-size: 18px; color: var(--ink-3); }
+.bujo-focus-input {
+  font-family: var(--bujo-hand); font-size: 18px; color: var(--ink);
+  background: none; border: none; border-bottom: 1.5px dashed var(--border-strong);
+  padding: 2px 6px 3px; min-width: 180px; text-align: center; outline: none;
+  transition: border-color var(--t);
+}
+.bujo-focus-input:focus { border-bottom-color: var(--accent); }
+.bujo-focus-input::placeholder { font-family: var(--bujo-hand); color: var(--ink-4); }
+
+/* Themed task-picker dropdown (replaces the native datalist) */
+.bujo-focus-picker { position: relative; display: inline-block; }
+.bujo-focus-menu {
+  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  z-index: 30; min-width: 240px; max-width: 340px; max-height: 280px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border-2);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-lg); padding: 6px;
+  animation: scaleIn .14s var(--ease-out); text-align: left;
+}
+.bujo-focus-option {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  padding: 7px 9px; border-radius: var(--r);
+  font-family: var(--bujo-hand); font-size: 15.5px; color: var(--ink);
+  background: none; border: none; cursor: pointer; transition: background var(--t);
+}
+.bujo-focus-option:hover { background: var(--surface-2); }
+.bujo-focus-option-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Dial — a quiet clock face that sweeps once per minute while running */
+.bujo-focus-dial { position: relative; width: 230px; height: 230px; }
+.bujo-focus-ring { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.bujo-focus-ring .track { fill: none; stroke: var(--border-2); stroke-width: 4; }
+.bujo-focus-ring .prog  { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset .3s linear; }
+.bujo-focus-dial.running { animation: bujoFocusBreathe 3.4s var(--ease-in-out) infinite; }
+@keyframes bujoFocusBreathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.012); } }
+.bujo-focus-clock {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 46px; font-weight: 700; letter-spacing: -.01em;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.bujo-focus-dial.running .bujo-focus-clock { color: var(--accent); }
+
+.bujo-focus-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.bujo-focus-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px; font-size: 13.5px; font-weight: 600; border-radius: var(--r);
+  border: 1px solid var(--border-2); background: var(--surface); color: var(--ink-2);
+  transition: background var(--t), color var(--t), border-color var(--t), transform 120ms var(--ease-out);
+}
+.bujo-focus-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); border-color: var(--border-strong); }
+.bujo-focus-btn:active:not(:disabled) { transform: scale(0.96); }
+.bujo-focus-btn:disabled { opacity: .4; cursor: not-allowed; }
+.bujo-focus-btn.primary { background: var(--accent-gradient); color: #fff; border-color: transparent; box-shadow: 0 2px 10px var(--accent-dim); }
+.bujo-focus-btn.ghost { background: none; border-color: transparent; color: var(--ink-3); }
+.bujo-focus-btn.ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--ink-2); }
+.bujo-focus-btn.log { border-color: var(--accent-border); background: var(--accent-dim); color: var(--accent); }
+.bujo-focus-btn.log:hover:not(:disabled) { background: var(--accent-border); color: var(--ink); }
+.bujo-focus-today { font-family: var(--bujo-hand); font-size: 16px; color: var(--ink-3); }
+.bujo-focus-today strong { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MORTGAGE CRM — Client Follow-ups tracker
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Filter chips */
+.fu-filters { display: flex; gap: 4px; flex-wrap: wrap; }
+.fu-filter {
+  padding: 7px 12px; font-size: 12.5px; font-weight: 500; border-radius: 99px;
+  border: 1px solid var(--border-2); background: var(--surface-2); color: var(--ink-3);
+  transition: background var(--t), color var(--t), border-color var(--t);
+}
+.fu-filter:hover { color: var(--ink-2); border-color: var(--border-strong); }
+.fu-filter.active { background: var(--mortgage-dim); color: var(--mortgage); border-color: var(--mortgage-border); font-weight: 600; }
+
+/* Summary banner */
+.fu-summary {
+  margin: 16px 28px 0; padding: 11px 16px; border-radius: var(--r-lg);
+  font-size: 13.5px; color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.fu-summary.owed { background: var(--warn-dim); border-color: var(--warn); color: var(--ink); }
+.fu-summary strong { color: var(--warn); font-weight: 800; }
+
+/* Row */
+.fu-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+  cursor: pointer; transition: border-color var(--t), background var(--t);
+}
+.fu-row:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.fu-row.action { border-color: var(--warn); box-shadow: inset 3px 0 0 var(--warn); }
+
+/* Inline segmented status control */
+.fu-pills { display: inline-flex; gap: 3px; flex-shrink: 0; }
+.fu-pill {
+  padding: 4px 10px; font-size: 11.5px; font-weight: 600; border-radius: 99px;
+  border: 1px solid var(--border-2); background: var(--surface-2); color: var(--ink-3);
+  white-space: nowrap; transition: background var(--t), color var(--t), border-color var(--t);
+}
+.fu-pill:hover { color: var(--ink); border-color: var(--border-strong); }
+.fu-pill.active { font-weight: 700; }
+
+/* Comment row delete reveal */
+.fu-comment .fu-comment-del { opacity: 0; transition: opacity var(--t); }
+.fu-comment:hover .fu-comment-del { opacity: .7; }

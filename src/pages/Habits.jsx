@@ -565,11 +565,11 @@ function OverviewSection({ habits, completions }) {
   ];
 
   return (
-    <div style={{ padding: '28px 28px 40px', flexShrink: 0 }}>
+    <div className="habits-overview-section" style={{ padding: '28px 28px 40px', flexShrink: 0 }}>
       <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-.025em', marginBottom: 20, color: 'var(--ink)' }}>Overview</div>
 
       {/* Summary metric cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 28 }}>
+      <div className="habits-overview-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 28 }}>
         {summaryCards.map((c, i) => (
           <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '14px 16px' }}>
             <div style={{ fontSize: 10, color: 'var(--ink-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 4 }}>{c.label}</div>
@@ -580,7 +580,7 @@ function OverviewSection({ habits, completions }) {
       </div>
 
       {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 24 }}>
+      <div className="habits-charts-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 24 }}>
         {/* Chart A: Daily completion rate */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '16px 18px' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)', marginBottom: 14 }}>Daily completion — 60 days</div>
@@ -812,10 +812,10 @@ export default function Habits() {
       {/* Scrollable body */}
       <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         {/* Three-column layout */}
-        <div style={{ display: 'flex', height: 600, flexShrink: 0, borderBottom: '1px solid var(--border)' }}>
+        <div className="habits-3col" style={{ display: 'flex', height: 600, flexShrink: 0, borderBottom: '1px solid var(--border)' }}>
 
           {/* ── Left Panel: Habit List ─────────────────────────────────── */}
-          <div style={{ width: 260, flexShrink: 0, borderRight: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="habits-left-panel" style={{ width: 260, flexShrink: 0, borderRight: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Toggle: Active / Archived */}
             <div style={{ display: 'flex', padding: '10px 10px 0', gap: 4, flexShrink: 0 }}>
               {[false, true].map(archived => (
@@ -897,7 +897,7 @@ export default function Habits() {
           </div>
 
           {/* ── Center Panel: Today ────────────────────────────────────── */}
-          <div style={{ flex: 1, overflow: 'auto', padding: '20px 22px' }}>
+          <div className="habits-center-panel" style={{ flex: 1, overflow: 'auto', padding: '20px 22px' }}>
             {/* Date + ring header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
               <div style={{ flex: 1 }}>
@@ -978,7 +978,7 @@ export default function Habits() {
 
           {/* ── Right Panel: Detail ────────────────────────────────────── */}
           {selectedHabit ? (
-            <div style={{ width: 300, flexShrink: 0, borderLeft: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'habitPanelIn 0.2s cubic-bezier(0.23,1,0.32,1)' }}>
+            <div className="habits-right-panel" style={{ width: 300, flexShrink: 0, borderLeft: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'habitPanelIn 0.2s cubic-bezier(0.23,1,0.32,1)' }}>
               <div style={{ padding: '10px 14px 8px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-3)' }}>Habit detail</span>
                 <button className="icon-btn sm" onClick={() => setSelectedId(null)}><X size={13}/></button>
@@ -989,7 +989,7 @@ export default function Habits() {
               />
             </div>
           ) : (
-            <div style={{ width: 300, flexShrink: 0, borderLeft: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="habits-right-panel habits-right-empty" style={{ width: 300, flexShrink: 0, borderLeft: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ textAlign: 'center', padding: '32px 24px', color: 'var(--ink-3)' }}>
                 <div style={{ fontSize: 28, marginBottom: 10 }}>👈</div>
                 <div style={{ fontSize: 13, lineHeight: 1.6 }}>Select a habit to see<br/>stats and details</div>

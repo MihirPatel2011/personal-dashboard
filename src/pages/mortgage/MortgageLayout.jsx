@@ -1,9 +1,10 @@
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { Kanban, Users, FileText, BarChart3, Settings2 } from 'lucide-react';
+import { Kanban, Users, Reply, FileText, BarChart3, Settings2 } from 'lucide-react';
 
 const tabs = [
   { path: '/mortgage/pipeline',    label: 'Pipeline',     icon: Kanban    },
   { path: '/mortgage/clients',     label: 'Clients',      icon: Users     },
+  { path: '/mortgage/followups',   label: 'Follow-ups',   icon: Reply     },
   { path: '/mortgage/notes',       label: 'Notes',        icon: FileText  },
   { path: '/mortgage/performance', label: 'Performance',  icon: BarChart3 },
   { path: '/mortgage/settings',    label: 'Settings',     icon: Settings2 },

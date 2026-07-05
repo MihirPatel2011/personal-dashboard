@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, Timer, Kanban, Users, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap, ListTodo, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Target, Timer, Kanban, Users, Reply, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, BookMarked, Zap, ListTodo, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
 import { isToday, isPast } from '../../utils';
+import { actionNeeded } from '../../utils/followups';
 
 // ─── Mobile bottom tab bar ─────────────────────────────────────────────────────
 export function MobileNav() {
@@ -33,7 +34,7 @@ export function MobileNav() {
   const moreItems = [
     { path: '/goals',   label: 'Goals',   icon: Target     },
     { path: '/notes',   label: 'Notes',   icon: NotebookPen },
-    { path: '/journal', label: 'Journal', icon: BookMarked  },
+    { path: '/journal', label: 'Bullet Journal', icon: BookMarked  },
   ];
 
   return (
@@ -91,7 +92,7 @@ export function MobileNav() {
 
 export default function Sidebar() {
   const { logout } = useAuth();
-  const { crmTasks, loading } = useData();
+  const { crmTasks, followups, loading } = useData();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -102,6 +103,7 @@ export default function Sidebar() {
   const overdueCrm = crmTasks.filter(t =>
     !['Done','Cancelled'].includes(t.status) && isPast(t.dueDate) && !isToday(t.dueDate)
   ).length;
+  const followupsDue = followups.filter(actionNeeded).length;
 
   return (
     <aside className="sidebar">
@@ -152,9 +154,9 @@ export default function Sidebar() {
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><NotebookPen size={15}/></span>
           Notes &amp; Ideas
         </button>
-        <button className={`nav-item${active('/journal') ? ' active' : ''}`} onClick={() => go('/journal')}>
+        <button className={`nav-item${active('/journal') ? ' active' : ''}`} onClick={() => go('/journal/daily')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><BookMarked size={15}/></span>
-          Journal
+          Bullet Journal
         </button>
 
         {/* Mortgage */}
@@ -166,6 +168,11 @@ export default function Sidebar() {
         <button className={`nav-item${active('/mortgage/clients') ? ' active' : ''}`} onClick={() => go('/mortgage/clients')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><Users size={15}/></span>
           Clients
+        </button>
+        <button className={`nav-item${active('/mortgage/followups') ? ' active' : ''}`} onClick={() => go('/mortgage/followups')}>
+          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><Reply size={15}/></span>
+          Follow-ups
+          {followupsDue > 0 && <span className="nav-badge">{followupsDue}</span>}
         </button>
         <button className={`nav-item${active('/mortgage/notes') ? ' active' : ''}`} onClick={() => go('/mortgage/notes')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><FileText size={15}/></span>

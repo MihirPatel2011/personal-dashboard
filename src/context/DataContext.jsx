@@ -16,7 +16,10 @@ export function DataProvider({ children }) {
   const [goalLog,          setGoalLog]          = useState([]);
   const [mortgageSettings, setMortgageSettings] = useState({});
   const [personalNotes,    setPersonalNotes]    = useState([]);
-  const [journalSpreads,   setJournalSpreads]   = useState([]);
+  const [bujoEntries,      setBujoEntries]      = useState([]);
+  const [bujoCollections,  setBujoCollections]  = useState([]);
+  const [bujoWeeklyGoals,  setBujoWeeklyGoals]  = useState([]);
+  const [followups,        setFollowups]        = useState([]);
   const [focusAreas,       setFocusAreas]       = useState([]);
   const [focusProjects,    setFocusProjects]    = useState([]);
   const [focusTasks,       setFocusTasks]       = useState([]);
@@ -31,7 +34,7 @@ export function DataProvider({ children }) {
   useEffect(() => {
     if (!user) {
       setClients([]); setLoans([]); setNotes([]); setCrmTasks([]);
-      setGoals([]); setGoalLog([]); setPersonalNotes([]); setJournalSpreads([]);
+      setGoals([]); setGoalLog([]); setPersonalNotes([]); setBujoEntries([]); setBujoCollections([]); setBujoWeeklyGoals([]); setFollowups([]);
       setFocusAreas([]); setFocusProjects([]); setFocusTasks([]); setFocusSessions([]);
       setMortgageSettings({});
       setLoading(false);
@@ -39,8 +42,11 @@ export function DataProvider({ children }) {
     }
     setLoading(true);
     let count = 0;
-    const TOTAL = 13;
+    const TOTAL = 16;
     const done = () => { count++; if (count >= TOTAL) setLoading(false); };
+
+    // One-time cleanup: the old book-style Journal node is retired by the BuJo module.
+    remove(ref(db, 'journalSpreads')).catch(() => {});
 
     const u1  = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
     const u2  = onValue(ref(db, 'loans'),            s => { setLoans(toArr(s));                 done(); });
@@ -50,13 +56,16 @@ export function DataProvider({ children }) {
     const u6  = onValue(ref(db, 'goalLog'),          s => { setGoalLog(toArr(s));               done(); });
     const u9  = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
     const u12 = onValue(ref(db, 'personalNotes'),    s => { setPersonalNotes(toArr(s));         done(); });
-    const u13 = onValue(ref(db, 'journalSpreads'),   s => { setJournalSpreads(toArr(s));        done(); });
+    const u13 = onValue(ref(db, 'bujoEntries'),      s => { setBujoEntries(toArr(s));           done(); });
+    const u18 = onValue(ref(db, 'bujoCollections'),  s => { setBujoCollections(toArr(s));       done(); });
+    const u19 = onValue(ref(db, 'bujoWeeklyGoals'),  s => { setBujoWeeklyGoals(toArr(s));       done(); });
+    const u20 = onValue(ref(db, 'followups'),        s => { setFollowups(toArr(s));             done(); });
     const u14 = onValue(ref(db, 'focusAreas'),       s => { setFocusAreas(toArr(s));            done(); });
     const u15 = onValue(ref(db, 'focusProjects'),    s => { setFocusProjects(toArr(s));         done(); });
     const u16 = onValue(ref(db, 'focusTasks'),       s => { setFocusTasks(toArr(s));            done(); });
     const u17 = onValue(ref(db, 'focusSessions'),    s => { setFocusSessions(toArr(s));         done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u9(); u12(); u13(); u14(); u15(); u16(); u17(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u9(); u12(); u13(); u18(); u19(); u20(); u14(); u15(); u16(); u17(); };
   }, [user]);
 
   // ─── Clients ──────────────────────────────────────────────────────────────
@@ -71,6 +80,7 @@ export function DataProvider({ children }) {
     if (c?.loanIds) for (const lid of Object.keys(c.loanIds)) await remove(ref(db, `loans/${lid}`));
     if (c?.noteIds) for (const nid of Object.keys(c.noteIds)) await remove(ref(db, `notes/${nid}`));
     if (c?.taskIds) for (const tid of Object.keys(c.taskIds)) await remove(ref(db, `tasks/${tid}`));
+    if (c?.followupIds) for (const fid of Object.keys(c.followupIds)) await remove(ref(db, `followups/${fid}`));
     await remove(ref(db, `clients/${id}`));
   }, [clients]);
 
@@ -133,6 +143,22 @@ export function DataProvider({ children }) {
     await remove(ref(db, `tasks/${id}`));
   }, [crmTasks]);
 
+  // ─── Client Follow-ups ──────────────────────────────────────────────────────
+  const addFollowup    = useCallback(async data => {
+    const r  = push(ref(db, 'followups'));
+    const id = r.key;
+    await set(r, { status: 'waiting_me', dueDate: '', ...data, createdAt: Date.now(), updatedAt: Date.now() });
+    if (data.clientId) await set(ref(db, `clients/${data.clientId}/followupIds/${id}`), true);
+    return id;
+  }, []);
+  const updateFollowup = useCallback(async (id, data) =>
+    update(ref(db, `followups/${id}`), { ...data, updatedAt: Date.now() }), []);
+  const deleteFollowup = useCallback(async id => {
+    const f = followups.find(x => x.id === id);
+    if (f?.clientId) await remove(ref(db, `clients/${f.clientId}/followupIds/${id}`));
+    await remove(ref(db, `followups/${id}`));
+  }, [followups]);
+
   // ─── Mortgage Settings ────────────────────────────────────────────────────
   const saveMortgageSettings = useCallback(async (section, arr) => {
     await set(ref(db, `mortgageSettings/${section}`), arr);
@@ -146,15 +172,41 @@ export function DataProvider({ children }) {
   const updateGoalLog = useCallback(async (id, data) => update(ref(db, `goalLog/${id}`), data), []);
   const deleteGoalLog = useCallback(async id => remove(ref(db, `goalLog/${id}`)), []);
 
-  // ─── Journal Spreads ─────────────────────────────────────────────────────
-  const addJournalSpread    = useCallback(async data => {
-    const r = push(ref(db, 'journalSpreads'));
-    await set(r, { ...data, createdAt: Date.now(), updatedAt: Date.now() });
+  // ─── Bullet Journal: entries ────────────────────────────────────────────────
+  const addBujoEntry    = useCallback(async data => {
+    const r = push(ref(db, 'bujoEntries'));
+    await set(r, { signifiers: {}, migration: [], ...data, createdAt: Date.now(), updatedAt: Date.now() });
     return r.key;
   }, []);
-  const updateJournalSpread = useCallback(async (id, data) =>
-    update(ref(db, `journalSpreads/${id}`), { ...data, updatedAt: Date.now() }), []);
-  const deleteJournalSpread = useCallback(async id => remove(ref(db, `journalSpreads/${id}`)), []);
+  const updateBujoEntry = useCallback(async (id, data) =>
+    update(ref(db, `bujoEntries/${id}`), { ...data, updatedAt: Date.now() }), []);
+  const deleteBujoEntry = useCallback(async id => remove(ref(db, `bujoEntries/${id}`)), []);
+
+  // ─── Bullet Journal: collections ────────────────────────────────────────────
+  const addBujoCollection    = useCallback(async data => {
+    const r = push(ref(db, 'bujoCollections'));
+    await set(r, { order: Date.now(), ...data, createdAt: Date.now(), updatedAt: Date.now() });
+    return r.key;
+  }, []);
+  const updateBujoCollection = useCallback(async (id, data) =>
+    update(ref(db, `bujoCollections/${id}`), { ...data, updatedAt: Date.now() }), []);
+  const deleteBujoCollection = useCallback(async (id, entries = []) => {
+    // Cascade: remove all entries that live on this collection page.
+    for (const e of entries.filter(x => x.logType === 'collection' && x.logKey === id)) {
+      await remove(ref(db, `bujoEntries/${e.id}`));
+    }
+    await remove(ref(db, `bujoCollections/${id}`));
+  }, []);
+
+  // ─── Bullet Journal: weekly goals ───────────────────────────────────────────
+  const addBujoWeeklyGoal    = useCallback(async data => {
+    const r = push(ref(db, 'bujoWeeklyGoals'));
+    await set(r, { done: false, order: Date.now(), ...data, createdAt: Date.now(), updatedAt: Date.now() });
+    return r.key;
+  }, []);
+  const updateBujoWeeklyGoal = useCallback(async (id, data) =>
+    update(ref(db, `bujoWeeklyGoals/${id}`), { ...data, updatedAt: Date.now() }), []);
+  const deleteBujoWeeklyGoal = useCallback(async id => remove(ref(db, `bujoWeeklyGoals/${id}`)), []);
 
   // ─── Focus: Areas ───────────────────────────────────────────────────────────
   const addFocusArea    = useCallback(async data => { const r = push(ref(db, 'focusAreas')); await set(r, { archived: false, order: Date.now(), ...data, createdAt: Date.now() }); return r.key; }, []);
@@ -188,19 +240,22 @@ export function DataProvider({ children }) {
 
   return (
     <DataContext.Provider value={{
-      clients, loans, notes, crmTasks,
-      goals, goalLog, personalNotes, journalSpreads,
+      clients, loans, notes, crmTasks, followups,
+      goals, goalLog, personalNotes, bujoEntries, bujoCollections, bujoWeeklyGoals,
       focusAreas, focusProjects, focusTasks, focusSessions,
       mortgageSettings, loading,
       addClient,    updateClient,    deleteClient,
       addLoan,      updateLoan,      deleteLoan,
       addNote,      updateNote,      deleteNote,
       addCrmTask,   updateCrmTask,   deleteCrmTask,
+      addFollowup,  updateFollowup,  deleteFollowup,
       saveMortgageSettings,
       addGoal,      updateGoal,      deleteGoal,
       addGoalLog,   updateGoalLog,   deleteGoalLog,
       addPersonalNote, updatePersonalNote, deletePersonalNote,
-      addJournalSpread, updateJournalSpread, deleteJournalSpread,
+      addBujoEntry,       updateBujoEntry,       deleteBujoEntry,
+      addBujoCollection,  updateBujoCollection,  deleteBujoCollection,
+      addBujoWeeklyGoal,  updateBujoWeeklyGoal,  deleteBujoWeeklyGoal,
       addFocusArea,    updateFocusArea,    deleteFocusArea,
       addFocusProject, updateFocusProject, deleteFocusProject,
       addFocusTask,    updateFocusTask,    deleteFocusTask, toggleFocusTask,
