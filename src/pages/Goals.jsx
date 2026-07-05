@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import NumberInput from '../components/common/NumberInput';
 import {
   formatCurrency, formatNumber, pctRound,
   tsToDateInput, dateInputToTs, fmtShortDate,
@@ -204,7 +205,7 @@ function GoalModal({ editGoal, allGoals, onSave, onClose }) {
           <div className="section-label" style={{marginBottom:8}}>Annual target (2026)</div>
           <div className="form-grid form-2" style={{gap:10}}>
             <div className="field"><label>Total target *</label>
-              <input type="number" value={f.yearTarget} onChange={e=>sf('yearTarget',e.target.value)} placeholder="0"/></div>
+              <NumberInput value={f.yearTarget} onChange={v=>sf('yearTarget',v)} placeholder="0"/></div>
             <div className="field"><label>Track by</label>
               <select value={f.periodType} onChange={e=>sf('periodType',e.target.value)}>
                 {PERIOD_OPTIONS.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
@@ -234,8 +235,8 @@ function LogModal({ goal, editEntry, onSave, onClose }) {
       <div className="modal-body">
         <div className="form-grid form-2">
           <div className="field"><label>{isCur?'Amount ($)':'Count'} *</label>
-            <input type="number" value={amt} onChange={e=>setAmt(e.target.value)}
-              placeholder={isCur?'10000':'1'} autoFocus step={goal.step||1}/></div>
+            <NumberInput value={amt} onChange={setAmt}
+              placeholder={isCur?'10,000':'1'} autoFocus/></div>
           <div className="field"><label>Date</label>
             <input type="date" value={logDate} onChange={e=>setLogDate(e.target.value)}/></div>
         </div>
@@ -247,7 +248,7 @@ function LogModal({ goal, editEntry, onSave, onClose }) {
             <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
               {[1,2,5,10,25,50].map(n=>{
                 const v=isCur?n*(goal.step||10000):n*(goal.step||1);
-                return <button key={n} className="btn sm" onClick={()=>setAmt(String(v))}>+{isCur?formatCurrency(v,true):v}</button>;
+                return <button key={n} className="btn sm" onClick={()=>setAmt(String(v))}>+{isCur?formatCurrency(v,true):formatNumber(v)}</button>;
               })}
             </div>
           </div>
@@ -275,8 +276,8 @@ function SubGoalLogModal({ sg, isCur, editEntry, onSave, onClose }) {
         <div className={`form-grid${hasTarget?' form-2':''}`}>
           {hasTarget&&(
             <div className="field"><label>{isCur?'Amount ($)':'Count'} *</label>
-              <input type="number" value={amt} onChange={e=>setAmt(e.target.value)}
-                placeholder="1" autoFocus step={1}/></div>
+              <NumberInput value={amt} onChange={setAmt}
+                placeholder="1" autoFocus/></div>
           )}
           <div className="field"><label>Date</label>
             <input type="date" value={date} onChange={e=>setDate(e.target.value)}
@@ -309,7 +310,7 @@ function SubGoalEditModal({ sg, onSave, onClose }) {
             onKeyDown={e=>{ if(e.key==='Enter'&&title.trim()) onSave({title:title.trim(),target:Number(target)||0}); }}/></div>
         <div className="field">
           <label>Target (leave blank for checkbox)</label>
-          <input type="number" value={target} onChange={e=>setTarget(e.target.value)}
+          <NumberInput value={target} onChange={setTarget}
             placeholder="e.g. 5 (optional)"
             onKeyDown={e=>{ if(e.key==='Enter'&&title.trim()) onSave({title:title.trim(),target:Number(target)||0}); }}/>
         </div>
@@ -353,7 +354,7 @@ function SubGoalRow({ sg, goalColor, isCur, onUpdate, onRequestLog, onRequestEdi
           <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
             {stepBtn('−',()=>onUpdate({actual:Math.max(0,(sg.actual||0)-1)}))}
             <span style={{fontFamily:'var(--mono)',fontSize:11,fontWeight:700,color:isDone?'var(--ok)':goalColor,minWidth:44,textAlign:'center'}}>
-              {displayAmt}/{sg.target}
+              {formatNumber(displayAmt)}/{formatNumber(sg.target)}
             </span>
             {stepBtn('+',()=>onUpdate({actual:(sg.actual||0)+1}))}
           </div>
@@ -414,7 +415,7 @@ function SubGoalRow({ sg, goalColor, isCur, onUpdate, onRequestLog, onRequestEdi
           {[...entries].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>(
             <div key={e.id} style={{display:'flex',alignItems:'center',gap:8,padding:'3px 8px',background:'var(--surface-2)',borderRadius:6}}>
               <span style={{fontSize:10.5,color:'var(--ink-4)',fontFamily:'var(--mono)',flexShrink:0}}>{e.date}</span>
-              {hasTarget&&<span style={{fontSize:11,fontWeight:700,color:goalColor}}>+{e.amt}</span>}
+              {hasTarget&&<span style={{fontSize:11,fontWeight:700,color:goalColor}}>+{formatNumber(e.amt)}</span>}
               <span style={{flex:1,fontSize:11,color:'var(--ink-3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.note||'—'}</span>
               <button className="icon-btn sm" style={{width:18,height:18}} onClick={()=>onRequestLog(sg,e)}><Edit3 size={9}/></button>
               <button className="icon-btn sm danger" style={{width:18,height:18}}
@@ -524,7 +525,7 @@ function GoalPeriodBlock({ goal, periodKey, onUpdateSubGoals }) {
                 onKeyDown={e=>{if(e.key==='Enter')handleAdd();if(e.key==='Escape')setAdding(false);}}
                 style={{...inputStyle,flex:1}} onFocus={focusAccent} onBlur={blurBorder}
               />
-              <input type="number" value={newTarget} onChange={e=>setNewTarget(e.target.value)}
+              <NumberInput value={newTarget} onChange={setNewTarget}
                 placeholder="Target (opt)"
                 onKeyDown={e=>{if(e.key==='Enter')handleAdd();if(e.key==='Escape')setAdding(false);}}
                 style={{...inputStyle,width:110}} onFocus={focusAccent} onBlur={blurBorder}
