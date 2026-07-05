@@ -1,5 +1,6 @@
 // src/pages/mortgage/Pipeline.jsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Edit3, Trash2, Search, FileText, ArrowUpDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useData } from '../../context/DataContext';
@@ -244,7 +245,46 @@ function LoanDrawer({ loan, clientName, onEdit, onDelete, onClose, onUpdate }) {
 }
 
 // ─── Inline Stage Selector ────────────────────────────────────────────────────
-function StageSelector({ loan, stages, open, onOpen, onSelect }) {
+// The menu renders in a portal with fixed positioning: inside the card it gets
+// trapped under sibling cards (hover transforms create stacking contexts) and
+// clipped by the viewport on the bottom row. Flips upward when space below is short.
+function StageSelector({ loan, stages, open, onOpen, onClose, onSelect }) {
+  const btnRef = useRef(null);
+  const [pos, setPos] = useState(null);
+
+  useLayoutEffect(() => {
+    if (!open || !btnRef.current) { setPos(null); return; }
+    const r = btnRef.current.getBoundingClientRect();
+    const GAP = 6, MARGIN = 8, MIN_W = 170;
+    const wanted     = Math.min(300, stages.length * 33 + 8);
+    const spaceBelow = window.innerHeight - r.bottom - GAP - MARGIN;
+    const spaceAbove = r.top - GAP - MARGIN;
+    const openUp     = spaceBelow < wanted && spaceAbove > spaceBelow;
+    setPos({
+      left: Math.max(MARGIN, Math.min(r.left, window.innerWidth - MIN_W - MARGIN)),
+      ...(openUp
+        ? { bottom: window.innerHeight - r.top + GAP }
+        : { top: r.bottom + GAP }),
+      maxHeight: Math.max(140, Math.min(300, openUp ? spaceAbove : spaceBelow)),
+    });
+  }, [open, stages.length]);
+
+  // Close on outside scroll/resize so the fixed menu never drifts from its button.
+  useEffect(() => {
+    if (!open) return;
+    const onScroll = e => {
+      if (e.target instanceof Element && e.target.closest('[data-stage-popover]')) return;
+      onClose();
+    };
+    const onResize = () => onClose();
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [open, onClose]);
+
   return (
     <div
       data-stage-popover
@@ -252,6 +292,7 @@ function StageSelector({ loan, stages, open, onOpen, onSelect }) {
       onClick={e => e.stopPropagation()}
     >
       <button
+        ref={btnRef}
         className="stage-badge-btn"
         onClick={onOpen}
         title="Click to change stage"
@@ -259,8 +300,13 @@ function StageSelector({ loan, stages, open, onOpen, onSelect }) {
         <StageBadge stage={loan.stage}/>
         <span className="stage-badge-caret">▾</span>
       </button>
-      {open && (
-        <div className="stage-popover">
+      {open && pos && createPortal(
+        <div
+          className="stage-popover"
+          data-stage-popover
+          style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, left: pos.left, maxHeight: pos.maxHeight }}
+          onClick={e => e.stopPropagation()}
+        >
           {stages.map(s => {
             const c = STAGE_COLORS[s] || {};
             const blockedGate = loan.stage === s ? null : stageBlockedBy(loan, s);
@@ -281,7 +327,8 @@ function StageSelector({ loan, stages, open, onOpen, onSelect }) {
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -492,6 +539,7 @@ export default function Pipeline() {
                       stages={activeStages}
                       open={editStageId === l.id}
                       onOpen={() => setEditStageId(editStageId === l.id ? null : l.id)}
+                      onClose={() => setEditStageId(null)}
                       onSelect={stage => handleStageSelect(l.id, stage)}
                     />
                     <div style={{ display: 'flex', gap: 4 }}>
