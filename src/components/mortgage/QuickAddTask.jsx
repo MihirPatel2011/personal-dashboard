@@ -13,15 +13,19 @@ export default function QuickAddTask({ defaultDueToday = false, autoFocus = fals
   const [text, setText] = useState('');
 
   const parsed = parseCrmTask(text, clients);
-  const effectiveDue = parsed.dueDate || (defaultDueToday ? tsToDateInput(Date.now()) : '');
   const unmatchedAt = !parsed.clientId && /(^|\s)@\S/.test(text);
+  const dueLabel = parsed.dueDate
+    ? (isToday(parsed.dueDate) ? 'Today' : fmtShortDate(parsed.dueDate))
+    : (defaultDueToday ? 'Today' : '');
 
   async function submit() {
     if (!parsed.title.trim()) return;
     try {
       await addCrmTask({
         title: parsed.title, clientId: parsed.clientId, type: '',
-        priority: parsed.priority, status: 'To Do', dueDate: effectiveDue, notes: '',
+        priority: parsed.priority, status: 'To Do',
+        dueDate: parsed.dueDate || (defaultDueToday ? tsToDateInput(Date.now()) : ''),
+        notes: '',
       });
       toast.success('Task added.');
       setText('');
@@ -45,7 +49,7 @@ export default function QuickAddTask({ defaultDueToday = false, autoFocus = fals
           {parsed.matchedClient && <span className="qat-chip client">{parsed.matchedClient}</span>}
           {unmatchedAt && <span className="qat-chip muted">no client match</span>}
           {parsed.priorityExplicit && <PriorityBadge priority={parsed.priority}/>}
-          {effectiveDue && <span className="qat-chip due">{isToday(effectiveDue) ? 'Today' : fmtShortDate(effectiveDue)}</span>}
+          {dueLabel && <span className="qat-chip due">{dueLabel}</span>}
         </div>
       )}
     </div>

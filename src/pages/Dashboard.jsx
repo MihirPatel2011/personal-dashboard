@@ -9,6 +9,7 @@ import { actionNeeded } from '../utils/followups';
 import { STAGE_COLORS, ACTIVE_STAGES } from '../constants';
 import { StageBadge } from '../components/common/Badge';
 import CheckinWidget from '../components/dashboard/CheckinWidget';
+import QuickAddTask from '../components/mortgage/QuickAddTask';
 
 function KpiCard({ icon: Icon, label, value, sub, color, soft, onClick }) {
   return (
@@ -133,6 +134,9 @@ export default function Dashboard() {
             ))}
           </div>
         )}
+        <div style={{ marginTop: 12 }}>
+          <QuickAddTask defaultDueToday/>
+        </div>
       </div>
 
       {/* KPIs */}

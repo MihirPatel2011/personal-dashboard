@@ -6,7 +6,8 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import EmptyState from '../../components/common/EmptyState';
 import { PriorityBadge } from '../../components/common/Badge';
-import { fmtDate, fmtRelative, isToday, isPast, isWithinDays } from '../../utils';
+import QuickAddTask from '../../components/mortgage/QuickAddTask';
+import { fmtDate, isToday, isPast, isWithinDays } from '../../utils';
 
 const TASK_STATUSES  = ['To Do', 'In Progress', 'Done', 'Cancelled'];
 const TASK_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
@@ -182,6 +183,7 @@ export default function CRMTasks() {
       </div>
 
       <div style={{ padding: '20px 28px' }}>
+        <QuickAddTask autoFocus/>
         {filtered.length === 0 ? (
           <EmptyState emoji="✅" title="No CRM tasks" description="Add tasks to track follow-ups and client actions."
             actionLabel="Add Task" onAction={() => { setEditTask(null); setShowForm(true); }}/>
