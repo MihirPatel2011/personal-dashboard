@@ -1367,3 +1367,20 @@ button[style*="borderRadius: 6px"]:hover {
 .checkin-dot.full { border-color: var(--accent); background: var(--accent); }
 .checkin-dot.today { outline: 2px solid var(--accent-dim); outline-offset: 1px; }
 .checkin-streak { display: flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--warn); }
+
+/* ─── CRM quick-add task bar ────────────────────────────────────────────── */
+.qat { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.qat-row {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); transition: border-color .15s;
+}
+.qat-row:focus-within { border-color: var(--accent-border); }
+.qat-input { flex: 1; background: none; border: none; outline: none; color: var(--ink); font-size: 13.5px; font-family: inherit; min-width: 0; }
+.qat-input::placeholder { color: var(--ink-4); }
+.qat-hint { display: flex; align-items: center; gap: 3px; font-size: 10.5px; color: var(--ink-4); flex-shrink: 0; }
+.qat-chips { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding-left: 6px; }
+.qat-chip { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+.qat-chip.client { background: var(--mortgage-dim); color: var(--mortgage); }
+.qat-chip.due { background: var(--warn-dim); color: var(--warn); }
+.qat-chip.muted { background: var(--surface-3); color: var(--ink-3); }
