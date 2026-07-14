@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, Kanban, Users, Reply, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, ListTodo, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Target, Timer, Kanban, Users, Reply, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, ListTodo, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -21,7 +21,7 @@ export function MobileNav() {
     return pathname.startsWith(base);
   };
 
-  const morePaths = ['/notes'];
+  const morePaths = ['/notes', '/focus'];
   const moreActive = morePaths.some(p => pathname.startsWith(p));
 
   const primaryTabs = [
@@ -31,6 +31,7 @@ export function MobileNav() {
   ];
 
   const moreItems = [
+    { path: '/focus', label: 'Focus Log', icon: Timer },
     { path: '/notes', label: 'Notes & Ideas', icon: NotebookPen },
   ];
 
@@ -132,6 +133,13 @@ export default function Sidebar() {
         <button className={`nav-item${active('/notes') ? ' active' : ''}`} onClick={() => go('/notes')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><NotebookPen size={15}/></span>
           Notes &amp; Ideas
+        </button>
+
+        {/* Focus */}
+        <div className="sidebar-section-label">Focus</div>
+        <button className={`nav-item${active('/focus') ? ' active' : ''}`} onClick={() => go('/focus/log')}>
+          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><Timer size={15}/></span>
+          Focus Log
         </button>
 
         {/* Mortgage */}

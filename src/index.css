@@ -1384,3 +1384,45 @@ button[style*="borderRadius: 6px"]:hover {
 .qat-chip.client { background: var(--mortgage-dim); color: var(--mortgage); }
 .qat-chip.due { background: var(--warn-dim); color: var(--warn); }
 .qat-chip.muted { background: var(--surface-3); color: var(--ink-3); }
+
+/* ─── Focus Log ─────────────────────────────────────────────────────────── */
+.flog-bar { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 20px; }
+.flog-activity { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r); padding: 10px 14px; color: var(--ink); font-size: 14px; font-family: inherit; outline: none; transition: border-color .15s; }
+.flog-activity:focus { border-color: var(--accent-border); }
+.flog-bar-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.flog-field { display: flex; flex-direction: column; gap: 3px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 600; }
+.flog-field input { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r); padding: 7px 10px; color: var(--ink); font-size: 12.5px; font-family: inherit; outline: none; }
+.flog-dur { font-size: 12px; font-weight: 700; font-family: var(--mono); padding-bottom: 9px; }
+.flog-cat-select { margin-left: auto; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; color: var(--ink); font-size: 12.5px; font-family: inherit; max-width: 210px; }
+.flog-client-suggest { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
+.flog-day-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
+.flog-row { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--r); }
+.flog-row:hover { background: var(--surface-2); }
+.flog-row.editing { flex-direction: column; align-items: stretch; gap: 8px; background: var(--surface-2); border: 1px solid var(--border); padding: 12px; }
+.flog-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.flog-edit-grid input, .flog-edit-grid select { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; color: var(--ink); font-size: 12.5px; font-family: inherit; outline: none; min-width: 0; }
+.flog-edit-grid input:first-child { grid-column: 1 / -1; }
+.flog-check { background: none; border: none; cursor: pointer; padding: 2px; display: flex; flex-shrink: 0; }
+.flog-time { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); flex-shrink: 0; min-width: 44px; }
+.flog-text { flex: 1; font-size: 13.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flog-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
+.flog-dur-tag { font-size: 11px; color: var(--ok); font-family: var(--mono); flex-shrink: 0; }
+.flog-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.flog-periods { display: flex; gap: 6px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.flog-period { padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-3); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s, color .15s; }
+.flog-period.active { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
+.flog-peak { padding: 12px 16px; background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: var(--r); font-size: 13.5px; color: var(--ink); margin-bottom: 16px; }
+.flog-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px 18px; margin-bottom: 16px; }
+.flog-stat-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+.flog-stat-caption { font-size: 11px; color: var(--ink-4); margin-top: 8px; }
+.flog-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.flog-heat { display: flex; gap: 3px; }
+.flog-heat-cell { flex: 1; height: 36px; border-radius: 4px; background: var(--surface-2); position: relative; overflow: hidden; }
+.flog-heat-fill { position: absolute; inset: 0; background: var(--accent); border-radius: inherit; }
+.flog-heat-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-4); margin-top: 5px; }
+@media (max-width: 760px) {
+  .flog-stat-grid { grid-template-columns: 1fr; }
+  .flog-cat-select { margin-left: 0; width: 100%; max-width: none; }
+  .flog-edit-grid { grid-template-columns: 1fr; }
+  .flog-text { white-space: normal; }
+}
