@@ -75,3 +75,23 @@ export const GOAL_COLORS = [
 
 export const GOAL_GLYPHS = ['🎯','💰','📞','✉','#','$','⭐','🔥','🚀','💡','📊','📈','🏋','🤝','✅','📝','🌟','💼'];
 
+// ─── Focus Log ────────────────────────────────────────────────────────────────
+// Edit this list to change the category options in the Focus Log module.
+export const FOCUS_CATEGORIES = [
+  'Broking – Submission', 'Broking – Approval/Bank', 'Broking – Settlement',
+  'Broking – Client Contact', 'Compliance', 'Marketing/Content',
+  'Side Project', 'Admin', 'Other',
+];
+
+export const FOCUS_CATEGORY_COLORS = {
+  'Broking – Submission':     '#7B96F5',
+  'Broking – Approval/Bank':  '#22D3EE',
+  'Broking – Settlement':     '#34D399',
+  'Broking – Client Contact': '#2DD4BF',
+  'Compliance':               '#FBBF24',
+  'Marketing/Content':        '#F472B6',
+  'Side Project':             '#A78BFA',
+  'Admin':                    '#FB923C',
+  'Other':                    '#94A3B8',
+};
+
