@@ -16,6 +16,7 @@ import LoanCompliance, { ProgressRing } from '../../components/mortgage/LoanComp
 
 import { clickable } from '../../compass/interaction';
 import { XDel } from '../../compass/ui';
+import EditField, { SelectField } from '../../compass/EditField';
 import { C, mono, card, labelSm } from '../../compass/tokens';
 
 // Compass's clients table: every column can shrink, long values ellipsis, so
@@ -190,7 +191,7 @@ function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose })
 // ─── Loan Panel ───────────────────────────────────────────────────────────────
 // Sits beside the table rather than sliding over it, so the file you picked
 // stays in view next to the rest of the pipeline.
-function LoanPanel({ loan, clientName, onEdit, onDelete, onClose, onUpdate }) {
+function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDelete, onClose, onUpdate }) {
   const [tab, setTab] = useState('details');
   if (!loan) return null;
   return (
@@ -218,35 +219,31 @@ function LoanPanel({ loan, clientName, onEdit, onDelete, onClose, onUpdate }) {
             <StageBadge stage={loan.stage}/>
             <span className="badge mortgage">{loan.status}</span>
           </div>
-          <div>
-            <div className="field-grid">
-              {[
-                ['Value',           loan.value ? formatCurrency(Number(loan.value)) : '—', true],
-                ['Lender',          loan.lender || '—'],
-                ['Objective',       loan.objective || '—'],
-                ['Stage',           loan.stage || '—'],
-                ['Status',          loan.status || '—'],
-                ['Referrer',        loan.referrer || '—'],
-                ['Submitted',       fmtDate(loan.submissionDate), true],
-                ['Settlement',      fmtDate(loan.settlementDate), true],
-                ['Commission',      loan.comms ? formatCurrency(Number(loan.comms)) : '—', true],
-                ['Comm. paid',      fmtDate(loan.datePaid), true],
-              ].map(([k, v, figure]) => (
-                <div key={k} className="fg-item">
-                  <span className="fg-label">{k}</span>
-                  <span className={figure ? 'fg-figure' : 'fg-value'} title={String(v)}>{v}</span>
-                </div>
-              ))}
-            </div>
+          {/* Every field edits in place — no round trip through the edit modal. */}
+          <div className="field-grid">
+            <EditField label="Value" value={loan.value ? formatCurrency(Number(loan.value)) : ''}
+                       type="number" placeholder="$0"
+                       onCommit={v => onUpdate({ value: v })}/>
+            <SelectField label="Lender" value={loan.lender} options={lenders} placeholder="Pick a lender"
+                         onCommit={v => onUpdate({ lender: v })}/>
+            <SelectField label="Objective" value={loan.objective} options={OBJECTIVES} placeholder="Pick one"
+                         onCommit={v => onUpdate({ objective: v })}/>
+            <SelectField label="Stage" value={loan.stage} options={stages} placeholder="Pick a stage"
+                         onCommit={v => onUpdate({ stage: v })}/>
+            <SelectField label="Status" value={loan.status} options={statuses} placeholder="Pick a status"
+                         onCommit={v => onUpdate({ status: v })}/>
+            <SelectField label="Referrer" value={loan.referrer} options={REFERRERS} placeholder="Pick a referrer"
+                         onCommit={v => onUpdate({ referrer: v })}/>
+            <EditField label="Submitted" value={loan.submissionDate || ''} type="date"
+                       onCommit={v => onUpdate({ submissionDate: v })}/>
+            <EditField label="Settlement" value={loan.settlementDate || ''} type="date"
+                       onCommit={v => onUpdate({ settlementDate: v })}/>
           </div>
-          {loan.notes && (
-            <div>
-              <div className="section-label" style={{ marginBottom: 8 }}>Notes</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.65, background: 'var(--surface-2)', padding: '12px 14px', borderRadius: 'var(--r)', border: '1px solid var(--border)' }}>
-                {loan.notes}
-              </div>
-            </div>
-          )}
+
+          <div>
+            <div className="section-label" style={{ marginBottom: 8 }}>Notes</div>
+            <NotesField value={loan.notes || ''} onCommit={v => onUpdate({ notes: v })}/>
+          </div>
           <ClientTasks clientId={loan.clientId} clientName={clientName || loan.clientObj}/>
 
           <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>Added {fmtRelative(loan.createdAt)}</div>
@@ -342,6 +339,29 @@ function ClientTasks({ clientId, clientName }) {
         <button className="btn accent sm" onClick={add}>Add</button>
       </div>
     </div>
+  );
+}
+
+// Notes save on blur like every other field in the panel.
+function NotesField({ value, onCommit }) {
+  const [local, setLocal] = useState(value);
+  const [focused, setFocused] = useState(false);
+  const [last, setLast] = useState(value);
+  if (!focused && value !== last) { setLast(value); setLocal(value); }
+
+  return (
+    <textarea
+      value={local}
+      placeholder="Anything worth remembering about this file…"
+      onChange={e => setLocal(e.target.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => { setFocused(false); if (local !== value) onCommit(local); }}
+      style={{
+        width: '100%', minHeight: 68, resize: 'vertical', padding: '10px 12px',
+        border: '1px solid var(--border-2)', borderRadius: 'var(--r)',
+        background: 'var(--surface-2)', color: 'var(--ink)',
+        fontSize: 13, lineHeight: 1.6, fontFamily: 'var(--font)',
+      }}/>
   );
 }
 
@@ -713,6 +733,9 @@ export default function Pipeline() {
           <LoanPanel
             loan={liveViewLoan}
             clientName={clientMap[liveViewLoan.clientId] || liveViewLoan.clientObj}
+            lenders={activeLenders}
+            stages={activeStages}
+            statuses={activeStatuses}
             onEdit={() => { setEditLoan(liveViewLoan); setShowForm(true); }}
             onDelete={() => setDelLoan(liveViewLoan)}
             onClose={() => setViewLoan(null)}

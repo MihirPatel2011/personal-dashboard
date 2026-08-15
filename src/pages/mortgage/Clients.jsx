@@ -7,6 +7,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import EmptyState from '../../components/common/EmptyState';
 
 import { clickable } from '../../compass/interaction';
+import EditField from '../../compass/EditField';
 import { C, mono, card, labelSm } from '../../compass/tokens';
 
 const ROW_GRID = {
@@ -21,7 +22,7 @@ const countChip = {
   padding: '3px 8px', borderRadius: 6, background: 'var(--surface-3)', color: 'var(--ink-2)',
   whiteSpace: 'nowrap',
 };
-import { fmtDate, fmtRelative, initials } from '../../utils';
+import { fmtDate, fmtRelative, initials, tsToDateInput } from '../../utils';
 
 const CHANNELS   = ['Phone', 'Email', 'In Person', 'Video Call', 'SMS', 'Other'];
 const NOTE_TYPES = ['General', 'Application Update', 'Client Follow-up', 'Settlement', 'Discharge', 'Other'];
@@ -35,6 +36,7 @@ function ClientForm({ client, onSave, onClose }) {
     phone:   client?.phone   || '',
     dob:     client?.dob     || '',
     address: client?.address || '',
+    dependentsAges: client?.dependentsAges || '',
     notes:   client?.notes   || '',
   });
   const sf = (k, v) => setF(p => ({ ...p, [k]: v }));
@@ -65,6 +67,10 @@ function ClientForm({ client, onSave, onClose }) {
         <div className="field">
           <label>Address</label>
           <input value={f.address} onChange={e => sf('address', e.target.value)} placeholder="123 Main St, Sydney NSW 2000"/>
+        </div>
+        <div className="field">
+          <label>Dependants' ages</label>
+          <input value={f.dependentsAges} onChange={e => sf('dependentsAges', e.target.value)} placeholder="e.g. 4, 7, 11"/>
         </div>
         <div className="field">
           <label>Notes</label>
@@ -207,7 +213,7 @@ function NoteDetailDrawer({ note, clientName, onEdit, onDelete, onBack }) {
 }
 
 // ─── Client Drawer ─────────────────────────────────────────────────────────────
-function ClientPanel({ client, loans, notes, onEdit, onDelete, onClose, onAddNote, onViewNote }) {
+function ClientPanel({ client, loans, notes, onEdit, onDelete, onClose, onAddNote, onViewNote, onUpdate }) {
   if (!client) return null;
 
   const clientLoans = loans.filter(l => l.clientId === client.id);
@@ -235,20 +241,31 @@ function ClientPanel({ client, loans, notes, onEdit, onDelete, onClose, onAddNot
         </div>
 
         <div className="drawer-body">
-          {/* Contact */}
-          <div>
-            <div className="field-grid">
-              {[
-                ['Phone',   client.phone   || '—', true],
-                ['Email',   client.email   || '—'],
-                ['DOB',     fmtDate(client.dob), true],
-                ['Address', client.address || '—'],
-              ].map(([k, v, figure]) => (
-                <div key={k} className="fg-item">
-                  <span className="fg-label">{k}</span>
-                  <span className={figure ? 'fg-figure' : 'fg-value'} title={String(v)}>{v}</span>
-                </div>
-              ))}
+          {/* Contact — every field edits in place */}
+          <div className="field-grid">
+            <EditField label="Phone" value={client.phone} placeholder="04.. ... ..."
+                       onCommit={v => onUpdate({ phone: v })}/>
+            <EditField label="Email" value={client.email} placeholder="name@mail.com"
+                       onCommit={v => onUpdate({ email: v })}/>
+            <EditField label="DOB" value={client.dob || ''} type="date"
+                       onCommit={v => onUpdate({ dob: v })}/>
+            <EditField label="Address" value={client.address} placeholder="Street, suburb"
+                       onCommit={v => onUpdate({ address: v })}/>
+          </div>
+
+          {/* Dependants' ages, stamped with when they were last confirmed —
+              ages go stale, so the date matters as much as the value. */}
+          <div className="field-grid" style={{ borderTop: 'none', paddingTop: 0 }}>
+            <EditField
+              label="Dependants' ages"
+              value={client.dependentsAges}
+              placeholder="e.g. 4, 7, 11"
+              onCommit={v => onUpdate({ dependentsAges: v, dependentsUpdated: tsToDateInput(Date.now()) })}/>
+            <div className="fg-item">
+              <span className="fg-label">Ages updated</span>
+              <span className="fg-figure">
+                {client.dependentsUpdated ? fmtDate(client.dependentsUpdated) : '—'}
+              </span>
             </div>
           </div>
 
@@ -394,9 +411,15 @@ export default function Clients() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   async function handleSave(data) {
+    // Stamp the dependants date whenever the ages actually change, so the
+    // form and the inline field behave the same way.
+    const payload = { ...data };
+    const agesChanged = (data.dependentsAges || '') !== (editClient?.dependentsAges || '');
+    if (agesChanged && data.dependentsAges) payload.dependentsUpdated = tsToDateInput(Date.now());
+
     try {
-      if (editClient) { await updateClient(editClient.id, data); toast.success('Client updated.'); }
-      else            { await addClient(data); toast.success('Client added!'); }
+      if (editClient) { await updateClient(editClient.id, payload); toast.success('Client updated.'); }
+      else            { await addClient(payload); toast.success('Client added!'); }
     } catch { toast.error('Failed to save.'); }
     setShowForm(false); setEditClient(null);
   }
@@ -534,6 +557,7 @@ export default function Clients() {
             client={viewClient}
             loans={loans}
             notes={notes}
+            onUpdate={data => updateClient(viewClient.id, data).catch(() => toast.error('Failed to save.'))}
             onEdit={() => { setEditClient(viewClient); setShowForm(true); }}
             onDelete={() => setDelClient(viewClient)}
             onClose={() => setViewClient(null)}
