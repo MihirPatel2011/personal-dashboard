@@ -190,6 +190,7 @@ export function DataProvider({ children }) {
   }, []);
   const addGoalV2Log  = useCallback(async (goalId, entry) => { const r = push(ref(db, `goalsV2/${goalId}/logs`)); await set(r, entry); }, []);
   const delGoalV2Log  = useCallback(async (goalId, logId) => remove(ref(db, `goalsV2/${goalId}/logs/${logId}`)), []);
+  const editGoalV2Log = useCallback(async (goalId, logId, entry) => update(ref(db, `goalsV2/${goalId}/logs/${logId}`), entry), []);
 
   // ─── Money ────────────────────────────────────────────────────────────────
   const addMoneyRow    = useCallback(async (node, data) => { const r = push(ref(db, node)); await set(r, data); return r.key; }, []);
@@ -216,7 +217,7 @@ export function DataProvider({ children }) {
       addGoalLog,   updateGoalLog,   deleteGoalLog,
       addPersonalNote, updatePersonalNote, deletePersonalNote,
       setCheckin,
-      addGoalV2, updateGoalV2, deleteGoalV2, addGoalV2Log, delGoalV2Log,
+      addGoalV2, updateGoalV2, deleteGoalV2, addGoalV2Log, delGoalV2Log, editGoalV2Log,
       addMoneyRow, updateMoneyRow, deleteMoneyRow,
       addMoneySetting, renameMoneySetting, removeMoneySetting,
     }}>

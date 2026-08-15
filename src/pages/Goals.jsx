@@ -18,7 +18,7 @@ import {
 // into quarters, with monthly goals that can roll their progress into one.
 
 export default function Goals() {
-  const { goalsV2, addGoalV2, deleteGoalV2, addGoalV2Log, delGoalV2Log } = useData();
+  const { goalsV2, addGoalV2, updateGoalV2, deleteGoalV2, addGoalV2Log, delGoalV2Log, editGoalV2Log } = useData();
   const [modal, setModal] = useState(null); // { kind, goalId }
 
   const goals = useMemo(
@@ -61,9 +61,7 @@ export default function Goals() {
           </div>
         </div>
         <div className="page-actions">
-          <button className="btn accent" onClick={() => openModal('newGoal')}>
-            {annual.length >= 3 ? '+ New monthly goal' : '+ New yearly goal'}
-          </button>
+          <button className="btn accent" onClick={() => openModal('newGoal')}>Add New Goal</button>
         </div>
       </div>
 
@@ -140,6 +138,13 @@ export default function Goals() {
         goals={goals}
         close={closeModal}
         onDelete={delGoalV2Log}
+        onEdit={editGoalV2Log}
+      />
+      <TargetsModal
+        open={modal?.kind === 'targets'}
+        goal={modalGoal}
+        close={closeModal}
+        onSave={updateGoalV2}
       />
     </>
   );
@@ -166,6 +171,13 @@ function AnnualCard({ v, onDelete, openModal }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+          <span style={{ ...labelSm, fontSize: 9, letterSpacing: '0.14em' }}>Quarter targets</span>
+          <span {...clickable(() => openModal('targets', g.id))}
+                style={{ fontFamily: mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.accent, cursor: 'pointer' }}>
+            Adjust
+          </span>
+        </div>
         {v.qSums.map((sum, i) => {
           const target = g.qTargets?.[i] || 0;
           const qp = target ? Math.round((sum / target) * 100) : 0;
@@ -454,7 +466,8 @@ function LogModal({ open, goal, close, onSave }) {
   );
 }
 
-function HistoryModal({ open, goal, goals, close, onDelete }) {
+function HistoryModal({ open, goal, goals, close, onDelete, onEdit }) {
+  const [editId, setEditId] = useState(null);
   if (!open || !goal) return null;
   const v = annualView(goal, goals);
   const logs = (goal.type === 'annual' ? v.logs : goal.logs)
@@ -468,15 +481,33 @@ function HistoryModal({ open, goal, goals, close, onDelete }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ fontSize: 12, color: C.muted }}>{goal.title}</div>
         {logs.map(l => (
-          <div key={l.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 0', borderBottom: `1px solid ${C.line}` }}>
-            <span style={{ fontFamily: mono, fontSize: 10.5, color: C.muted, flex: '0 0 52px' }}>{dateLabel(l.date)}</span>
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.note}</span>
-              <span style={{ fontSize: 11, color: C.muted }}>{l.src || 'Logged directly'}</span>
+          editId === l.id ? (
+            <LogEditRow
+              key={l.id}
+              log={l}
+              unit={goal.unit}
+              onCancel={() => setEditId(null)}
+              onSave={async (entry) => {
+                await onEdit(l.goalId || goal.id, l.id, entry);
+                setEditId(null);
+                toast.success('Entry updated');
+              }}
+            />
+          ) : (
+            <div key={l.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 0', borderBottom: `1px solid ${C.line}` }}>
+              <span style={{ fontFamily: mono, fontSize: 10.5, color: C.muted, flex: '0 0 52px' }}>{dateLabel(l.date)}</span>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.note}</span>
+                <span style={{ fontSize: 11, color: C.muted }}>{l.src || 'Logged directly'}</span>
+              </div>
+              <span style={{ fontFamily: mono, fontSize: 12.5, whiteSpace: 'nowrap' }}>{unitVal(goal.unit, l.amount)}</span>
+              <span {...clickable(() => setEditId(l.id), 'Edit entry')}
+                    style={{ fontFamily: mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.accent, cursor: 'pointer', flex: '0 0 auto' }}>
+                Edit
+              </span>
+              <XDel size={15} onClick={() => onDelete(l.goalId || goal.id, l.id)} />
             </div>
-            <span style={{ fontFamily: mono, fontSize: 12.5, whiteSpace: 'nowrap' }}>{unitVal(goal.unit, l.amount)}</span>
-            <XDel size={15} onClick={() => onDelete(l.goalId || goal.id, l.id)} />
-          </div>
+          )
         ))}
         {!logs.length && <Empty style={{ padding: 0 }}>Nothing logged against this goal yet.</Empty>}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8 }}>
@@ -484,6 +515,121 @@ function HistoryModal({ open, goal, goals, close, onDelete }) {
           <span style={{ fontFamily: serif, fontSize: 22 }}>{unitVal(goal.unit, total)}</span>
         </div>
       </div>
+      </div>
+    </Modal>
+  );
+}
+
+// One log entry, opened for correction in place.
+function LogEditRow({ log, unit, onSave, onCancel }) {
+  const [amount, setAmount] = useState(String(log.amount ?? ''));
+  const [date, setDate] = useState(log.date || TODAY);
+  const [note, setNote] = useState(log.note || '');
+
+  const save = () => {
+    const amt = parseFloat(String(amount).replace(/[^0-9.-]/g, ''));
+    if (!amt) { toast.error('Enter an amount'); return; }
+    onSave({ amount: amt, date: date || TODAY, note: note.trim() || 'Logged' });
+  };
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 8, padding: 12,
+      borderRadius: 10, background: C.cardTint, border: `1px solid ${C.line}`,
+    }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <input value={amount} onChange={e => setAmount(e.target.value)}
+               onKeyDown={e => e.key === 'Enter' && save()}
+               placeholder={unit === 'money' ? 'Amount' : 'How many'}
+               style={{ ...goalInput, flex: '0 1 110px', fontFamily: mono }} />
+        <input type="date" value={date} onChange={e => setDate(e.target.value)}
+               style={{ ...goalInput, flex: '0 1 145px' }} />
+      </div>
+      <input value={note} onChange={e => setNote(e.target.value)}
+             onKeyDown={e => e.key === 'Enter' && save()}
+             placeholder="What was it"
+             style={{ ...goalInput, width: '100%' }} />
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <button onClick={onCancel} style={{ ...btnGhost, padding: '7px 12px', fontSize: 12 }}>Cancel</button>
+        <button onClick={save} style={{ ...btnDark, padding: '7px 14px', fontSize: 12 }}>Save</button>
+      </div>
+    </div>
+  );
+}
+
+const goalInput = {
+  padding: '9px 11px', border: `1px solid ${C.field}`, borderRadius: 8,
+  background: C.card, color: C.ink, fontSize: 13, minWidth: 0,
+};
+
+// Quarter targets default to an even split; this lets them be shaped to the
+// year you actually expect.
+function TargetsModal({ open, goal, close, onSave }) {
+  const [vals, setVals] = useState(['', '', '', '']);
+  const [loadedFor, setLoadedFor] = useState(null);
+
+  if (open && goal && loadedFor !== goal.id) {
+    setLoadedFor(goal.id);
+    setVals((goal.qTargets || [0, 0, 0, 0]).map(v => String(v ?? 0)));
+  }
+  if (!open && loadedFor) setLoadedFor(null);
+  if (!open || !goal) return null;
+
+  const nums = vals.map(v => parseFloat(String(v).replace(/[^0-9.-]/g, '')) || 0);
+  const sum = nums.reduce((a, b) => a + b, 0);
+  const diff = sum - (Number(goal.target) || 0);
+
+  const save = async () => {
+    await onSave(goal.id, { qTargets: nums });
+    toast.success('Quarter targets updated');
+    close();
+  };
+
+  const split = () => {
+    const q = (Number(goal.target) || 0) / 4;
+    setVals([q, q, q, q].map(String));
+  };
+
+  return (
+    <Modal isOpen title="Quarter targets" onClose={close}>
+      <div className="modal-body">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
+            {goal.title} · year target {unitVal(goal.unit, goal.target)}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 110px), 1fr))', gap: 12 }}>
+            {vals.map((v, i) => (
+              <label key={i} style={fieldLabel}>
+                Q{i + 1}
+                <input value={v}
+                       onChange={e => setVals(prev => prev.map((x, j) => (j === i ? e.target.value : x)))}
+                       onKeyDown={e => e.key === 'Enter' && save()}
+                       style={{ ...textInput, fontFamily: mono, fontSize: 13, padding: '10px 12px' }} />
+              </label>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: C.muted }}>
+              Quarters total <span style={{ fontFamily: mono, color: C.ink }}>{unitVal(goal.unit, sum)}</span>
+              {diff !== 0 && (
+                <span style={{ color: 'var(--warn)' }}>
+                  {' · '}{diff > 0 ? 'over' : 'under'} the year target by {unitVal(goal.unit, Math.abs(diff))}
+                </span>
+              )}
+            </span>
+            <span {...clickable(split, 'Split evenly')}
+                  style={{ fontFamily: mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.accent, cursor: 'pointer' }}>
+              Split evenly
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 6 }}>
+            <button onClick={close} style={{ ...btnGhost, padding: '10px 16px', borderRadius: 9, fontSize: 12.5 }}>Cancel</button>
+            <button onClick={save} style={{ ...btnDark, padding: '10px 20px', borderRadius: 9 }}>Save targets</button>
+          </div>
+        </div>
       </div>
     </Modal>
   );
