@@ -10,7 +10,7 @@ import { StageBadge } from '../../components/common/Badge';
 import EmptyState from '../../components/common/EmptyState';
 import NumberInput from '../../components/common/NumberInput';
 import { LOAN_STAGES, LOAN_STATUSES, OBJECTIVES, LENDERS, REFERRERS, STAGE_COLORS, ACTIVE_STAGES } from '../../constants';
-import { formatCurrency, fmtDate, fmtRelative } from '../../utils';
+import { formatCurrency, fmtDate, fmtRelative, tsToDateInput } from '../../utils';
 import { progress as complianceProgress, stageBlockedBy, blockingItems } from '../../utils/crmCompliance';
 import LoanCompliance, { ProgressRing } from '../../components/mortgage/LoanCompliance';
 
@@ -244,6 +244,8 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
             <div className="section-label" style={{ marginBottom: 8 }}>Notes</div>
             <NotesField value={loan.notes || ''} onCommit={v => onUpdate({ notes: v })}/>
           </div>
+          <ConversationLog clientId={loan.clientId} clientName={clientName || loan.clientObj}/>
+
           <ClientTasks clientId={loan.clientId} clientName={clientName || loan.clientObj}/>
 
           <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>Added {fmtRelative(loan.createdAt)}</div>
@@ -254,6 +256,96 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
           <button className="btn primary" onClick={onEdit}><Edit3 size={14}/> Edit</button>
         </div>
       </aside>
+  );
+}
+
+// ─── Conversation log ─────────────────────────────────────────────────────────
+// Compass's log, writing to the same notes node the CRM Notes page reads — a
+// call logged here is the same record you will find under Notes.
+function ConversationLog({ clientId, clientName }) {
+  const { notes, addNote, deleteNote } = useData();
+  const [text, setText] = useState('');
+  const [channel, setChannel] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const mine = notes
+    .filter(n => n.clientId === clientId)
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  const save = async () => {
+    const body = text.trim();
+    if (!body) return;
+    if (!clientId) { toast.error('Link this loan to a client first.'); return; }
+    // The Notes page leads with the title, so derive a readable one from the
+    // opening line rather than saving an untitled note.
+    const firstLine = body.split('\n')[0].trim();
+    const title = firstLine.length > 60 ? `${firstLine.slice(0, 57)}…` : firstLine;
+    setSaving(true);
+    try {
+      await addNote({
+        clientId,
+        title,
+        body,
+        channel,
+        date: tsToDateInput(Date.now()),
+      });
+      setText(''); setChannel('');
+      toast.success('Note saved.');
+    } catch { toast.error('Failed to save note.'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div>
+      <div className="section-label" style={{ marginBottom: 10 }}>
+        Conversation log{clientName ? ` · ${clientName}` : ''}
+      </div>
+
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder="Log a call or conversation…"
+        style={{
+          width: '100%', minHeight: 62, resize: 'vertical', padding: '10px 12px',
+          border: '1px solid var(--border-2)', borderRadius: 'var(--r)',
+          background: 'var(--surface-2)', color: 'var(--ink)',
+          fontSize: 13, lineHeight: 1.55, fontFamily: 'var(--font)',
+        }}/>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '8px 0 14px', flexWrap: 'wrap' }}>
+        <select value={channel} onChange={e => setChannel(e.target.value)}
+                style={{ ...panelInput, flex: '0 1 130px', fontSize: 12 }}>
+          <option value="">Channel…</option>
+          {CHANNELS.map(c => <option key={c}>{c}</option>)}
+        </select>
+        <button className="btn accent sm" onClick={save} disabled={saving || !text.trim()}>
+          {saving ? 'Saving…' : 'Save note'}
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 260, overflow: 'auto' }}>
+        {mine.map(n => (
+          <div key={n.id} style={{
+            display: 'flex', gap: 8, alignItems: 'flex-start',
+            paddingLeft: 12, borderLeft: '2px solid var(--accent-border)',
+          }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>
+                {n.date ? fmtDate(n.date) : fmtRelative(n.createdAt)}
+                {n.channel ? ` · ${n.channel}` : ''}
+              </span>
+              <span style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--ink-2)', whiteSpace: 'pre-wrap' }}>
+                {n.body || n.title}
+              </span>
+            </div>
+            <XDel size={15} onClick={() => deleteNote(n.id).catch(() => toast.error('Failed.'))}/>
+          </div>
+        ))}
+        {!mine.length && (
+          <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>No conversations logged yet.</div>
+        )}
+      </div>
+    </div>
   );
 }
 
