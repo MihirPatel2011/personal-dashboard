@@ -207,7 +207,7 @@ function NoteDetailDrawer({ note, clientName, onEdit, onDelete, onBack }) {
 }
 
 // ─── Client Drawer ─────────────────────────────────────────────────────────────
-function ClientDrawer({ client, loans, notes, onEdit, onDelete, onClose, onAddNote, onViewNote }) {
+function ClientPanel({ client, loans, notes, onEdit, onDelete, onClose, onAddNote, onViewNote }) {
   if (!client) return null;
 
   const clientLoans = loans.filter(l => l.clientId === client.id);
@@ -215,9 +215,7 @@ function ClientDrawer({ client, loans, notes, onEdit, onDelete, onClose, onAddNo
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   return (
-    <>
-      <div className="drawer-backdrop" onClick={onClose}/>
-      <div className="drawer">
+      <aside className="detail-panel">
         <div className="drawer-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
@@ -350,8 +348,7 @@ function ClientDrawer({ client, loans, notes, onEdit, onDelete, onClose, onAddNo
           <button className="btn danger-ghost" onClick={onDelete}><Trash2 size={14}/> Delete</button>
           <button className="btn primary" onClick={onEdit}><Edit3 size={14}/> Edit</button>
         </div>
-      </div>
-    </>
+      </aside>
   );
 }
 
@@ -460,8 +457,9 @@ export default function Clients() {
         </div>
       </div>
 
-      {/* ── Grid ── */}
-      <div className="crm-body" style={{ padding: '20px 28px' }}>
+      {/* ── Table + detail panel, side by side ── */}
+      <div className="crm-body split-view" style={{ padding: '20px 28px' }}>
+        <div style={{ minWidth: 0 }}>
         {filtered.length === 0 ? (
           <EmptyState emoji="👤" title="No clients yet" description="Add your first client to start building your CRM."
             actionLabel="Add Client" onAction={() => { setEditClient(null); setShowForm(true); }}/>
@@ -528,6 +526,29 @@ export default function Clients() {
             })}
           </section>
         )}
+        </div>
+
+        {viewClient ? (
+          <ClientPanel
+            client={viewClient}
+            loans={loans}
+            notes={notes}
+            onEdit={() => { setEditClient(viewClient); setShowForm(true); }}
+            onDelete={() => setDelClient(viewClient)}
+            onClose={() => setViewClient(null)}
+            onAddNote={(clientId) => { setNoteClientId(clientId); setEditNote(null); setShowNoteForm(true); }}
+            onViewNote={openNoteDetail}
+          />
+        ) : (
+          <aside className="detail-panel empty">
+            <div className="drawer-body">
+              <h2 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 24, margin: 0 }}>No client selected</h2>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.6 }}>
+                Pick a client on the left to see their loans and notes here.
+              </div>
+            </div>
+          </aside>
+        )}
       </div>
 
       {/* ── Client Form Modal ── */}
@@ -536,24 +557,6 @@ export default function Clients() {
           client={editClient}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditClient(null); }}
-        />
-      )}
-
-      {/* ── Client Drawer ── */}
-      {viewClient && (
-        <ClientDrawer
-          client={viewClient}
-          loans={loans}
-          notes={notes}
-          onEdit={() => { setEditClient(viewClient); setViewClient(null); setShowForm(true); }}
-          onDelete={() => setDelClient(viewClient)}
-          onClose={() => setViewClient(null)}
-          onAddNote={(clientId) => {
-            setNoteClientId(clientId);
-            setEditNote(null);
-            setShowNoteForm(true);
-          }}
-          onViewNote={openNoteDetail}
         />
       )}
 

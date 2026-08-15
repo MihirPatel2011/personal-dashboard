@@ -15,6 +15,7 @@ import { progress as complianceProgress, stageBlockedBy, blockingItems } from '.
 import LoanCompliance, { ProgressRing } from '../../components/mortgage/LoanCompliance';
 
 import { clickable } from '../../compass/interaction';
+import { XDel } from '../../compass/ui';
 import { C, mono, card, labelSm } from '../../compass/tokens';
 
 // Compass's clients table: every column can shrink, long values ellipsis, so
@@ -186,20 +187,20 @@ function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose })
   );
 }
 
-// ─── Loan Drawer ──────────────────────────────────────────────────────────────
-function LoanDrawer({ loan, clientName, onEdit, onDelete, onClose, onUpdate }) {
+// ─── Loan Panel ───────────────────────────────────────────────────────────────
+// Sits beside the table rather than sliding over it, so the file you picked
+// stays in view next to the rest of the pipeline.
+function LoanPanel({ loan, clientName, onEdit, onDelete, onClose, onUpdate }) {
   const [tab, setTab] = useState('details');
   if (!loan) return null;
   return (
-    <>
-      <div className="drawer-backdrop" onClick={onClose}/>
-      <div className={`drawer${tab === 'compliance' ? ' wide' : ''}`}>
+      <aside className="detail-panel">
         <div className="drawer-head">
           <div>
             <h2>{clientName || loan.clientObj || 'Unknown Client'}</h2>
             <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>{loan.lender} · {loan.objective}</div>
           </div>
-          <button className="icon-btn" onClick={onClose}>✕</button>
+          <button className="icon-btn" onClick={onClose} title="Close">✕</button>
         </div>
         <div className="drawer-tabs">
           <button className={`drawer-tab${tab === 'details' ? ' active' : ''}`} onClick={() => setTab('details')}>Details</button>
@@ -245,6 +246,8 @@ function LoanDrawer({ loan, clientName, onEdit, onDelete, onClose, onUpdate }) {
               </div>
             </div>
           )}
+          <ClientTasks clientId={loan.clientId} clientName={clientName || loan.clientObj}/>
+
           <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>Added {fmtRelative(loan.createdAt)}</div>
         </div>
         )}
@@ -252,10 +255,99 @@ function LoanDrawer({ loan, clientName, onEdit, onDelete, onClose, onUpdate }) {
           <button className="btn danger-ghost" onClick={onDelete}><Trash2 size={14}/> Delete</button>
           <button className="btn primary" onClick={onEdit}><Edit3 size={14}/> Edit</button>
         </div>
-      </div>
-    </>
+      </aside>
   );
 }
+
+// ─── Tasks for this client ────────────────────────────────────────────────────
+// Mirrors Compass: tick one off, add one with a due date, without leaving the
+// file. Writes to the same tasks node the CRM Tasks page uses.
+function ClientTasks({ clientId, clientName }) {
+  const { crmTasks, addCrmTask, updateCrmTask, deleteCrmTask } = useData();
+  const [title, setTitle] = useState('');
+  const [due, setDue] = useState('');
+
+  const mine = crmTasks
+    .filter(t => t.clientId === clientId)
+    .sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
+
+  const add = async () => {
+    const t = title.trim();
+    if (!t) return;
+    if (!clientId) { toast.error('Link this loan to a client first.'); return; }
+    try {
+      await addCrmTask({
+        title: t, clientId, type: '', priority: 'Medium',
+        status: 'To Do', dueDate: due || '', notes: '',
+      });
+      setTitle(''); setDue('');
+      toast.success('Task added.');
+    } catch { toast.error('Failed to add task.'); }
+  };
+
+  const toggle = async (t) => {
+    // Patch just the status — spreading the whole task back would rewrite every
+    // field (and write the id into the record) for a one-field change.
+    try { await updateCrmTask(t.id, { status: t.status === 'Done' ? 'To Do' : 'Done' }); }
+    catch { toast.error('Failed to update task.'); }
+  };
+
+  return (
+    <div>
+      <div className="section-label" style={{ marginBottom: 10 }}>
+        Tasks {clientName ? `for ${clientName}` : 'for this client'}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {mine.map(t => {
+          const done = t.status === 'Done';
+          return (
+            <div key={t.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <div {...clickable(() => toggle(t), done ? 'Mark as not done' : 'Mark as done')}
+                   style={{
+                     width: 17, height: 17, flex: '0 0 17px', marginTop: 1, borderRadius: 5,
+                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                     fontSize: 11, color: 'var(--bg)',
+                     border: `1.5px solid ${done ? 'var(--accent)' : 'var(--border-strong)'}`,
+                     background: done ? 'var(--accent)' : 'transparent',
+                   }}>
+                {done ? '✓' : ''}
+              </div>
+              <div style={{
+                flex: 1, minWidth: 0, fontSize: 13.5, lineHeight: 1.4,
+                ...(done ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : { color: 'var(--ink)' }),
+              }}>
+                {t.title}
+              </div>
+              {t.dueDate && (
+                <span style={{ fontSize: 11, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{fmtDate(t.dueDate)}</span>
+              )}
+              <XDel size={15} onClick={() => deleteCrmTask(t.id).catch(() => toast.error('Failed.'))}/>
+            </div>
+          );
+        })}
+        {!mine.length && (
+          <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>Nothing to do on this file yet.</div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+        <input value={title} onChange={e => setTitle(e.target.value)}
+               onKeyDown={e => e.key === 'Enter' && add()}
+               placeholder="Add a task…"
+               style={{ ...panelInput, flex: '1 1 140px' }}/>
+        <input type="date" value={due} onChange={e => setDue(e.target.value)}
+               style={{ ...panelInput, flex: '0 1 130px', fontSize: 12 }}/>
+        <button className="btn accent sm" onClick={add}>Add</button>
+      </div>
+    </div>
+  );
+}
+
+const panelInput = {
+  padding: '9px 11px', border: '1px solid var(--border-2)', borderRadius: 8,
+  background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 12.5, minWidth: 0,
+};
 
 // ─── Inline Stage Selector ────────────────────────────────────────────────────
 // The menu renders in a portal with fixed positioning: inside the card it gets
@@ -526,8 +618,9 @@ export default function Pipeline() {
         </div>
       </div>
 
-      {/* ── Cards grid ── */}
-      <div className="crm-body" style={{ padding: '16px 28px 28px' }}>
+      {/* ── Table + detail panel, side by side ── */}
+      <div className="crm-body split-view" style={{ padding: '16px 28px 28px' }}>
+        <div style={{ minWidth: 0 }}>
         {filtered.length === 0 ? (
           <EmptyState
             emoji={showSettled ? '🏡' : '🏠'}
@@ -613,9 +706,30 @@ export default function Pipeline() {
             })}
           </section>
         )}
+        </div>
+
+        {liveViewLoan ? (
+          <LoanPanel
+            loan={liveViewLoan}
+            clientName={clientMap[liveViewLoan.clientId] || liveViewLoan.clientObj}
+            onEdit={() => { setEditLoan(liveViewLoan); setShowForm(true); }}
+            onDelete={() => setDelLoan(liveViewLoan)}
+            onClose={() => setViewLoan(null)}
+            onUpdate={data => updateLoan(liveViewLoan.id, data).catch(() => toast.error('Failed to save.'))}
+          />
+        ) : (
+          <aside className="detail-panel empty">
+            <div className="drawer-body">
+              <h2 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 24, margin: 0 }}>No file selected</h2>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.6 }}>
+                Pick a loan on the left to see its details, compliance and tasks here.
+              </div>
+            </div>
+          </aside>
+        )}
       </div>
 
-      {/* ── Modals / Drawers ── */}
+      {/* ── Modals ── */}
       {showForm && (
         <LoanForm loan={editLoan} clients={clients} lenders={activeLenders}
           stages={activeStages} statuses={activeStatuses}
@@ -623,16 +737,6 @@ export default function Pipeline() {
       )}
       {showNoteForm && (
         <QuickNoteModal clients={clients} onSave={handleQuickNote} onClose={() => setShowNoteForm(false)}/>
-      )}
-      {liveViewLoan && (
-        <LoanDrawer
-          loan={liveViewLoan}
-          clientName={clientMap[liveViewLoan.clientId] || liveViewLoan.clientObj}
-          onEdit={() => { setEditLoan(liveViewLoan); setViewLoan(null); setShowForm(true); }}
-          onDelete={() => setDelLoan(liveViewLoan)}
-          onClose={() => setViewLoan(null)}
-          onUpdate={data => updateLoan(liveViewLoan.id, data).catch(() => toast.error('Failed to save.'))}
-        />
       )}
       <ConfirmDialog
         isOpen={!!delLoan} onClose={() => setDelLoan(null)}

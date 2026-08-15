@@ -1453,3 +1453,36 @@ button[style*="borderRadius: 6px"]:hover {
   .flog-edit-grid { grid-template-columns: 1fr; }
   .flog-text { white-space: normal; }
 }
+
+/* ══ SPLIT VIEW — table beside its detail panel (Compass layout) ═══════════ */
+.split-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+/* The panel is the drawer's content without the slide-over chrome. */
+.detail-panel {
+  position: static;
+  width: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  box-shadow: none;
+  animation: none;
+  align-self: start;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+}
+.detail-panel .drawer-body { overflow-y: auto; }
+.detail-panel.empty { min-height: 180px; justify-content: center; }
+
+/* Below tablet width the panel drops under the table rather than squeezing it. */
+@media (max-width: 1100px) {
+  .split-view { grid-template-columns: minmax(0, 1fr); }
+  .detail-panel { position: static; max-height: none; }
+}
