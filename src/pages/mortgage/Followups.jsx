@@ -95,7 +95,7 @@ function FollowupDrawer({ followup, client, notes, onClose, onStatus, onDue, onA
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
               width: 42, height: 42, borderRadius: '50%', background: 'var(--mortgage-dim)', color: 'var(--mortgage)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, flexShrink: 0,
             }}>{initials(client.name)}</div>
             <div>
               <h2 style={{ margin: 0 }}>{client.name}</h2>
@@ -117,7 +117,7 @@ function FollowupDrawer({ followup, client, notes, onClose, onStatus, onDue, onA
               type="date"
               value={followup.dueDate || ''}
               onChange={e => onDue(e.target.value)}
-              style={{ padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 'var(--r)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 13.5 }}
+              style={{ padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 'var(--r)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 13 }}
             />
           </div>
 
@@ -129,7 +129,7 @@ function FollowupDrawer({ followup, client, notes, onClose, onStatus, onDue, onA
                 onChange={e => setComment(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitComment(); }}
                 placeholder="Add a comment… (e.g. 'left voicemail', 'emailed docs')"
-                style={{ flex: 1, minHeight: 60, padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--r)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 13.5, resize: 'vertical', lineHeight: 1.5 }}
+                style={{ flex: 1, minHeight: 60, padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--r)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 13, resize: 'vertical', lineHeight: 1.5 }}
               />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
@@ -282,14 +282,14 @@ export default function Followups() {
                 <div key={f.id} className={`fu-row${actionNeeded(f) ? ' action' : ''}`} onClick={() => setViewId(f.id)}>
                   <div style={{
                     width: 36, height: 36, borderRadius: '50%', background: 'var(--mortgage-dim)', color: 'var(--mortgage)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, flexShrink: 0,
                   }}>{initials(c.name)}</div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 3, flexWrap: 'wrap' }}>
                       <DueLabel date={f.dueDate} status={f.status}/>
-                      {last && <span style={{ fontSize: 11.5, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}>“{last.body || last.title}”</span>}
+                      {last && <span style={{ fontSize: 11, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}>“{last.body || last.title}”</span>}
                     </div>
                   </div>
 

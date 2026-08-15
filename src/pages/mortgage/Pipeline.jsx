@@ -219,29 +219,30 @@ function LoanPanel({ loan, clientName, onEdit, onDelete, onClose, onUpdate }) {
             <span className="badge mortgage">{loan.status}</span>
           </div>
           <div>
-            <div className="section-label" style={{ marginBottom: 12 }}>Loan Details</div>
-            {[
-              ['Value',           loan.value ? formatCurrency(Number(loan.value)) : '—'],
-              ['Lender',          loan.lender || '—'],
-              ['Objective',       loan.objective || '—'],
-              ['Stage',           loan.stage || '—'],
-              ['Status',          loan.status || '—'],
-              ['Referrer',        loan.referrer || '—'],
-              ['Submission Date', fmtDate(loan.submissionDate)],
-              ['Settlement Date', fmtDate(loan.settlementDate)],
-              ['Commission',      loan.comms ? formatCurrency(Number(loan.comms)) : '—'],
-              ['Comm. Paid',      fmtDate(loan.datePaid)],
-            ].map(([k, v]) => (
-              <div key={k} className="info-row">
-                <div className="info-key">{k}</div>
-                <div className="info-val">{v}</div>
-              </div>
-            ))}
+            <div className="field-grid">
+              {[
+                ['Value',           loan.value ? formatCurrency(Number(loan.value)) : '—', true],
+                ['Lender',          loan.lender || '—'],
+                ['Objective',       loan.objective || '—'],
+                ['Stage',           loan.stage || '—'],
+                ['Status',          loan.status || '—'],
+                ['Referrer',        loan.referrer || '—'],
+                ['Submitted',       fmtDate(loan.submissionDate), true],
+                ['Settlement',      fmtDate(loan.settlementDate), true],
+                ['Commission',      loan.comms ? formatCurrency(Number(loan.comms)) : '—', true],
+                ['Comm. paid',      fmtDate(loan.datePaid), true],
+              ].map(([k, v, figure]) => (
+                <div key={k} className="fg-item">
+                  <span className="fg-label">{k}</span>
+                  <span className={figure ? 'fg-figure' : 'fg-value'} title={String(v)}>{v}</span>
+                </div>
+              ))}
+            </div>
           </div>
           {loan.notes && (
             <div>
               <div className="section-label" style={{ marginBottom: 8 }}>Notes</div>
-              <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.65, background: 'var(--surface-2)', padding: '12px 14px', borderRadius: 'var(--r)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.65, background: 'var(--surface-2)', padding: '12px 14px', borderRadius: 'var(--r)', border: '1px solid var(--border)' }}>
                 {loan.notes}
               </div>
             </div>
@@ -314,7 +315,7 @@ function ClientTasks({ clientId, clientName }) {
                 {done ? '✓' : ''}
               </div>
               <div style={{
-                flex: 1, minWidth: 0, fontSize: 13.5, lineHeight: 1.4,
+                flex: 1, minWidth: 0, fontSize: 13, lineHeight: 1.4,
                 ...(done ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : { color: 'var(--ink)' }),
               }}>
                 {t.title}
@@ -337,7 +338,7 @@ function ClientTasks({ clientId, clientName }) {
                placeholder="Add a task…"
                style={{ ...panelInput, flex: '1 1 140px' }}/>
         <input type="date" value={due} onChange={e => setDue(e.target.value)}
-               style={{ ...panelInput, flex: '0 1 130px', fontSize: 12 }}/>
+               style={{ ...panelInput, flex: '0 1 130px', fontSize: 12.5 }}/>
         <button className="btn accent sm" onClick={add}>Add</button>
       </div>
     </div>
@@ -431,7 +432,7 @@ function StageSelector({ loan, stages, open, onOpen, onClose, onSelect }) {
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.text || 'var(--ink-3)', display: 'inline-block', flexShrink: 0 }}/>
                 {s}
                 {blockedGate && (
-                  <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--warn)' }} aria-label={`Gate ${blockedGate} incomplete`}>
+                  <span style={{ marginLeft: 'auto', fontSize: 10.5, color: 'var(--warn)' }} aria-label={`Gate ${blockedGate} incomplete`}>
                     ⚠ G{blockedGate}
                   </span>
                 )}
@@ -661,18 +662,18 @@ export default function Pipeline() {
                       <ProgressRing value={complianceProgress(l)} size={24}/>
                     </span>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }} title={name}>
-                      <span style={{ fontSize: 13.5, ...CELL }}>{name}</span>
+                      <span style={{ fontSize: 13, ...CELL }}>{name}</span>
                       <span style={{ fontSize: 10.5, color: C.muted, ...CELL }}>
                         {l.objective || '—'}{l.referrer ? ` · via ${l.referrer}` : ''}
                       </span>
                     </div>
                   </div>
 
-                  <div style={{ fontFamily: mono, fontSize: 12, ...CELL }}>
+                  <div style={{ fontFamily: mono, fontSize: 12.5, ...CELL }}>
                     {l.value ? formatCurrency(Number(l.value)) : '—'}
                   </div>
 
-                  <div style={{ fontSize: 12, color: l.lender ? C.ink : C.dim, ...CELL }} title={l.lender || ''}>
+                  <div style={{ fontSize: 12.5, color: l.lender ? C.ink : C.dim, ...CELL }} title={l.lender || ''}>
                     {l.lender || '—'}
                   </div>
 
@@ -689,7 +690,7 @@ export default function Pipeline() {
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1 }}>
-                      <span style={{ fontSize: 12, color: C.ink, ...CELL }}>
+                      <span style={{ fontSize: 12.5, color: C.ink, ...CELL }}>
                         {l.settlementDate ? fmtDate(l.settlementDate) : '—'}
                       </span>
                       <span style={{ fontSize: 10.5, color: C.muted, ...CELL }}>

@@ -307,10 +307,10 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 /* ── DRAWER ── */
 .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.52); z-index: 100; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fadeIn .16s var(--ease-out); }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 500px; background: var(--surface); border-left: 1px solid var(--border-2); z-index: 101; display: flex; flex-direction: column; box-shadow: var(--shadow-xl), -8px 0 40px rgba(0,0,0,0.3); animation: slideInRight .24s var(--ease-out); }
-.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.drawer-head h2 { font-family: var(--display); font-size: 21px; font-weight: 400; }
-.drawer-body { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
-.drawer-foot { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.drawer-head h2 { font-family: var(--display); font-size: 20px; font-weight: 400; line-height: 1.15; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 15px; }
+.drawer-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
 
 /* ── EMPTY STATE ── */
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 56px 24px; text-align: center; }
@@ -462,17 +462,17 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 .loan-card:hover { border-color: var(--border-2); border-left-color: var(--mortgage); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 .loan-card:active { transform: scale(0.98) translateY(0); box-shadow: var(--shadow-sm); }
 .loan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-.loan-client { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
-.loan-meta   { font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
-.loan-value  { font-family: var(--display); font-size: 21px; font-weight: 400; color: var(--ink); }
-.loan-value-label { font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .07em; }
+.loan-client { font-size: 13.5px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+.loan-meta   { font-size: 11px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.loan-value  { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+.loan-value-label { font-family: var(--mono); font-size: 9px; font-weight: 500; color: var(--ink-3); text-transform: uppercase; letter-spacing: .12em; }
 .loan-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
 .client-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px 18px; cursor: pointer; transition: border-color var(--t-slow), transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out); display: flex; flex-direction: column; gap: 12px; }
 .client-card:hover { border-color: var(--border-2); transform: translateY(-2px); box-shadow: var(--shadow); }
 .client-card:active { transform: scale(0.98) translateY(0); }
 .client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .client-avatar { width: 38px; height: 38px; border-radius: 10px; background: var(--mortgage-dim); color: var(--mortgage); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
-.client-name { font-size: 15px; font-weight: 700; color: var(--ink); }
+.client-name { font-size: 13.5px; font-weight: 500; color: var(--ink); }
 .client-type { font-size: 11.5px; color: var(--ink-3); }
 .client-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .stat-label   { font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
@@ -485,10 +485,24 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 .note-meta    { font-size: 11px; color: var(--ink-3); }
 
 /* ── INFO ROWS ── */
-.info-row { display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
-.info-row:last-child { border-bottom: none; }
-.info-key { font-size: 12px; color: var(--ink-3); min-width: 120px; flex-shrink: 0; }
-.info-val { font-size: 13.5px; color: var(--ink); font-weight: 500; flex: 1; word-break: break-word; }
+/* Compass's field grid: label over value, several to a row. Replaces the old
+   stacked info rows, which turned ten fields into ~440px of scrolling. */
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 118px), 1fr));
+  gap: 13px 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.fg-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fg-label {
+  font-family: var(--mono); font-size: 9px; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3);
+}
+.fg-value { font-size: 13px; color: var(--ink); word-break: break-word; }
+/* Money, dates and counts are mono everywhere in the CRM — table and panel. */
+.fg-figure { font-family: var(--mono); font-size: 12.5px; color: var(--ink); white-space: nowrap; }
 
 /* ── MISC UTILS ── */
 .flex { display: flex; }
@@ -1228,7 +1242,7 @@ button[style*="borderRadius: 6px"]:hover {
 .drawer { transition: width .24s var(--ease-out); }
 .drawer.wide { width: 680px; max-width: 94vw; }
 
-.drawer-tabs { display: flex; gap: 2px; padding: 0 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.drawer-tabs { display: flex; gap: 2px; padding: 0 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .drawer-tab { padding: 11px 14px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color var(--t), border-color var(--t); }
 .drawer-tab:hover { color: var(--ink); }
 .drawer-tab.active { color: var(--mortgage); border-bottom-color: var(--mortgage); }

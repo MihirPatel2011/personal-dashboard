@@ -172,7 +172,7 @@ export default function CRMTasks() {
             {TASK_PRIORITIES.map(p => <option key={p}>{p}</option>)}
           </select>
           {overdue > 0 && (
-            <span style={{ fontSize: 12, background: 'var(--danger-dim)', color: 'var(--danger)', padding: '4px 10px', borderRadius: 20, fontWeight: 600 }}>
+            <span style={{ fontSize: 12.5, background: 'var(--danger-dim)', color: 'var(--danger)', padding: '4px 10px', borderRadius: 20, fontWeight: 600 }}>
               {overdue} overdue
             </span>
           )}
@@ -206,20 +206,20 @@ export default function CRMTasks() {
                   </button>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                      <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: done ? 'line-through' : 'none' }}>{t.title}</span>
+                      <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)', textDecoration: done ? 'line-through' : 'none' }}>{t.title}</span>
                       <PriorityBadge priority={t.priority}/>
-                      {t.type && <span className="badge" style={{ fontSize: 10, background: 'var(--surface-2)', color: 'var(--ink-3)', border: '1px solid var(--border)' }}>{t.type}</span>}
+                      {t.type && <span className="badge" style={{ fontSize: 10.5, background: 'var(--surface-2)', color: 'var(--ink-3)', border: '1px solid var(--border)' }}>{t.type}</span>}
                       {t.status !== 'To Do' && (
-                        <span className="badge" style={{ fontSize: 10, background: 'var(--surface-2)', color: 'var(--ink-3)', border: '1px solid var(--border)' }}>{t.status}</span>
+                        <span className="badge" style={{ fontSize: 10.5, background: 'var(--surface-2)', color: 'var(--ink-3)', border: '1px solid var(--border)' }}>{t.status}</span>
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                       {clientMap[t.clientId] && (
-                        <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{clientMap[t.clientId]}</span>
+                        <span style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{clientMap[t.clientId]}</span>
                       )}
                       <DueDateLabel date={t.dueDate} status={t.status}/>
                     </div>
-                    {t.notes && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{t.notes}</div>}
+                    {t.notes && <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 4 }}>{t.notes}</div>}
                   </div>
                   <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                     <button className="icon-btn sm" onClick={() => { setEditTask(t); setShowForm(true); }}><Edit3 size={12}/></button>

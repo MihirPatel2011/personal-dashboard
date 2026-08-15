@@ -24,9 +24,9 @@ function StatCard({ label, value, sub, color }) {
       background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)',
       padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 4
     }}>
-      <div style={{ fontSize: 12, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || 'var(--ink)', lineHeight: 1.15 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{sub}</div>}
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.12em', fontWeight: 500 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--display)', fontSize: 28, fontWeight: 400, color: color || 'var(--ink)', lineHeight: 1.15 }}>{value}</div>
+      {sub && <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{sub}</div>}
     </div>
   );
 }
@@ -35,7 +35,7 @@ function StatCard({ label, value, sub, color }) {
 function ChartTooltip({ active, payload, label, format }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '8px 12px', fontSize: 12 }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '8px 12px', fontSize: 12.5 }}>
       <div style={{ color: 'var(--ink-3)', marginBottom: 4 }}>{label}</div>
       {payload.map((p, i) => (
         <div key={i} style={{ color: p.color || 'var(--ink)', fontWeight: 600 }}>
@@ -116,7 +116,7 @@ export default function Performance() {
 
   if (loans.length === 0) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--ink-3)', fontSize: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--ink-3)', fontSize: 13 }}>
         No loan data yet — add loans to see performance metrics.
       </div>
     );

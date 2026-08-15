@@ -17,7 +17,7 @@ const ROW_GRID = {
 };
 const CELL = { minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
 const countChip = {
-  fontFamily: mono, fontSize: 9.5, letterSpacing: '.08em', textTransform: 'uppercase',
+  fontFamily: mono, fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase',
   padding: '3px 8px', borderRadius: 6, background: 'var(--surface-3)', color: 'var(--ink-2)',
   whiteSpace: 'nowrap',
 };
@@ -168,8 +168,8 @@ function NoteDetailDrawer({ note, clientName, onEdit, onDelete, onBack }) {
               <ChevronLeft size={16}/>
             </button>
             <div>
-              <h2 style={{ margin: 0, fontSize: 16 }}>{note.title}</h2>
-              <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>
+              <h2 style={{ margin: 0, fontFamily: 'var(--display)', fontWeight: 400, fontSize: 20 }}>{note.title}</h2>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 2 }}>
                 {clientName || '—'}{note.date ? ` · ${fmtDate(note.date)}` : ''}
               </div>
             </div>
@@ -189,7 +189,7 @@ function NoteDetailDrawer({ note, clientName, onEdit, onDelete, onBack }) {
 
           <div>
             <div className="section-label" style={{ marginBottom: 8 }}>Note</div>
-            <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.7, background: 'var(--surface-2)', padding: '14px 16px', borderRadius: 'var(--r)', border: '1px solid var(--border)', whiteSpace: 'pre-wrap' }}>
+            <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.7, background: 'var(--surface-2)', padding: '14px 16px', borderRadius: 'var(--r)', border: '1px solid var(--border)', whiteSpace: 'pre-wrap' }}>
               {note.body}
             </div>
           </div>
@@ -222,7 +222,7 @@ function ClientPanel({ client, loans, notes, onEdit, onDelete, onClose, onAddNot
               width: 42, height: 42, borderRadius: '50%',
               background: 'var(--mortgage-dim)', color: 'var(--mortgage)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 15, fontWeight: 700, flexShrink: 0,
+              fontSize: 13, fontWeight: 600, flexShrink: 0,
             }}>
               {initials(client.name)}
             </div>
@@ -237,25 +237,26 @@ function ClientPanel({ client, loans, notes, onEdit, onDelete, onClose, onAddNot
         <div className="drawer-body">
           {/* Contact */}
           <div>
-            <div className="section-label" style={{ marginBottom: 12 }}>Contact Details</div>
-            {[
-              ['Phone',   client.phone   || '—'],
-              ['Email',   client.email   || '—'],
-              ['DOB',     fmtDate(client.dob)],
-              ['Address', client.address || '—'],
-            ].map(([k, v]) => (
-              <div key={k} className="info-row">
-                <div className="info-key">{k}</div>
-                <div className="info-val">{v}</div>
-              </div>
-            ))}
+            <div className="field-grid">
+              {[
+                ['Phone',   client.phone   || '—', true],
+                ['Email',   client.email   || '—'],
+                ['DOB',     fmtDate(client.dob), true],
+                ['Address', client.address || '—'],
+              ].map(([k, v, figure]) => (
+                <div key={k} className="fg-item">
+                  <span className="fg-label">{k}</span>
+                  <span className={figure ? 'fg-figure' : 'fg-value'} title={String(v)}>{v}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Client notes field */}
           {client.notes && (
             <div>
               <div className="section-label" style={{ marginBottom: 8 }}>General Notes</div>
-              <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.65, background: 'var(--surface-2)', padding: '12px 14px', borderRadius: 'var(--r)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.65, background: 'var(--surface-2)', padding: '12px 14px', borderRadius: 'var(--r)', border: '1px solid var(--border)' }}>
                 {client.notes}
               </div>
             </div>
@@ -302,7 +303,7 @@ function ClientPanel({ client, loans, notes, onEdit, onDelete, onClose, onAddNot
                           <FileText size={12} style={{ color: 'var(--mortgage)', flexShrink: 0 }}/>
                           <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{n.title}</span>
                           {n.channel && (
-                            <span className="badge mortgage" style={{ fontSize: 10, padding: '2px 7px' }}>{n.channel}</span>
+                            <span className="badge mortgage" style={{ fontSize: 10.5, padding: '2px 7px' }}>{n.channel}</span>
                           )}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: n.body ? 4 : 0 }}>
@@ -311,7 +312,7 @@ function ClientPanel({ client, loans, notes, onEdit, onDelete, onClose, onAddNot
                         </div>
                         {n.body && (
                           <div style={{
-                            fontSize: 12, color: 'var(--ink-2)',
+                            fontSize: 12.5, color: 'var(--ink-2)',
                             overflow: 'hidden', display: '-webkit-box',
                             WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                             lineHeight: 1.55,
@@ -497,11 +498,11 @@ export default function Clients() {
                     }}>
                       {initials(c.name)}
                     </div>
-                    <span style={{ fontSize: 13.5, ...CELL }} title={c.name}>{c.name}</span>
+                    <span style={{ fontSize: 13, ...CELL }} title={c.name}>{c.name}</span>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                    <span style={{ fontSize: 12, color: C.ink, ...CELL }} title={c.email || ''}>{c.email || '—'}</span>
+                    <span style={{ fontSize: 12.5, color: C.ink, ...CELL }} title={c.email || ''}>{c.email || '—'}</span>
                     <span style={{ fontSize: 10.5, color: C.muted, ...CELL }}>{c.phone || '—'}</span>
                   </div>
 
@@ -513,7 +514,7 @@ export default function Clients() {
                       <span style={countChip}>{noteCountMap[c.id]} note{noteCountMap[c.id] !== 1 ? 's' : ''}</span>
                     ) : null}
                     {!loanCountMap[c.id] && !noteCountMap[c.id] && (
-                      <span style={{ fontSize: 11.5, color: C.dim }}>—</span>
+                      <span style={{ fontSize: 11, color: C.dim }}>—</span>
                     )}
                   </div>
 

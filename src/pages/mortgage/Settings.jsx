@@ -55,8 +55,8 @@ function EditableList({ title, description, items, onSave }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)', marginBottom: 3 }}>{title}</div>
-          {description && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{description}</div>}
+          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)', marginBottom: 3 }}>{title}</div>
+          {description && <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{description}</div>}
         </div>
         {dirty && (
           <div style={{ display: 'flex', gap: 6 }}>
@@ -123,7 +123,7 @@ export default function Settings() {
   return (
     <div style={{ padding: '24px 28px', maxWidth: 760 }}>
       <div style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>Mortgage Settings</div>
+        <div style={{ fontFamily: 'var(--display)', fontSize: 22, fontWeight: 400, color: 'var(--ink)', marginBottom: 4 }}>Mortgage Settings</div>
         <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
           Customise the selectable options throughout the Mortgage CRM. Changes are saved per-section.
         </div>
