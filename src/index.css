@@ -1266,8 +1266,9 @@ button[style*="borderRadius: 6px"]:hover {
 .bid-q { padding: 10px 0; border-bottom: 1px solid var(--border); }
 .bid-q:last-child { border-bottom: none; padding-bottom: 2px; }
 
-.stage-popover-item.locked { opacity: .45; cursor: not-allowed; }
-.stage-popover-item.locked:hover { background: transparent; color: var(--ink-3); }
+/* Stages with an incomplete gate stay selectable — flagged, not disabled. */
+.stage-popover-item.incomplete { color: var(--ink-2); }
+.stage-popover-item.incomplete:hover { background: var(--surface-2); color: var(--ink); }
 
 /* ─── Focus: mobile ───────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {

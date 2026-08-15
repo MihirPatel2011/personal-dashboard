@@ -325,18 +325,24 @@ function StageSelector({ loan, stages, open, onOpen, onClose, onSelect }) {
             const blockedGate = loan.stage === s ? null : stageBlockedBy(loan, s);
             const outstanding = blockedGate ? blockingItems(loan, blockedGate) : [];
             return (
+              // Gates are advisory, not a lock: the edit form never enforced
+              // them, so blocking here only forced a longer route to the same
+              // result. Outstanding items are flagged instead.
               <button
                 key={s}
-                className={`stage-popover-item${loan.stage === s ? ' active' : ''}${blockedGate ? ' locked' : ''}`}
-                disabled={!!blockedGate}
+                className={`stage-popover-item${loan.stage === s ? ' active' : ''}${blockedGate ? ' incomplete' : ''}`}
                 title={blockedGate
-                  ? `Locked — Gate ${blockedGate} incomplete (${outstanding.length} outstanding): ${outstanding.slice(0, 4).map(i => i.label).join('; ')}${outstanding.length > 4 ? '…' : ''}`
+                  ? `Gate ${blockedGate} incomplete (${outstanding.length} outstanding): ${outstanding.slice(0, 4).map(i => i.label).join('; ')}${outstanding.length > 4 ? '…' : ''}`
                   : undefined}
-                onClick={() => onSelect(s)}
+                onClick={() => onSelect(s, blockedGate, outstanding.length)}
               >
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.text || 'var(--ink-3)', display: 'inline-block', flexShrink: 0 }}/>
                 {s}
-                {blockedGate && <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--ink-4)' }}>🔒 G{blockedGate}</span>}
+                {blockedGate && (
+                  <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--warn)' }} aria-label={`Gate ${blockedGate} incomplete`}>
+                    ⚠ G{blockedGate}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -438,10 +444,17 @@ export default function Pipeline() {
     setShowNoteForm(false);
   }
 
-  const handleStageSelect = useCallback(async (loanId, stage) => {
+  const handleStageSelect = useCallback(async (loanId, stage, blockedGate, outstanding) => {
     setEditStageId(null);
-    try { await updateLoan(loanId, { stage }); toast.success(`Stage → ${stage}`); }
-    catch { toast.error('Failed to update stage.'); }
+    try {
+      await updateLoan(loanId, { stage });
+      if (blockedGate) {
+        // Moved anyway — say what is still outstanding rather than silently allowing it.
+        toast(`Stage → ${stage} · Gate ${blockedGate} still has ${outstanding} outstanding`, { icon: '⚠️' });
+      } else {
+        toast.success(`Stage → ${stage}`);
+      }
+    } catch { toast.error('Failed to update stage.'); }
   }, [updateLoan]);
 
   function switchToActive() { setShowSettled(false); setSelectedStatus('all'); }
