@@ -81,26 +81,4 @@ export const GOAL_COLORS = [
 
 export const GOAL_GLYPHS = ['🎯','💰','📞','✉','#','$','⭐','🔥','🚀','💡','📊','📈','🏋','🤝','✅','📝','🌟','💼'];
 
-// ─── Focus Log ────────────────────────────────────────────────────────────────
-// Edit this list to change the category options in the Focus Log module.
-export const FOCUS_CATEGORIES = [
-  'Broking – Submission', 'Broking – Approval/Bank', 'Broking – Settlement',
-  'Broking – Client Contact', 'Compliance', 'Marketing/Content',
-  'Side Project', 'Admin', 'Other',
-];
-
-// These feed Recharts <Cell fill>, and SVG presentation attributes cannot
-// resolve CSS variables — so they are literal mid-tones of the same earth
-// palette, chosen to hold their own on both paper and ink.
-export const FOCUS_CATEGORY_COLORS = {
-  'Broking – Submission':     '#B06A38', // terracotta
-  'Broking – Approval/Bank':  '#5D7C96', // slate
-  'Broking – Settlement':     '#55875F', // forest
-  'Broking – Client Contact': '#6A9C8C', // sage
-  'Compliance':               '#B08A3C', // ochre
-  'Marketing/Content':        '#8B6789', // plum
-  'Side Project':             '#9C7C54', // tan
-  'Admin':                    '#A8564A', // brick
-  'Other':                    '#8D8474', // stone
-};
 

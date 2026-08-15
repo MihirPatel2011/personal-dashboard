@@ -18,7 +18,14 @@ export function DataProvider({ children }) {
   const [personalNotes,    setPersonalNotes]    = useState([]);
   const [followups,        setFollowups]        = useState([]);
   const [checkins,         setCheckins]         = useState({});   // { 'YYYY-MM-DD': { am: ts|null, pm: ts|null } }
-  const [focusLogs,        setFocusLogs]        = useState([]);
+  // Compass-model goals live under goalsV2 so the legacy `goals` node stays
+  // untouched and recoverable.
+  const [goalsV2,          setGoalsV2]          = useState([]);
+  const [assets,           setAssets]           = useState([]);
+  const [liabs,            setLiabs]            = useState([]);
+  const [expenses,         setExpenses]         = useState([]);
+  const [income,           setIncome]           = useState([]);
+  const [moneySettings,    setMoneySettings]    = useState({});
   const [loading,          setLoading]          = useState(true);
 
   const toArr = snap => {
@@ -31,14 +38,15 @@ export function DataProvider({ children }) {
       setClients([]); setLoans([]); setNotes([]); setCrmTasks([]);
       setGoals([]); setGoalLog([]); setPersonalNotes([]); setFollowups([]);
       setCheckins({});
-      setFocusLogs([]);
+      setGoalsV2([]); setAssets([]); setLiabs([]); setIncome([]); setExpenses([]);
+      setMoneySettings({});
       setMortgageSettings({});
       setLoading(false);
       return;
     }
     setLoading(true);
     let count = 0;
-    const TOTAL = 11;
+    const TOTAL = 16;
     const done = () => { count++; if (count >= TOTAL) setLoading(false); };
 
     const u1  = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
@@ -51,9 +59,14 @@ export function DataProvider({ children }) {
     const u8  = onValue(ref(db, 'personalNotes'),    s => { setPersonalNotes(toArr(s));         done(); });
     const u9  = onValue(ref(db, 'followups'),        s => { setFollowups(toArr(s));             done(); });
     const u10 = onValue(ref(db, 'checkins'),         s => { setCheckins(s.val() || {});         done(); });
-    const u11 = onValue(ref(db, 'focusLogs'),        s => { setFocusLogs(toArr(s));             done(); });
+    const u11 = onValue(ref(db, 'goalsV2'),          s => { setGoalsV2(toArr(s));                done(); });
+    const u12 = onValue(ref(db, 'assets'),           s => { setAssets(toArr(s));                 done(); });
+    const u13 = onValue(ref(db, 'liabs'),            s => { setLiabs(toArr(s));                  done(); });
+    const u14 = onValue(ref(db, 'expenses'),         s => { setExpenses(toArr(s));               done(); });
+    const u15 = onValue(ref(db, 'income'),           s => { setIncome(toArr(s));                 done(); });
+    const u16 = onValue(ref(db, 'moneySettings'),    s => { setMoneySettings(s.val() || {});     done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); u11(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); u11(); u12(); u13(); u14(); u15(); u16(); };
   }, [user]);
 
   // ─── Clients ──────────────────────────────────────────────────────────────
@@ -157,15 +170,6 @@ export function DataProvider({ children }) {
   const setCheckin = useCallback(async (dateKey, part, value) =>
     set(ref(db, `checkins/${dateKey}/${part}`), value ? Date.now() : null), []);
 
-  // ─── Focus Log ────────────────────────────────────────────────────────────
-  const addFocusLog    = useCallback(async data => {
-    const r = push(ref(db, 'focusLogs'));
-    await set(r, { done: false, client: '', endTime: '', durationMin: null, ...data, createdAt: Date.now() });
-    return r.key;
-  }, []);
-  const updateFocusLog = useCallback(async (id, data) => update(ref(db, `focusLogs/${id}`), data), []);
-  const deleteFocusLog = useCallback(async id => remove(ref(db, `focusLogs/${id}`)), []);
-
   // ─── Goals ───────────────────────────────────────────────────────────────
   const addGoal       = useCallback(async data => { const r = push(ref(db, 'goals')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
   const updateGoal    = useCallback(async (id, data) => update(ref(db, `goals/${id}`), data), []);
@@ -174,10 +178,33 @@ export function DataProvider({ children }) {
   const updateGoalLog = useCallback(async (id, data) => update(ref(db, `goalLog/${id}`), data), []);
   const deleteGoalLog = useCallback(async id => remove(ref(db, `goalLog/${id}`)), []);
 
+  // ─── Goals (Compass model) ────────────────────────────────────────────────
+  // { type: 'annual'|'monthly', tag, title, unit: 'money'|'count', target,
+  //   month, parentId, qTargets[4], logs/{id}: { date, amount, note } }
+  const addGoalV2     = useCallback(async data => { const r = push(ref(db, 'goalsV2')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
+  const updateGoalV2  = useCallback(async (id, data) => update(ref(db, `goalsV2/${id}`), data), []);
+  const deleteGoalV2  = useCallback(async (id, all = []) => {
+    // Monthly goals that fed this one become standalone rather than orphaned.
+    for (const g of all) if (g.parentId === id) await update(ref(db, `goalsV2/${g.id}`), { parentId: '' });
+    await remove(ref(db, `goalsV2/${id}`));
+  }, []);
+  const addGoalV2Log  = useCallback(async (goalId, entry) => { const r = push(ref(db, `goalsV2/${goalId}/logs`)); await set(r, entry); }, []);
+  const delGoalV2Log  = useCallback(async (goalId, logId) => remove(ref(db, `goalsV2/${goalId}/logs/${logId}`)), []);
+
+  // ─── Money ────────────────────────────────────────────────────────────────
+  const addMoneyRow    = useCallback(async (node, data) => { const r = push(ref(db, node)); await set(r, data); return r.key; }, []);
+  const updateMoneyRow = useCallback(async (node, id, data) => update(ref(db, `${node}/${id}`), data), []);
+  const deleteMoneyRow = useCallback(async (node, id) => remove(ref(db, `${node}/${id}`)), []);
+  // moneySettings holds the managed lists: buckets, expCats, incCats.
+  const addMoneySetting    = useCallback(async (list, name) => { const r = push(ref(db, `moneySettings/${list}`)); await set(r, { name }); }, []);
+  const renameMoneySetting = useCallback(async (list, id, name) => set(ref(db, `moneySettings/${list}/${id}/name`), name), []);
+  const removeMoneySetting = useCallback(async (list, id) => remove(ref(db, `moneySettings/${list}/${id}`)), []);
+
   return (
     <DataContext.Provider value={{
       clients, loans, notes, crmTasks, followups,
-      goals, goalLog, personalNotes, checkins, focusLogs,
+      goals, goalLog, personalNotes, checkins,
+      goalsV2, assets, liabs, expenses, income, moneySettings,
       mortgageSettings, loading,
       addClient,    updateClient,    deleteClient,
       addLoan,      updateLoan,      deleteLoan,
@@ -189,7 +216,9 @@ export function DataProvider({ children }) {
       addGoalLog,   updateGoalLog,   deleteGoalLog,
       addPersonalNote, updatePersonalNote, deletePersonalNote,
       setCheckin,
-      addFocusLog, updateFocusLog, deleteFocusLog,
+      addGoalV2, updateGoalV2, deleteGoalV2, addGoalV2Log, delGoalV2Log,
+      addMoneyRow, updateMoneyRow, deleteMoneyRow,
+      addMoneySetting, renameMoneySetting, removeMoneySetting,
     }}>
       {children}
     </DataContext.Provider>

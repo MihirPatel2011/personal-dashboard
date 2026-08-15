@@ -14,6 +14,19 @@ import { formatCurrency, fmtDate, fmtRelative } from '../../utils';
 import { progress as complianceProgress, stageBlockedBy, blockingItems } from '../../utils/crmCompliance';
 import LoanCompliance, { ProgressRing } from '../../components/mortgage/LoanCompliance';
 
+import { clickable } from '../../compass/interaction';
+import { C, mono, card, labelSm } from '../../compass/tokens';
+
+// Compass's clients table: every column can shrink, long values ellipsis, so
+// the table always fits its card rather than scrolling sideways.
+const ROW_GRID = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0,1.8fr) minmax(0,0.8fr) minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.1fr)',
+  gap: 10,
+  alignItems: 'center',
+};
+const CELL = { minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+
 const CHANNELS = ['Phone', 'Email', 'In Person', 'Video Call', 'SMS', 'Other'];
 const SETTLED_STAGE = 'Settled';
 
@@ -511,29 +524,53 @@ export default function Pipeline() {
             onAction={showSettled ? undefined : () => { setEditLoan(null); setShowForm(true); }}
           />
         ) : (
-          <div className="loan-grid">
+          <section style={{ ...card, padding: 0, overflow: 'hidden' }}>
+            <div style={{
+              ...ROW_GRID, padding: '11px 16px', background: 'var(--surface-2)',
+              borderBottom: `1px solid ${C.line}`, ...labelSm, fontSize: 9, letterSpacing: '0.12em',
+            }}>
+              <div style={CELL}>Client · referrer</div>
+              <div style={CELL}>Loan</div>
+              <div style={CELL}>Bank</div>
+              <div style={CELL}>Stage</div>
+              <div style={CELL}>Key date</div>
+            </div>
+
             {filtered.map(l => {
               const name = l.clientObj || clientMap[l.clientId] || 'Unknown';
+              const selected = viewLoan?.id === l.id;
               return (
-                <div key={l.id} className="loan-card" onClick={() => setViewLoan(l)}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                    <div className="loan-client">{name}</div>
-                    <span title={`Compliance ${complianceProgress(l)}%`}><ProgressRing value={complianceProgress(l)} size={30}/></span>
-                  </div>
-                  <div className="loan-meta">
-                    <span>{l.lender || '—'}</span>
-                    <span style={{ color: 'var(--border-strong)' }}>·</span>
-                    <span>{l.objective || '—'}</span>
-                    {l.referrer && <><span style={{ color: 'var(--border-strong)' }}>·</span><span>{l.referrer}</span></>}
-                  </div>
-                  {l.value && (
-                    <div>
-                      <div className="loan-value-label">Loan Value</div>
-                      <div className="loan-value">{formatCurrency(Number(l.value))}</div>
+                <div
+                  key={l.id}
+                  {...clickable(() => setViewLoan(l), `Open ${name}`)}
+                  style={{
+                    ...ROW_GRID, padding: '12px 16px', cursor: 'pointer',
+                    borderBottom: `1px solid ${C.line}`,
+                    background: selected ? 'var(--surface-2)' : 'var(--surface)',
+                    boxShadow: `inset 2px 0 0 ${selected ? C.accent : 'transparent'}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                    <span title={`Compliance ${complianceProgress(l)}%`} style={{ flex: '0 0 auto', display: 'flex' }}>
+                      <ProgressRing value={complianceProgress(l)} size={24}/>
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }} title={name}>
+                      <span style={{ fontSize: 13.5, ...CELL }}>{name}</span>
+                      <span style={{ fontSize: 10.5, color: C.muted, ...CELL }}>
+                        {l.objective || '—'}{l.referrer ? ` · via ${l.referrer}` : ''}
+                      </span>
                     </div>
-                  )}
-                  <div className="loan-footer">
-                    {/* Inline stage selector */}
+                  </div>
+
+                  <div style={{ fontFamily: mono, fontSize: 12, ...CELL }}>
+                    {l.value ? formatCurrency(Number(l.value)) : '—'}
+                  </div>
+
+                  <div style={{ fontSize: 12, color: l.lender ? C.ink : C.dim, ...CELL }} title={l.lender || ''}>
+                    {l.lender || '—'}
+                  </div>
+
+                  <div style={{ minWidth: 0 }} onClick={e => e.stopPropagation()}>
                     <StageSelector
                       loan={l}
                       stages={activeStages}
@@ -542,20 +579,26 @@ export default function Pipeline() {
                       onClose={() => setEditStageId(null)}
                       onSelect={stage => handleStageSelect(l.id, stage)}
                     />
-                    <div style={{ display: 'flex', gap: 4 }}>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1 }}>
+                      <span style={{ fontSize: 12, color: C.ink, ...CELL }}>
+                        {l.settlementDate ? fmtDate(l.settlementDate) : '—'}
+                      </span>
+                      <span style={{ fontSize: 10.5, color: C.muted, ...CELL }}>
+                        {l.settlementDate ? 'settlement' : (l.status || '')}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, flex: '0 0 auto' }}>
                       <button className="icon-btn sm" onClick={e => { e.stopPropagation(); setEditLoan(l); setShowForm(true); }}><Edit3 size={12}/></button>
                       <button className="icon-btn sm danger" onClick={e => { e.stopPropagation(); setDelLoan(l); }}><Trash2 size={12}/></button>
                     </div>
                   </div>
-                  {l.settlementDate && (
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
-                      Settlement: {fmtDate(l.settlementDate)}
-                    </div>
-                  )}
                 </div>
               );
             })}
-          </div>
+          </section>
         )}
       </div>
 

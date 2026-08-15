@@ -15,9 +15,7 @@ import CRMTasks from './pages/mortgage/CRMTasks';
 import Performance from './pages/mortgage/Performance';
 import Settings from './pages/mortgage/Settings';
 import PersonalNotes from './pages/PersonalNotes';
-import FocusLogLayout from './pages/focuslog/FocusLogLayout';
-import FocusLogPage from './pages/focuslog/LogPage';
-import FocusStatsPage from './pages/focuslog/StatsPage';
+import Money from './pages/Money';
 
 function ThemedToaster() {
   const { theme } = useTheme();
@@ -64,12 +62,8 @@ function AppShell() {
           <Route path="/"                    element={<Navigate to="/dashboard" replace/>}/>
           <Route path="/dashboard"           element={<Dashboard/>}/>
           <Route path="/goals"               element={<Goals/>}/>
+          <Route path="/money"               element={<Money/>}/>
           <Route path="/notes"               element={<PersonalNotes/>}/>
-          <Route path="/focus"               element={<FocusLogLayout/>}>
-            <Route index                     element={<Navigate to="/focus/log" replace/>}/>
-            <Route path="log"                element={<FocusLogPage/>}/>
-            <Route path="stats"              element={<FocusStatsPage/>}/>
-          </Route>
           <Route path="/mortgage"            element={<MortgageLayout/>}>
             <Route index                     element={<Navigate to="/mortgage/pipeline" replace/>}/>
             <Route path="pipeline"           element={<Pipeline/>}/>

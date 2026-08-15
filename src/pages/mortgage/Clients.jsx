@@ -5,6 +5,22 @@ import { useData } from '../../context/DataContext';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import EmptyState from '../../components/common/EmptyState';
+
+import { clickable } from '../../compass/interaction';
+import { C, mono, card, labelSm } from '../../compass/tokens';
+
+const ROW_GRID = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0,1.6fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,64px)',
+  gap: 10,
+  alignItems: 'center',
+};
+const CELL = { minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+const countChip = {
+  fontFamily: mono, fontSize: 9.5, letterSpacing: '.08em', textTransform: 'uppercase',
+  padding: '3px 8px', borderRadius: 6, background: 'var(--surface-3)', color: 'var(--ink-2)',
+  whiteSpace: 'nowrap',
+};
 import { fmtDate, fmtRelative, initials } from '../../utils';
 
 const CHANNELS   = ['Phone', 'Email', 'In Person', 'Video Call', 'SMS', 'Other'];
@@ -450,46 +466,67 @@ export default function Clients() {
           <EmptyState emoji="👤" title="No clients yet" description="Add your first client to start building your CRM."
             actionLabel="Add Client" onAction={() => { setEditClient(null); setShowForm(true); }}/>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-            {filtered.map(c => (
-              <div key={c.id} className="loan-card" onClick={() => setViewClient(c)}
-                style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: '50%',
-                    background: 'var(--mortgage-dim)', color: 'var(--mortgage)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 13, fontWeight: 700, flexShrink: 0,
-                  }}>
-                    {initials(c.name)}
+          <section style={{ ...card, padding: 0, overflow: 'hidden' }}>
+            <div style={{
+              ...ROW_GRID, padding: '11px 16px', background: 'var(--surface-2)',
+              borderBottom: `1px solid ${C.line}`, ...labelSm, fontSize: 9, letterSpacing: '0.12em',
+            }}>
+              <div style={CELL}>Client</div>
+              <div style={CELL}>Contact</div>
+              <div style={CELL}>Files</div>
+              <div style={CELL}/>
+            </div>
+
+            {filtered.map(c => {
+              const selected = viewClient?.id === c.id;
+              return (
+                <div
+                  key={c.id}
+                  {...clickable(() => setViewClient(c), `Open ${c.name}`)}
+                  style={{
+                    ...ROW_GRID, padding: '12px 16px', cursor: 'pointer',
+                    borderBottom: `1px solid ${C.line}`,
+                    background: selected ? 'var(--surface-2)' : 'var(--surface)',
+                    boxShadow: `inset 2px 0 0 ${selected ? C.accent : 'transparent'}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                      background: 'var(--accent-dim)', color: 'var(--accent)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: mono, fontSize: 10.5, letterSpacing: '.04em',
+                    }}>
+                      {initials(c.name)}
+                    </div>
+                    <span style={{ fontSize: 13.5, ...CELL }} title={c.name}>{c.name}</span>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
-                    {c.email && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 1 }}>{c.email}</div>}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                    <span style={{ fontSize: 12, color: C.ink, ...CELL }} title={c.email || ''}>{c.email || '—'}</span>
+                    <span style={{ fontSize: 10.5, color: C.muted, ...CELL }}>{c.phone || '—'}</span>
                   </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: 12, color: 'var(--ink-3)', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                    {c.phone || '—'}
+
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', minWidth: 0, flexWrap: 'wrap' }}>
                     {loanCountMap[c.id] ? (
-                      <span style={{ background: 'var(--mortgage-dim)', color: 'var(--mortgage)', padding: '2px 7px', borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
-                        {loanCountMap[c.id]} loan{loanCountMap[c.id] !== 1 ? 's' : ''}
-                      </span>
+                      <span style={countChip}>{loanCountMap[c.id]} loan{loanCountMap[c.id] !== 1 ? 's' : ''}</span>
                     ) : null}
                     {noteCountMap[c.id] ? (
-                      <span style={{ background: 'var(--accent-dim)', color: 'var(--accent)', padding: '2px 7px', borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
-                        {noteCountMap[c.id]} note{noteCountMap[c.id] !== 1 ? 's' : ''}
-                      </span>
+                      <span style={countChip}>{noteCountMap[c.id]} note{noteCountMap[c.id] !== 1 ? 's' : ''}</span>
                     ) : null}
+                    {!loanCountMap[c.id] && !noteCountMap[c.id] && (
+                      <span style={{ fontSize: 11.5, color: C.dim }}>—</span>
+                    )}
                   </div>
-                  <div style={{ display: 'flex', gap: 4 }}>
+
+                  <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                     <button className="icon-btn sm" onClick={e => { e.stopPropagation(); setEditClient(c); setShowForm(true); }}><Edit3 size={12}/></button>
                     <button className="icon-btn sm danger" onClick={e => { e.stopPropagation(); setDelClient(c); }}><Trash2 size={12}/></button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              );
+            })}
+          </section>
         )}
       </div>
 
