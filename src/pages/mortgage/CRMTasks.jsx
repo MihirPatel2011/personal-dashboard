@@ -90,7 +90,7 @@ function DueDateLabel({ date, status }) {
   const today   = isToday(date);
   const soon    = !overdue && !today && isWithinDays(date, 3);
 
-  const color  = overdue ? 'var(--danger)' : today ? 'var(--tasks)' : soon ? '#C8922A' : 'var(--ink-3)';
+  const color  = overdue ? 'var(--danger)' : today ? 'var(--tasks)' : soon ? 'var(--warn)' : 'var(--ink-3)';
   const label  = overdue ? `Overdue · ${fmtDate(date)}` : today ? 'Due today' : fmtDate(date);
 
   return <span style={{ fontSize: 11, color, fontWeight: overdue || today ? 600 : 400 }}>{label}</span>;

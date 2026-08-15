@@ -6,7 +6,7 @@ import { useData } from '../../context/DataContext';
 import { FOCUS_CATEGORY_COLORS } from '../../constants';
 import { PERIODS, periodRange, filterByPeriod, hourHistogram, peakWindow, categoryBreakdown, volumeTrend, topClients, fmtHour, fmtDurationMin } from '../../utils/focusLog';
 
-const TREND_COLOR = '#3DBBA0'; // matches the Performance page chart teal
+const TREND_COLOR = '#B06A38'; // matches the Performance page chart terracotta
 
 function Card({ title, caption, children }) {
   return (
@@ -96,14 +96,14 @@ export default function StatsPage() {
                 <ResponsiveContainer width={150} height={150}>
                   <PieChart>
                     <Pie data={s.cats} dataKey="value" nameKey="name" innerRadius={42} outerRadius={68} paddingAngle={2} strokeWidth={0}>
-                      {s.cats.map(c => <Cell key={c.name} fill={FOCUS_CATEGORY_COLORS[c.name] || '#94A3B8'}/>)}
+                      {s.cats.map(c => <Cell key={c.name} fill={FOCUS_CATEGORY_COLORS[c.name] || '#8D8474'}/>)}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {s.cats.map(c => (
                     <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                      <span style={{ width: 9, height: 9, borderRadius: 3, background: FOCUS_CATEGORY_COLORS[c.name] || '#94A3B8', flexShrink: 0 }}/>
+                      <span style={{ width: 9, height: 9, borderRadius: 3, background: FOCUS_CATEGORY_COLORS[c.name] || '#8D8474', flexShrink: 0 }}/>
                       <span style={{ flex: 1, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
                       <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--mono)', fontSize: 11 }}>
                         {heat.useMinutes ? fmtDurationMin(c.value) : c.value}

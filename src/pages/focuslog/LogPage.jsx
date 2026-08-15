@@ -10,7 +10,7 @@ import { FOCUS_CATEGORIES, FOCUS_CATEGORY_COLORS } from '../../constants';
 import { computeDurationMin, parseClientFromActivity, nowLocalInput, fmtDurationMin, fmtClock, groupByDay, fmtDayHeader } from '../../utils/focusLog';
 
 function CategoryTag({ category }) {
-  const c = FOCUS_CATEGORY_COLORS[category] || '#94A3B8';
+  const c = FOCUS_CATEGORY_COLORS[category] || '#8D8474';
   return <span className="flog-tag" style={{ background: `${c}22`, color: c }}>{category}</span>;
 }
 

@@ -8,12 +8,14 @@ import { formatCurrency, isThisYear, isThisMonth } from '../../utils';
 import { ACTIVE_STAGES } from '../../constants';
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const TEAL  = '#3DBBA0';
-const GOLD  = '#C8922A';
-const BLUE  = '#7B8FDE';
-const AMBER = '#E8924A';
+// Literal mid-tones of the earth palette — SVG fill attributes cannot read
+// CSS variables, and these need to hold on both paper and ink.
+const TEAL  = '#B06A38'; // terracotta (kept the old names to avoid churn)
+const GOLD  = '#B08A3C'; // ochre
+const BLUE  = '#5D7C96'; // slate
+const AMBER = '#9C7C54'; // tan
 
-const STAGE_PIE_COLORS = [TEAL, GOLD, BLUE, AMBER, '#A370DB', '#E06B6B', '#5BC4B4', '#C4C45B'];
+const STAGE_PIE_COLORS = [TEAL, GOLD, BLUE, AMBER, '#8B6789', '#A8564A', '#6A9C8C', '#55875F'];
 
 // ─── Stat Card ─────────────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, color }) {

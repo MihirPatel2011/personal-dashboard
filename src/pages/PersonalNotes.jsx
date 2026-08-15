@@ -38,9 +38,9 @@ function todayIso() { return new Date().toISOString().slice(0, 10); }
 
 // ─── Note type config ─────────────────────────────────────────────────────────
 const NOTE_TYPES = [
-  { value: 'note',  label: 'Note',  color: '#60A5FA' },
-  { value: 'idea',  label: 'Idea',  color: '#F59E0B' },
-  { value: 'area',  label: 'Area',  color: '#34D399' },
+  { value: 'note',  label: 'Note',  color: 'var(--cat-2)' },
+  { value: 'idea',  label: 'Idea',  color: 'var(--cat-4)' },
+  { value: 'area',  label: 'Area',  color: 'var(--cat-3)' },
 ];
 
 // ─── Toolbar button data ──────────────────────────────────────────────────────

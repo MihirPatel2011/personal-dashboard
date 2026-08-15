@@ -2,9 +2,10 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext(null);
 
-// Apply theme before first React paint to avoid flash
+// Apply theme before first React paint to avoid flash.
+// Paper (light) is the primary look; dark is the ink counterpart.
 const bootstrap = () => {
-  const saved = localStorage.getItem('apex-theme') || 'dark';
+  const saved = localStorage.getItem('apex-theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
   return saved;
 };

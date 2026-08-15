@@ -22,7 +22,7 @@ function KpiCard({ icon: Icon, label, value, sub, color, soft, onClick }) {
   );
 }
 
-const NOTE_TYPE_COLORS = { note: '#60A5FA', idea: '#F59E0B', area: '#34D399' };
+const NOTE_TYPE_COLORS = { note: 'var(--cat-2)', idea: 'var(--cat-4)', area: 'var(--cat-3)' };
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -235,8 +235,8 @@ export default function Dashboard() {
         <div className="dash-section">
           <div className="dash-section-header">
             <div className="dash-section-title">
-              <span className="section-pip" style={{ background: '#60A5FA' }}/>
-              <span style={{ color: '#60A5FA' }}>Notes &amp; Ideas</span>
+              <span className="section-pip" style={{ background: 'var(--cat-2)' }}/>
+              <span style={{ color: 'var(--cat-2)' }}>Notes &amp; Ideas</span>
             </div>
             <button className="btn ghost sm" onClick={() => navigate('/notes')} style={{ gap: 4 }}>
               View all <ArrowRight size={12}/>

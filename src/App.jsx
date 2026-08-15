@@ -27,27 +27,27 @@ function ThemedToaster() {
       position="bottom-center"
       toastOptions={{
         style: {
-          background:   dark ? '#121922' : '#FAFCFE',
-          color:        dark ? '#E2EDF7' : '#0A1628',
-          border:       `1px solid ${dark ? 'rgba(0,210,160,0.13)' : 'rgba(0,100,80,0.18)'}`,
+          background:   dark ? '#221F18' : '#FFFFFF',
+          color:        dark ? '#E9E3D5' : '#17150F',
+          border:       `1px solid ${dark ? 'rgba(233,227,213,0.17)' : '#E0D9CB'}`,
           borderRadius: '99px',
           fontSize:     '13px',
           fontWeight:   500,
           padding:      '10px 18px',
           boxShadow:    dark
-            ? '0 8px 32px rgba(0,0,0,0.7)'
-            : '0 8px 24px rgba(0,60,50,0.14)',
+            ? '0 8px 24px rgba(0,0,0,0.40)'
+            : '0 8px 24px rgba(23,21,15,0.10)',
         },
         success: {
           iconTheme: {
-            primary:   dark ? '#00C896' : '#009870',
-            secondary: dark ? '#121922' : '#FAFCFE',
+            primary:   dark ? '#9EC4A3' : '#3D6B45',
+            secondary: dark ? '#221F18' : '#FFFFFF',
           },
         },
         error: {
           iconTheme: {
-            primary:   dark ? '#F06060' : '#C83030',
-            secondary: dark ? '#121922' : '#FAFCFE',
+            primary:   dark ? '#D99B8E' : '#98392E',
+            secondary: dark ? '#221F18' : '#FFFFFF',
           },
         },
       }}

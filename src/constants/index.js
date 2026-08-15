@@ -32,45 +32,51 @@ export const ACTIVE_STAGES = [
   'Unconditional', 'Loan Docs', 'Booked',
 ];
 
+// Colours come from the themed categorical palette in index.css (--cat-1..8),
+// so stages, goals and categories follow paper/ink instead of being fixed neon.
+const cat = (n) => ({ bg: `var(--cat-${n}-dim)`, text: `var(--cat-${n})` });
+
+// The pipeline reads as a journey: stone and slate early, ochre through the
+// paperwork, green as it firms up, brick for the ones that fall over.
 export const STAGE_COLORS = {
-  'New Client':       { bg: 'rgba(99,102,241,0.15)',  text: '#818CF8' },
-  'Opt. & Servicing': { bg: 'rgba(96,165,250,0.15)',  text: '#60A5FA' },
-  'Collection':       { bg: 'rgba(129,140,248,0.15)', text: '#A78BFA' },
-  'Prepare App.':     { bg: 'rgba(196,181,253,0.15)', text: '#C4B5FD' },
-  'Audit Checklist':  { bg: 'rgba(251,191,36,0.15)',  text: '#FBBF24' },
-  'CPR Signing':      { bg: 'rgba(251,146,60,0.15)',  text: '#FB923C' },
-  'App. Signing':     { bg: 'rgba(239,114,60,0.15)',  text: '#F97316' },
-  'Lodged':           { bg: 'rgba(34,211,238,0.15)',  text: '#22D3EE' },
-  'Conditional':      { bg: 'rgba(45,212,191,0.15)',  text: '#2DD4BF' },
-  'Pre-approval':     { bg: 'rgba(52,211,153,0.15)',  text: '#34D399' },
-  'Unconditional':    { bg: 'rgba(74,222,128,0.15)',  text: '#4ADE80' },
-  'Loan Docs':        { bg: 'rgba(163,230,53,0.15)',  text: '#A3E635' },
-  'Booked':           { bg: 'rgba(34,197,94,0.15)',   text: '#22C55E' },
-  'Settled':          { bg: 'rgba(16,185,129,0.15)',  text: '#10B981' },
-  'Not Proceeded':    { bg: 'rgba(249,115,22,0.15)',  text: '#F97316' },
-  'Lost':             { bg: 'rgba(239,68,68,0.15)',   text: '#EF4444' },
+  'New Client':       cat(2),
+  'Opt. & Servicing': cat(2),
+  'Collection':       cat(6),
+  'Prepare App.':     cat(6),
+  'Audit Checklist':  cat(4),
+  'CPR Signing':      cat(4),
+  'App. Signing':     cat(1),
+  'Lodged':           cat(1),
+  'Conditional':      cat(7),
+  'Pre-approval':     cat(7),
+  'Unconditional':    cat(3),
+  'Loan Docs':        cat(3),
+  'Booked':           cat(3),
+  'Settled':          cat(3),
+  'Not Proceeded':    cat(8),
+  'Lost':             cat(5),
 };
 
 export const STATUS_COLORS = {
-  'Later/Potential': { border: '#6B7280', glow: 'rgba(107,114,128,0.2)' },
-  'Leads':           { border: '#3B82F6', glow: 'rgba(59,130,246,0.2)' },
-  'Proceeding':      { border: '#818CF8', glow: 'rgba(129,140,248,0.2)' },
-  'Lodged':          { border: '#22D3EE', glow: 'rgba(34,211,238,0.2)' },
-  'Pre-App':         { border: '#2DD4BF', glow: 'rgba(45,212,191,0.2)' },
-  'Formal':          { border: '#FBBF24', glow: 'rgba(251,191,36,0.2)' },
-  'Settled':         { border: '#10B981', glow: 'rgba(16,185,129,0.2)' },
+  'Later/Potential': { border: 'var(--ink-4)',  glow: 'transparent' },
+  'Leads':           { border: 'var(--cat-2)',  glow: 'transparent' },
+  'Proceeding':      { border: 'var(--cat-6)',  glow: 'transparent' },
+  'Lodged':          { border: 'var(--cat-1)',  glow: 'transparent' },
+  'Pre-App':         { border: 'var(--cat-7)',  glow: 'transparent' },
+  'Formal':          { border: 'var(--cat-4)',  glow: 'transparent' },
+  'Settled':         { border: 'var(--cat-3)',  glow: 'transparent' },
 };
 
 // ─── Goals ────────────────────────────────────────────────────────────────────
 export const GOAL_COLORS = [
-  { cls: 'gc0', bg: 'rgba(96,165,250,0.18)',  fg: '#60A5FA', label: 'Blue'     },
-  { cls: 'gc1', bg: 'rgba(167,139,250,0.18)', fg: '#A78BFA', label: 'Purple'   },
-  { cls: 'gc2', bg: 'rgba(52,211,153,0.18)',  fg: '#34D399', label: 'Green'    },
-  { cls: 'gc3', bg: 'rgba(251,146,60,0.18)',  fg: '#FB923C', label: 'Orange'   },
-  { cls: 'gc4', bg: 'rgba(244,114,182,0.18)', fg: '#F472B6', label: 'Pink'     },
-  { cls: 'gc5', bg: 'rgba(45,212,191,0.18)',  fg: '#2DD4BF', label: 'Teal'     },
-  { cls: 'gc6', bg: 'rgba(251,191,36,0.18)',  fg: '#FBBF24', label: 'Amber'    },
-  { cls: 'gc7', bg: 'rgba(99,102,241,0.18)',  fg: '#818CF8', label: 'Indigo'   },
+  { cls: 'gc0', bg: 'var(--cat-1-dim)', fg: 'var(--cat-1)', label: 'Terracotta' },
+  { cls: 'gc1', bg: 'var(--cat-2-dim)', fg: 'var(--cat-2)', label: 'Slate'      },
+  { cls: 'gc2', bg: 'var(--cat-3-dim)', fg: 'var(--cat-3)', label: 'Forest'     },
+  { cls: 'gc3', bg: 'var(--cat-4-dim)', fg: 'var(--cat-4)', label: 'Ochre'      },
+  { cls: 'gc4', bg: 'var(--cat-5-dim)', fg: 'var(--cat-5)', label: 'Brick'      },
+  { cls: 'gc5', bg: 'var(--cat-6-dim)', fg: 'var(--cat-6)', label: 'Plum'       },
+  { cls: 'gc6', bg: 'var(--cat-7-dim)', fg: 'var(--cat-7)', label: 'Sage'       },
+  { cls: 'gc7', bg: 'var(--cat-8-dim)', fg: 'var(--cat-8)', label: 'Tan'        },
 ];
 
 export const GOAL_GLYPHS = ['🎯','💰','📞','✉','#','$','⭐','🔥','🚀','💡','📊','📈','🏋','🤝','✅','📝','🌟','💼'];
@@ -83,15 +89,18 @@ export const FOCUS_CATEGORIES = [
   'Side Project', 'Admin', 'Other',
 ];
 
+// These feed Recharts <Cell fill>, and SVG presentation attributes cannot
+// resolve CSS variables — so they are literal mid-tones of the same earth
+// palette, chosen to hold their own on both paper and ink.
 export const FOCUS_CATEGORY_COLORS = {
-  'Broking – Submission':     '#7B96F5',
-  'Broking – Approval/Bank':  '#22D3EE',
-  'Broking – Settlement':     '#34D399',
-  'Broking – Client Contact': '#2DD4BF',
-  'Compliance':               '#FBBF24',
-  'Marketing/Content':        '#F472B6',
-  'Side Project':             '#A78BFA',
-  'Admin':                    '#FB923C',
-  'Other':                    '#94A3B8',
+  'Broking – Submission':     '#B06A38', // terracotta
+  'Broking – Approval/Bank':  '#5D7C96', // slate
+  'Broking – Settlement':     '#55875F', // forest
+  'Broking – Client Contact': '#6A9C8C', // sage
+  'Compliance':               '#B08A3C', // ochre
+  'Marketing/Content':        '#8B6789', // plum
+  'Side Project':             '#9C7C54', // tan
+  'Admin':                    '#A8564A', // brick
+  'Other':                    '#8D8474', // stone
 };
 
