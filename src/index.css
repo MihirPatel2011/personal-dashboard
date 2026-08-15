@@ -396,11 +396,6 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
 .pnotes-body .pnotes-check-cb { cursor: pointer; flex-shrink: 0; }
 
 /* ── MORTGAGE CRM ── */
-.crm-sub-nav { display: flex; align-items: center; gap: 0; padding: 0 28px; border-bottom: 1px solid var(--border); background: var(--surface); overflow-x: auto; flex-shrink: 0; }
-.crm-sub-btn { display: flex; align-items: center; gap: 6px; padding: 13px 16px; font-size: 13px; font-weight: 500; color: var(--ink-3); cursor: pointer; border: none; background: none; white-space: nowrap; position: relative; transition: color var(--t), background var(--t); border-radius: var(--r) var(--r) 0 0; }
-.crm-sub-btn:hover { color: var(--ink-2); background: var(--surface-2); }
-.crm-sub-btn.active { color: var(--mortgage); font-weight: 600; }
-.crm-sub-btn.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2.5px; background: var(--mortgage); border-radius: 3px 3px 0 0; }
 .pipeline-status-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
 .status-tab { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: transparent; color: var(--ink-3); transition: all var(--t); white-space: nowrap; }
 .status-tab:hover { border-color: var(--border-strong); color: var(--ink-2); }
@@ -1031,10 +1026,7 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
   .crm-body { padding: 12px 16px !important; }
 
   /* ── CRM sub-nav tabs ── */
-  .crm-sub-nav { padding: 0 12px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
-  .crm-sub-nav::-webkit-scrollbar { display: none; }
-  .crm-sub-btn { padding: 11px 12px; font-size: 12px; flex-shrink: 0; }
-
+    
   /* ── Pipeline status tabs ── */
   .pipeline-status-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
   .pipeline-status-tabs::-webkit-scrollbar { display: none; }
