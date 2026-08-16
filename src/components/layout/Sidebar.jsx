@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, Wallet, Kanban, Users, Reply, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, ListTodo, MoreHorizontal } from 'lucide-react';
+import { PanelLeftClose, LayoutDashboard, Target, Wallet, Kanban, Users, Reply, FileText, BarChart3, Settings2, LogOut, Sun, Moon, NotebookPen, ListTodo, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -28,6 +28,7 @@ export function MobileNav() {
     { path: '/dashboard',         label: 'Home',     icon: LayoutDashboard },
     { path: '/goals',             label: 'Goals',    icon: Target          },
     { path: '/mortgage/pipeline', label: 'Mortgage', icon: Kanban          },
+    { path: '/tasks',             label: 'Tasks',    icon: ListTodo        },
   ];
 
   const moreItems = [
@@ -88,7 +89,7 @@ export function MobileNav() {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ onHide }) {
   const { logout } = useAuth();
   const { crmTasks, followups, clients, loading } = useData();
   const { theme, toggleTheme } = useTheme();
@@ -108,10 +109,15 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="brand-mark">A</div>
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="brand-name">Apex</div>
           <div className="brand-sub">Personal Dashboard</div>
         </div>
+        {onHide && (
+          <button className="icon-btn sm" onClick={onHide} title="Hide sidebar" aria-label="Hide sidebar">
+            <PanelLeftClose size={15}/>
+          </button>
+        )}
       </div>
 
       <div className="sidebar-scroll">
@@ -123,6 +129,11 @@ export default function Sidebar() {
 
         {/* Goals */}
         <div className="sidebar-section-label">Goals</div>
+        <button className={`nav-item${active('/tasks') ? ' active' : ''}`} onClick={() => go('/tasks')}>
+          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><ListTodo size={15}/></span>
+          Tasks
+          {overdueCrm > 0 && <span className="nav-badge">{overdueCrm}</span>}
+        </button>
         <button className={`nav-item${active('/goals') ? ' active' : ''}`} onClick={() => go('/goals')}>
           <span className="nav-icon goals-icon"><Target size={15}/></span>
           Goals Tracker
@@ -156,11 +167,6 @@ export default function Sidebar() {
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><Reply size={15}/></span>
           Follow-ups
           {followupsDue > 0 && <span className="nav-badge">{followupsDue}</span>}
-        </button>
-        <button className={`nav-item${active('/mortgage/tasks') ? ' active' : ''}`} onClick={() => go('/mortgage/tasks')}>
-          <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><ListTodo size={15}/></span>
-          Tasks
-          {overdueCrm > 0 && <span className="nav-badge">{overdueCrm}</span>}
         </button>
         <button className={`nav-item${active('/mortgage/notes') ? ' active' : ''}`} onClick={() => go('/mortgage/notes')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><FileText size={15}/></span>

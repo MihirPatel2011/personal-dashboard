@@ -1,7 +1,7 @@
 // src/pages/mortgage/Pipeline.jsx
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit3, Trash2, Search, FileText, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit3, Trash2, Copy, Search, FileText, ArrowUpDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useData } from '../../context/DataContext';
 import Modal from '../../components/common/Modal';
@@ -23,7 +23,7 @@ import { C, mono, card, labelSm } from '../../compass/tokens';
 // the table always fits its card rather than scrolling sideways.
 const ROW_GRID = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(0,1.8fr) minmax(0,0.8fr) minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.1fr)',
+  gridTemplateColumns: 'minmax(0,0.5fr) minmax(0,1.7fr) minmax(0,0.8fr) minmax(0,0.9fr) minmax(0,1fr) minmax(0,1fr)',
   gap: 10,
   alignItems: 'center',
 };
@@ -79,6 +79,7 @@ function QuickNoteModal({ clients, onSave, onClose }) {
 function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose }) {
   const isEdit = !!loan;
   const [f, setF] = useState({
+    ref:            loan?.ref            || '',
     clientId:       loan?.clientId       || '',
     clientObj:      loan?.clientObj      || '',
     lender:         loan?.lender         || '',
@@ -99,6 +100,10 @@ function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose })
   return (
     <Modal isOpen={true} onClose={onClose} title={isEdit ? 'Edit Loan' : 'Add New Loan'} size="lg">
       <div className="modal-body">
+        <div className="field">
+          <label>File ref</label>
+          <input value={f.ref} onChange={e => sf('ref', e.target.value)} placeholder="Your own identifier, e.g. 2026-014"/>
+        </div>
         <div className="form-grid form-2">
           <div className="field">
             <label>Client *</label>
@@ -191,7 +196,7 @@ function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose })
 // ─── Loan Panel ───────────────────────────────────────────────────────────────
 // Sits beside the table rather than sliding over it, so the file you picked
 // stays in view next to the rest of the pipeline.
-function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDelete, onClose, onUpdate }) {
+function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDelete, onDuplicate, onClose, onUpdate }) {
   const [tab, setTab] = useState('details');
   if (!loan) return null;
   return (
@@ -221,6 +226,8 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
           </div>
           {/* Every field edits in place — no round trip through the edit modal. */}
           <div className="field-grid">
+            <EditField label="File ref" value={loan.ref} placeholder="e.g. 2026-014"
+                       onCommit={v => onUpdate({ ref: v })}/>
             <EditField label="Value" value={loan.value ? formatCurrency(Number(loan.value)) : ''}
                        type="number" placeholder="$0"
                        onCommit={v => onUpdate({ value: v })}/>
@@ -253,6 +260,7 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
         )}
         <div className="drawer-foot">
           <button className="btn danger-ghost" onClick={onDelete}><Trash2 size={14}/> Delete</button>
+          <button className="btn" onClick={onDuplicate}><Copy size={14}/> Duplicate</button>
           <button className="btn primary" onClick={onEdit}><Edit3 size={14}/> Edit</button>
         </div>
       </aside>
@@ -604,8 +612,10 @@ export default function Pipeline() {
     .filter(l => {
       const matchStatus = showSettled || selectedStatus === 'all' || l.status === selectedStatus;
       const name = (l.clientObj || clientMap[l.clientId] || '').toLowerCase();
-      const matchSearch = !search || name.includes(search.toLowerCase()) ||
-        (l.lender || '').toLowerCase().includes(search.toLowerCase());
+      const q = search.toLowerCase();
+      const matchSearch = !search || name.includes(q) ||
+        (l.lender || '').toLowerCase().includes(q) ||
+        (l.ref || '').toLowerCase().includes(q);
       return matchStatus && matchSearch;
     })
     .sort((a, b) => {
@@ -635,6 +645,21 @@ export default function Pipeline() {
       else          { await addLoan(data); toast.success('Loan added!'); }
     } catch { toast.error('Failed to save.'); }
     setShowForm(false); setEditLoan(null);
+  }
+
+  // Same file, new record: everything carries over — including compliance —
+  // so a near-identical application starts where the last one finished.
+  async function handleDuplicate(loan) {
+    if (!loan) return;
+    const copy = { ...loan };
+    delete copy.id;
+    delete copy.createdAt;
+    copy.ref = loan.ref ? `${loan.ref}-copy` : '';
+    try {
+      const newId = await addLoan(copy);
+      toast.success('File duplicated.');
+      setViewLoan({ ...copy, id: newId });
+    } catch { toast.error('Failed to duplicate.'); }
   }
 
   async function handleDelete(id) {
@@ -748,6 +773,7 @@ export default function Pipeline() {
               ...ROW_GRID, padding: '11px 16px', background: 'var(--surface-2)',
               borderBottom: `1px solid ${C.line}`, ...labelSm, fontSize: 9, letterSpacing: '0.12em',
             }}>
+              <div style={CELL}>Ref</div>
               <div style={CELL}>Client · referrer</div>
               <div style={CELL}>Loan</div>
               <div style={CELL}>Bank</div>
@@ -769,6 +795,10 @@ export default function Pipeline() {
                     boxShadow: `inset 2px 0 0 ${selected ? C.accent : 'transparent'}`,
                   }}
                 >
+                  <div style={{ fontFamily: mono, fontSize: 11.5, color: l.ref ? C.ink : 'var(--ink-4)', ...CELL }} title={l.ref || 'No ref'}>
+                    {l.ref || '—'}
+                  </div>
+
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                     <span title={`Compliance ${complianceProgress(l)}%`} style={{ flex: '0 0 auto', display: 'flex' }}>
                       <ProgressRing value={complianceProgress(l)} size={24}/>
@@ -830,6 +860,7 @@ export default function Pipeline() {
             statuses={activeStatuses}
             onEdit={() => { setEditLoan(liveViewLoan); setShowForm(true); }}
             onDelete={() => setDelLoan(liveViewLoan)}
+            onDuplicate={() => handleDuplicate(liveViewLoan)}
             onClose={() => setViewLoan(null)}
             onUpdate={data => updateLoan(liveViewLoan.id, data).catch(() => toast.error('Failed to save.'))}
           />

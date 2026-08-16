@@ -61,9 +61,12 @@ export default function Dashboard() {
   const openTasks = crmTasks.filter(t => !DONE_STATES.includes(t.status));
   const overdue = openTasks.filter(t => t.dueDate && isPast(t.dueDate) && !isToday(t.dueDate));
   const dueToday = openTasks.filter(t => t.dueDate && isToday(t.dueDate));
-  // Compass pins starred tasks; Apex has no star, so the next three moves are
-  // what is late or due, oldest first.
-  const focus = [...overdue, ...dueToday]
+  // Starred tasks are the day's focus. Nothing starred yet? Fall back to what
+  // is late or due, so the card is never dead space.
+  const starred = openTasks.filter(t => t.focus);
+  const focus = (starred.length
+    ? starred
+    : [...overdue, ...dueToday])
     .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''))
     .slice(0, 3);
 
@@ -97,7 +100,7 @@ export default function Dashboard() {
       label: 'Open tasks',
       value: String(openTasks.length),
       sub: openTasks.length ? `${overdue.length} overdue · ${dueToday.length} due today` : 'Nothing on the list',
-      go: () => navigate('/mortgage/tasks'),
+      go: () => navigate('/tasks'),
     },
     {
       label: 'Year to target',
@@ -159,10 +162,12 @@ export default function Dashboard() {
               <section style={{ ...card, padding: '22px 22px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
                   <h2 style={sectionTitle}>Focus — next 3 moves</h2>
-                  <span {...clickable(() => navigate('/mortgage/tasks'))} style={linkAction}>All tasks</span>
+                  <span {...clickable(() => navigate('/tasks'))} style={linkAction}>All tasks</span>
                 </div>
                 <p style={{ margin: '6px 0 14px', fontSize: 11.5, color: C.muted, lineHeight: 1.55 }}>
-                  What is late or due today, oldest first. Tick one off as you go.
+                  {starred.length
+                    ? 'Starred in Tasks — three at a time, tap a star there to swap one out.'
+                    : 'Nothing starred yet — showing what is late or due. Star up to three in Tasks to pin them here.'}
                 </p>
                 {focus.length ? focus.map(t => {
                   const late = t.dueDate && isPast(t.dueDate) && !isToday(t.dueDate);

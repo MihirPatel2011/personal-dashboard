@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { PanelLeftOpen } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
@@ -11,7 +13,7 @@ import Pipeline from './pages/mortgage/Pipeline';
 import Clients from './pages/mortgage/Clients';
 import Followups from './pages/mortgage/Followups';
 import Notes from './pages/mortgage/Notes';
-import CRMTasks from './pages/mortgage/CRMTasks';
+import Tasks from './pages/Tasks';
 import Performance from './pages/mortgage/Performance';
 import Settings from './pages/mortgage/Settings';
 import PersonalNotes from './pages/PersonalNotes';
@@ -54,14 +56,31 @@ function ThemedToaster() {
 }
 
 function AppShell() {
+  // Remembered per browser: hiding the nav is a working preference, not a
+  // one-off, and it should survive a reload.
+  const [navHidden, setNavHidden] = useState(() => {
+    try { return localStorage.getItem('apex-nav-hidden') === '1'; } catch { return false; }
+  });
+  const setHidden = (v) => {
+    setNavHidden(v);
+    try { localStorage.setItem('apex-nav-hidden', v ? '1' : '0'); } catch { /* private mode */ }
+  };
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
-      <Sidebar/>
+      {!navHidden && <Sidebar onHide={() => setHidden(true)}/>}
+      {navHidden && (
+        <button className="nav-restore" onClick={() => setHidden(false)}
+                title="Show sidebar" aria-label="Show sidebar">
+          <PanelLeftOpen size={16}/>
+        </button>
+      )}
       <main className="main-content" style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <Routes>
           <Route path="/"                    element={<Navigate to="/dashboard" replace/>}/>
           <Route path="/dashboard"           element={<Dashboard/>}/>
           <Route path="/goals"               element={<Goals/>}/>
+          <Route path="/tasks"               element={<Tasks/>}/>
           <Route path="/money"               element={<Money/>}/>
           <Route path="/notes"               element={<PersonalNotes/>}/>
           <Route path="/mortgage"            element={<MortgageLayout/>}>
@@ -70,7 +89,7 @@ function AppShell() {
             <Route path="clients"            element={<Clients/>}/>
             <Route path="followups"          element={<Followups/>}/>
             <Route path="notes"              element={<Notes/>}/>
-            <Route path="tasks"              element={<CRMTasks/>}/>
+            <Route path="tasks"              element={<Navigate to="/tasks" replace/>}/>
             <Route path="performance"        element={<Performance/>}/>
             <Route path="settings"           element={<Settings/>}/>
           </Route>

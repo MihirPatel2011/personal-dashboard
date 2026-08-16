@@ -1492,3 +1492,30 @@ button[style*="borderRadius: 6px"]:hover {
   .split-view { grid-template-columns: minmax(0, 1fr); }
   .detail-panel { position: static; max-height: none; }
 }
+
+/* ══ HIDDEN SIDEBAR ═══════════════════════════════════════════════════════ */
+/* The way back when the nav is hidden: small, out of the way, always there. */
+.nav-restore {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 60;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r);
+  border: 1px solid var(--border-2);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--t), color var(--t), transform 120ms var(--ease-out);
+}
+.nav-restore:hover { background: var(--surface-2); color: var(--ink); }
+.nav-restore:active { transform: scale(0.94); }
+
+/* With the nav hidden, page headers clear the restore button. */
+.nav-restore ~ .main-content .page-header,
+.nav-restore ~ .main-content .crm-toolbar { padding-left: 58px; }
