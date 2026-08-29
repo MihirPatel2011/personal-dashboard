@@ -26,6 +26,12 @@ export function DataProvider({ children }) {
   const [expenses,         setExpenses]         = useState([]);
   const [income,           setIncome]           = useState([]);
   const [moneySettings,    setMoneySettings]    = useState({});
+  // One net-worth reading per date, so the trend line has history to draw.
+  const [netWorthLog,      setNetWorthLog]      = useState({});
+  // The weekly routine: a short list of guideline tasks, plus which of them
+  // were ticked off in a given week.
+  const [weeklyRoutine,    setWeeklyRoutine]    = useState([]);
+  const [weeklyDone,       setWeeklyDone]       = useState({});
   const [loading,          setLoading]          = useState(true);
 
   const toArr = snap => {
@@ -39,14 +45,15 @@ export function DataProvider({ children }) {
       setGoals([]); setGoalLog([]); setPersonalNotes([]); setFollowups([]);
       setCheckins({});
       setGoalsV2([]); setAssets([]); setLiabs([]); setIncome([]); setExpenses([]);
-      setMoneySettings({});
+      setMoneySettings({}); setNetWorthLog({});
+      setWeeklyRoutine([]); setWeeklyDone({});
       setMortgageSettings({});
       setLoading(false);
       return;
     }
     setLoading(true);
     let count = 0;
-    const TOTAL = 16;
+    const TOTAL = 19;
     const done = () => { count++; if (count >= TOTAL) setLoading(false); };
 
     const u1  = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
@@ -65,8 +72,11 @@ export function DataProvider({ children }) {
     const u14 = onValue(ref(db, 'expenses'),         s => { setExpenses(toArr(s));               done(); });
     const u15 = onValue(ref(db, 'income'),           s => { setIncome(toArr(s));                 done(); });
     const u16 = onValue(ref(db, 'moneySettings'),    s => { setMoneySettings(s.val() || {});     done(); });
+    const u17 = onValue(ref(db, 'netWorthLog'),      s => { setNetWorthLog(s.val() || {});       done(); });
+    const u18 = onValue(ref(db, 'weeklyRoutine'),    s => { setWeeklyRoutine(toArr(s));          done(); });
+    const u19 = onValue(ref(db, 'weeklyDone'),       s => { setWeeklyDone(s.val() || {});        done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); u11(); u12(); u13(); u14(); u15(); u16(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); u11(); u12(); u13(); u14(); u15(); u16(); u17(); u18(); u19(); };
   }, [user]);
 
   // ─── Clients ──────────────────────────────────────────────────────────────
@@ -196,6 +206,19 @@ export function DataProvider({ children }) {
   const addMoneyRow    = useCallback(async (node, data) => { const r = push(ref(db, node)); await set(r, data); return r.key; }, []);
   const updateMoneyRow = useCallback(async (node, id, data) => update(ref(db, `${node}/${id}`), data), []);
   const deleteMoneyRow = useCallback(async (node, id) => remove(ref(db, `${node}/${id}`)), []);
+  // Keyed by date: re-recording on the same day corrects that day's reading
+  // rather than stacking duplicate points on the chart.
+  const recordNetWorth = useCallback(async (dateKey, entry) => set(ref(db, `netWorthLog/${dateKey}`), entry), []);
+  const deleteNetWorth = useCallback(async (dateKey) => remove(ref(db, `netWorthLog/${dateKey}`)), []);
+
+  // ─── Weekly routine ───────────────────────────────────────────────────────
+  const addRoutineItem    = useCallback(async data => { const r = push(ref(db, 'weeklyRoutine')); await set(r, { createdAt: Date.now(), ...data }); return r.key; }, []);
+  const updateRoutineItem = useCallback(async (id, data) => update(ref(db, `weeklyRoutine/${id}`), data), []);
+  const removeRoutineItem = useCallback(async id => remove(ref(db, `weeklyRoutine/${id}`)), []);
+  // Completion is per week, so the routine itself stays untouched as weeks roll.
+  const setRoutineDone    = useCallback(async (weekKey, itemId, done) =>
+    set(ref(db, `weeklyDone/${weekKey}/${itemId}`), done ? Date.now() : null), []);
+
   // moneySettings holds the managed lists: buckets, expCats, incCats.
   const addMoneySetting    = useCallback(async (list, name) => { const r = push(ref(db, `moneySettings/${list}`)); await set(r, { name }); }, []);
   const renameMoneySetting = useCallback(async (list, id, name) => set(ref(db, `moneySettings/${list}/${id}/name`), name), []);
@@ -205,7 +228,8 @@ export function DataProvider({ children }) {
     <DataContext.Provider value={{
       clients, loans, notes, crmTasks, followups,
       goals, goalLog, personalNotes, checkins,
-      goalsV2, assets, liabs, expenses, income, moneySettings,
+      goalsV2, assets, liabs, expenses, income, moneySettings, netWorthLog,
+      weeklyRoutine, weeklyDone,
       mortgageSettings, loading,
       addClient,    updateClient,    deleteClient,
       addLoan,      updateLoan,      deleteLoan,
@@ -220,6 +244,8 @@ export function DataProvider({ children }) {
       addGoalV2, updateGoalV2, deleteGoalV2, addGoalV2Log, delGoalV2Log, editGoalV2Log,
       addMoneyRow, updateMoneyRow, deleteMoneyRow,
       addMoneySetting, renameMoneySetting, removeMoneySetting,
+      recordNetWorth, deleteNetWorth,
+      addRoutineItem, updateRoutineItem, removeRoutineItem, setRoutineDone,
     }}>
       {children}
     </DataContext.Provider>

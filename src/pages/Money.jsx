@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
 import Modal from '../components/common/Modal';
@@ -9,8 +9,11 @@ import {
   linkAction, segment, segmentWrap, chip,
 } from '../compass/tokens';
 import {
-  money, dateLabel, monthLabel, THIS_MONTH, THIS_YEAR, TODAY, MONTHS_ELAPSED,
+  money, short, dateLabel, monthLabel, THIS_MONTH, THIS_YEAR, TODAY, MONTHS_ELAPSED,
 } from '../compass/format';
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+} from 'recharts';
 
 const catChipStyle = {
   fontFamily: mono, fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -25,14 +28,34 @@ const ANNUAL_GRID = {
   minWidth: 620,
 };
 
+function TrendTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  return (
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--border-2)',
+      borderRadius: 'var(--r)', padding: '9px 12px', fontSize: 12.5, boxShadow: 'var(--shadow)',
+    }}>
+      <div style={{ color: 'var(--ink-3)', marginBottom: 4, fontFamily: mono, fontSize: 10.5 }}>
+        {dateLabel(label)}
+      </div>
+      <div style={{ fontFamily: mono }}>{money(p.net)}</div>
+      <div style={{ color: 'var(--ink-3)', fontSize: 11, marginTop: 2 }}>
+        {money(p.assets)} assets · {money(p.liabs)} owed
+      </div>
+    </div>
+  );
+}
+
 // moneySettings holds maps of { name }; turn them into sorted arrays.
 const listOf = (map) => Object.entries(map || {}).map(([id, v]) => ({ id, name: v?.name || '' }));
 
 export default function Money() {
   const {
     assets: rawAssets, liabs: rawLiabs, expenses: rawExpenses, income: rawIncome,
-    moneySettings, addMoneyRow, deleteMoneyRow,
+    moneySettings, netWorthLog, addMoneyRow, deleteMoneyRow,
     addMoneySetting, renameMoneySetting, removeMoneySetting,
+    recordNetWorth, deleteNetWorth,
   } = useData();
 
   const [moneyMonth, setMoneyMonth] = useState(THIS_MONTH);
@@ -104,6 +127,23 @@ export default function Money() {
   });
   const tInc = annualRows.reduce((a, r) => a + r.inc, 0);
   const tExp = annualRows.reduce((a, r) => a + r.exp, 0);
+
+  const net = totalAssets - totalLiabs;
+  useEffect(() => {
+    if (!assets.length && !liabs.length) return;      // nothing to record yet
+    const todayEntry = netWorthLog[TODAY];
+    if (todayEntry && Number(todayEntry.net) === net) return;   // already current
+    recordNetWorth(TODAY, { date: TODAY, assets: totalAssets, liabs: totalLiabs, net });
+  }, [net, totalAssets, totalLiabs, assets.length, liabs.length, netWorthLog, recordNetWorth]);
+
+  const trend = useMemo(
+    () => Object.values(netWorthLog)
+      .map(e => ({ ...e, net: Number(e.net) || 0, assets: Number(e.assets) || 0, liabs: Number(e.liabs) || 0 }))
+      .sort((a, b) => String(a.date).localeCompare(String(b.date))),
+    [netWorthLog],
+  );
+  const firstPoint = trend[0];
+  const growth = firstPoint ? net - firstPoint.net : 0;
 
   const addEntry = async () => {
     const dsc = desc.trim();
@@ -177,6 +217,57 @@ export default function Money() {
               </div>
             </div>
           </div>
+
+          {/* ── Net worth over time ── */}
+          <section style={{ ...card, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap', marginBottom: 4 }}>
+              <h2 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 24 }}>Net worth over time</h2>
+              <span style={{ fontSize: 12, color: C.muted }}>
+                {trend.length > 1
+                  ? `${trend.length} readings · ${growth >= 0 ? '+' : ''}${money(growth)} since ${dateLabel(firstPoint.date)}`
+                  : 'Updating the balance sheet records a reading — review it each quarter and watch the line grow.'}
+              </span>
+            </div>
+
+            {trend.length > 1 ? (
+              <div style={{ height: 240, marginTop: 16 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trend} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+                    <CartesianGrid stroke="var(--border)" vertical={false}/>
+                    <XAxis dataKey="date" tickFormatter={dateLabel} tick={{ fontSize: 11, fill: 'var(--ink-3)' }}
+                           axisLine={false} tickLine={false}/>
+                    <YAxis tickFormatter={v => short(v)} tick={{ fontSize: 11, fill: 'var(--ink-3)' }}
+                           axisLine={false} tickLine={false} width={62}/>
+                    <Tooltip content={<TrendTooltip/>}/>
+                    <Line type="monotone" dataKey="net" name="Net worth" stroke="#B06A38"
+                          strokeWidth={2} dot={{ r: 3, strokeWidth: 0, fill: '#B06A38' }} activeDot={{ r: 5 }}/>
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <Empty>
+                One reading so far. Each time you revise the balance sheet the day's figure is
+                recorded, so a quarterly review builds the line.
+              </Empty>
+            )}
+
+            {trend.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
+                {trend.slice(-8).reverse().map(e => (
+                  <span key={e.date} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    fontFamily: mono, fontSize: 10.5, color: C.muted2,
+                    padding: '5px 9px', borderRadius: 99, background: 'var(--surface-3)',
+                  }}>
+                    {dateLabel(e.date)} · {short(e.net)}
+                    {e.date !== TODAY && (
+                      <XDel size={13} label={`Remove reading for ${e.date}`} onClick={() => deleteNetWorth(e.date)}/>
+                    )}
+                  </span>
+                ))}
+              </div>
+            )}
+          </section>
 
           {/* ── Month view ── */}
           <section>

@@ -20,6 +20,9 @@ import {
 export default function Goals() {
   const { goalsV2, addGoalV2, updateGoalV2, deleteGoalV2, addGoalV2Log, delGoalV2Log, editGoalV2Log } = useData();
   const [modal, setModal] = useState(null); // { kind, goalId }
+  // Monthly goals are a monthly conversation — show one month at a time, and
+  // let past months be revisited (and logged into) without clutter.
+  const [viewMonth, setViewMonth] = useState(THIS_MONTH);
 
   const goals = useMemo(
     () => goalsV2.map(g => ({
@@ -35,12 +38,22 @@ export default function Goals() {
     () => goals.filter(g => g.type === 'annual').map(g => annualView(g, goals)),
     [goals],
   );
-  const monthly = useMemo(
+  const monthlyAll = useMemo(
     () => goals.filter(g => g.type === 'monthly')
-      .sort((a, b) => (b.month || '').localeCompare(a.month || ''))
-      .map(g => monthlyView(g, goals)),
+      .sort((a, b) => (b.month || '').localeCompare(a.month || '')),
     [goals],
   );
+  const monthly = useMemo(
+    () => monthlyAll.filter(g => (g.month || '') === viewMonth).map(g => monthlyView(g, goals)),
+    [monthlyAll, goals, viewMonth],
+  );
+  // Only offer months that actually have goals, plus the current one.
+  const monthsWithGoals = useMemo(
+    () => [...new Set([THIS_MONTH, ...monthlyAll.map(g => g.month).filter(Boolean)])].sort().reverse(),
+    [monthlyAll],
+  );
+  const monthIdx = monthsWithGoals.indexOf(viewMonth);
+  const isCurrentMonth = viewMonth === THIS_MONTH;
 
   const openModal = (kind, goalId) => setModal({ kind, goalId });
   const closeModal = () => setModal(null);
@@ -95,13 +108,48 @@ export default function Goals() {
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'flex', gap: 14, alignItems: 'baseline', flexWrap: 'wrap' }}>
-              <h2 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 22 }}>Monthly goals</h2>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <h2 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 22 }}>
+                Monthly goals — {monthLabel(viewMonth)}
+              </h2>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button
+                  className="icon-btn sm"
+                  title="Earlier month"
+                  disabled={monthIdx >= monthsWithGoals.length - 1}
+                  onClick={() => setViewMonth(monthsWithGoals[Math.min(monthIdx + 1, monthsWithGoals.length - 1)])}>
+                  ‹
+                </button>
+                <button
+                  className="icon-btn sm"
+                  title="Later month"
+                  disabled={monthIdx <= 0}
+                  onClick={() => setViewMonth(monthsWithGoals[Math.max(monthIdx - 1, 0)])}>
+                  ›
+                </button>
+                {!isCurrentMonth && (
+                  <span {...clickable(() => setViewMonth(THIS_MONTH), 'Back to this month')}
+                        style={{ fontFamily: mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.accent, cursor: 'pointer', marginLeft: 6 }}>
+                    This month
+                  </span>
+                )}
+              </div>
+
               <span style={{ fontSize: 12, color: C.muted }}>
                 {monthly.length
                   ? `${monthly.filter(g => g.parent).length} of ${monthly.length} feed a yearly goal`
-                  : 'None yet — monthly goals roll into the three above.'}
+                  : 'None set for this month.'}
               </span>
+
+              {!isCurrentMonth && (
+                <span style={{
+                  fontFamily: mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase',
+                  padding: '4px 8px', borderRadius: 6, background: 'var(--surface-3)', color: C.muted2,
+                }}>
+                  Past month · still loggable
+                </span>
+              )}
             </div>
             {monthly.length ? (
               <div style={grid(280, 14)}>
@@ -112,7 +160,9 @@ export default function Goals() {
             ) : (
               <section style={card}>
                 <Empty style={{ padding: 0 }}>
-                  Add a monthly goal to break a yearly target into something you can hit this month.
+                  {isCurrentMonth
+                    ? 'Add a monthly goal to break a yearly target into something you can hit this month.'
+                    : `Nothing was set for ${monthLabel(viewMonth)}.`}
                 </Empty>
               </section>
             )}

@@ -4,7 +4,6 @@ import { PanelLeftClose, LayoutDashboard, Target, Wallet, Kanban, Users, Reply, 
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
-import { isToday, isPast } from '../../utils';
 import { actionNeeded } from '../../utils/followups';
 
 // ─── Mobile bottom tab bar ─────────────────────────────────────────────────────
@@ -28,7 +27,7 @@ export function MobileNav() {
     { path: '/dashboard',         label: 'Home',     icon: LayoutDashboard },
     { path: '/goals',             label: 'Goals',    icon: Target          },
     { path: '/mortgage/pipeline', label: 'Mortgage', icon: Kanban          },
-    { path: '/tasks',             label: 'Tasks',    icon: ListTodo        },
+    { path: '/weekly',            label: 'Weekly',   icon: ListTodo        },
   ];
 
   const moreItems = [
@@ -91,7 +90,7 @@ export function MobileNav() {
 
 export default function Sidebar({ onHide }) {
   const { logout } = useAuth();
-  const { crmTasks, followups, clients, loading } = useData();
+  const { followups, clients, loading } = useData();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -100,9 +99,6 @@ export default function Sidebar({ onHide }) {
 
   // Badges — match the page logic: orphaned follow-ups (deleted client) don't count.
   const clientIds  = new Set(clients.map(c => c.id));
-  const overdueCrm = crmTasks.filter(t =>
-    !['Done','Cancelled'].includes(t.status) && isPast(t.dueDate) && !isToday(t.dueDate)
-  ).length;
   const followupsDue = followups.filter(f => clientIds.has(f.clientId) && actionNeeded(f)).length;
 
   return (
@@ -129,10 +125,9 @@ export default function Sidebar({ onHide }) {
 
         {/* Goals */}
         <div className="sidebar-section-label">Goals</div>
-        <button className={`nav-item${active('/tasks') ? ' active' : ''}`} onClick={() => go('/tasks')}>
+        <button className={`nav-item${active('/weekly') ? ' active' : ''}`} onClick={() => go('/weekly')}>
           <span className="nav-icon" style={{ color: 'var(--ink-3)' }}><ListTodo size={15}/></span>
-          Tasks
-          {overdueCrm > 0 && <span className="nav-badge">{overdueCrm}</span>}
+          Weekly
         </button>
         <button className={`nav-item${active('/goals') ? ' active' : ''}`} onClick={() => go('/goals')}>
           <span className="nav-icon goals-icon"><Target size={15}/></span>

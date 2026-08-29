@@ -1519,3 +1519,13 @@ button[style*="borderRadius: 6px"]:hover {
 /* With the nav hidden, page headers clear the restore button. */
 .nav-restore ~ .main-content .page-header,
 .nav-restore ~ .main-content .crm-toolbar { padding-left: 58px; }
+
+/* Value of the deals behind each pipeline status tab. */
+.tab-value {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.status-tab.active .tab-value { color: var(--accent); }

@@ -56,19 +56,39 @@ export default function Performance() {
     const thisYearSett = settled.filter(l => isThisYear(l.settlementDate));
     const thisMonSett  = settled.filter(l => isThisMonth(l.settlementDate));
 
+    const submitted     = loans.filter(l => l.submissionDate);
+    const thisYearSubs  = submitted.filter(l => isThisYear(l.submissionDate));
+    const thisMonSubs   = submitted.filter(l => isThisMonth(l.submissionDate));
+    const subVolYTD     = thisYearSubs.reduce((s, l) => s + (Number(l.value) || 0), 0);
+    const subVolMTD     = thisMonSubs.reduce((s, l) => s + (Number(l.value) || 0), 0);
+
     const commYTD  = thisYearSett.reduce((s, l) => s + (Number(l.comms) || 0), 0);
     const commMTD  = thisMonSett.reduce((s, l)  => s + (Number(l.comms) || 0), 0);
     const commPaid = loans.filter(l => l.datePaid).reduce((s, l) => s + (Number(l.comms) || 0), 0);
     const volYTD   = thisYearSett.reduce((s, l) => s + (Number(l.value) || 0), 0);
     const pipeline = active.reduce((s, l) => s + (Number(l.value) || 0), 0);
 
-    return { commYTD, commMTD, commPaid, volYTD, pipeline, settledCount: thisYearSett.length, activeCount: active.length };
+    return {
+      commYTD, commMTD, commPaid, volYTD, pipeline,
+      settledCount: thisYearSett.length, activeCount: active.length,
+      subVolYTD, subVolMTD, subCountYTD: thisYearSubs.length, subCountMTD: thisMonSubs.length,
+    };
   }, [loans]);
 
   // Monthly settlements bar chart
   const monthlyData = useMemo(() => {
-    const buckets = Array.from({ length: 12 }, (_, i) => ({ month: MONTH_NAMES[i], settlements: 0, volume: 0, commission: 0 }));
+    const buckets = Array.from({ length: 12 }, (_, i) => ({
+      month: MONTH_NAMES[i], settlements: 0, volume: 0, commission: 0,
+      submissions: 0, subVolume: 0,
+    }));
     const year = new Date().getFullYear();
+    loans.filter(l => l.submissionDate).forEach(l => {
+      const d = new Date(l.submissionDate);
+      if (d.getFullYear() === year) {
+        buckets[d.getMonth()].submissions += 1;
+        buckets[d.getMonth()].subVolume   += Number(l.value) || 0;
+      }
+    });
     loans.filter(l => l.stage === 'Settled' && l.settlementDate).forEach(l => {
       const d = new Date(l.settlementDate);
       if (d.getFullYear() === year) {
@@ -126,6 +146,8 @@ export default function Performance() {
     <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* KPI Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 12 }}>
+        <StatCard label="Submitted YTD"     value={formatCurrency(stats.subVolYTD, true)} sub={`${stats.subCountYTD} loans submitted`} color={TEAL}/>
+        <StatCard label="Submitted MTD"     value={formatCurrency(stats.subVolMTD, true)} sub={`${stats.subCountMTD} this month`}      color={TEAL}/>
         <StatCard label="Commission YTD"    value={formatCurrency(stats.commYTD, true)}   color={TEAL}/>
         <StatCard label="Commission MTD"    value={formatCurrency(stats.commMTD, true)}   color={TEAL}/>
         <StatCard label="Commission Paid"   value={formatCurrency(stats.commPaid, true)}  color={GOLD}/>
@@ -145,6 +167,7 @@ export default function Performance() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--ink-3)' }} axisLine={false} tickLine={false}/>
               <YAxis tick={{ fontSize: 11, fill: 'var(--ink-3)' }} axisLine={false} tickLine={false} allowDecimals={false}/>
               <Tooltip content={<ChartTooltip/>}/>
+              <Bar dataKey="submissions" name="Submissions" fill={GOLD} radius={[3, 3, 0, 0]}/>
               <Bar dataKey="settlements" name="Settlements" fill={TEAL} radius={[3, 3, 0, 0]}/>
             </BarChart>
           </ResponsiveContainer>

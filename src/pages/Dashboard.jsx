@@ -5,24 +5,21 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
 import CheckinWidget from '../components/dashboard/CheckinWidget';
-import { Empty, Progress } from '../compass/ui';
+import { Bar, Empty, Progress } from '../compass/ui';
 import { clickable } from '../compass/interaction';
 import { C, serif, mono, card, label, grid, linkAction, sectionTitle } from '../compass/tokens';
 import { annualView, monthlyView } from '../compass/goals';
 import {
-  money, short, dateLabel, monthLabel, headerDate,
-  THIS_MONTH, TODAY, CURRENT_QUARTER, MONTH_NAMES,
+  money, short, dateLabel, monthLabel, headerDate, weekLabel,
+  THIS_MONTH, TODAY, THIS_WEEK, CURRENT_QUARTER, MONTH_NAMES,
 } from '../compass/format';
 import { ACTIVE_STAGES } from '../constants';
-import { isToday, isPast } from '../utils';
-
-const DONE_STATES = ['Done', 'Cancelled'];
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const {
-    loans, clients, crmTasks, goalsV2, assets, liabs, income, expenses,
-    updateCrmTask, loading,
+    loans, clients, goalsV2, assets, liabs, income, expenses,
+    weeklyRoutine, weeklyDone, setRoutineDone, loading,
   } = useData();
 
   const clientMap = useMemo(
@@ -57,18 +54,15 @@ export default function Dashboard() {
   const settlingThisMonth = loans.filter(l => (l.settlementDate || '').slice(0, 7) === THIS_MONTH);
   const settlingVal = settlingThisMonth.reduce((s, l) => s + (Number(l.value) || 0), 0);
 
-  /* ── Tasks ─────────────────────────────────────────────────────────────── */
-  const openTasks = crmTasks.filter(t => !DONE_STATES.includes(t.status));
-  const overdue = openTasks.filter(t => t.dueDate && isPast(t.dueDate) && !isToday(t.dueDate));
-  const dueToday = openTasks.filter(t => t.dueDate && isToday(t.dueDate));
-  // Starred tasks are the day's focus. Nothing starred yet? Fall back to what
-  // is late or due, so the card is never dead space.
-  const starred = openTasks.filter(t => t.focus);
-  const focus = (starred.length
-    ? starred
-    : [...overdue, ...dueToday])
-    .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''))
-    .slice(0, 3);
+  /* ── This week ─────────────────────────────────────────────────────────── */
+  const routine = useMemo(
+    () => [...weeklyRoutine].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.createdAt || 0) - (b.createdAt || 0)),
+    [weeklyRoutine],
+  );
+  const doneThisWeek = weeklyDone[THIS_WEEK] || {};
+  const routineDone = routine.filter(i => doneThisWeek[i.id]).length;
+  const routinePct = routine.length ? Math.round((routineDone / routine.length) * 100) : 0;
+
 
   /* ── Money ─────────────────────────────────────────────────────────────── */
   const totalAssets = assets.reduce((a, x) => a + (Number(x.value) || 0), 0);
@@ -97,10 +91,12 @@ export default function Dashboard() {
       go: () => navigate('/mortgage/pipeline'),
     },
     {
-      label: 'Open tasks',
-      value: String(openTasks.length),
-      sub: openTasks.length ? `${overdue.length} overdue · ${dueToday.length} due today` : 'Nothing on the list',
-      go: () => navigate('/tasks'),
+      label: 'This week',
+      value: routine.length ? `${routineDone}/${routine.length}` : '—',
+      sub: routine.length
+        ? (routineDone === routine.length ? 'All done' : `${routine.length - routineDone} still to do`)
+        : 'Set up your weekly routine',
+      go: () => navigate('/weekly'),
     },
     {
       label: 'Year to target',
@@ -110,12 +106,9 @@ export default function Dashboard() {
     },
   ];
 
-  const completeTask = async (t) => {
-    try {
-      await updateCrmTask(t.id, { status: 'Done' });
-      toast.success('Task completed.');
-    } catch { toast.error('Failed to update task.'); }
-  };
+  const toggleRoutine = (item) =>
+    setRoutineDone(THIS_WEEK, item.id, !doneThisWeek[item.id])
+      .catch(() => toast.error('Failed to update.'));
 
   if (loading) {
     return (
@@ -161,45 +154,48 @@ export default function Dashboard() {
             <section style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <section style={{ ...card, padding: '22px 22px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-                  <h2 style={sectionTitle}>Focus — next 3 moves</h2>
-                  <span {...clickable(() => navigate('/tasks'))} style={linkAction}>All tasks</span>
+                  <h2 style={sectionTitle}>This week — {weekLabel(THIS_WEEK)}</h2>
+                  <span {...clickable(() => navigate('/weekly'))} style={linkAction}>Weekly</span>
                 </div>
-                <p style={{ margin: '6px 0 14px', fontSize: 11.5, color: C.muted, lineHeight: 1.55 }}>
-                  {starred.length
-                    ? 'Starred in Tasks — three at a time, tap a star there to swap one out.'
-                    : 'Nothing starred yet — showing what is late or due. Star up to three in Tasks to pin them here.'}
+                <p style={{ margin: '6px 0 12px', fontSize: 11.5, color: C.muted, lineHeight: 1.55 }}>
+                  {routine.length
+                    ? `${routineDone} of ${routine.length} done — tick them off here or on the Weekly page.`
+                    : 'No weekly routine yet — add the handful of things you do every week.'}
                 </p>
-                {focus.length ? focus.map(t => {
-                  const late = t.dueDate && isPast(t.dueDate) && !isToday(t.dueDate);
+                {routine.length > 0 && <Bar pct={routinePct} height={6} style={{ marginBottom: 4 }}/>}
+
+                {routine.length ? routine.map(item => {
+                  const isDone = !!doneThisWeek[item.id];
                   return (
-                    <div key={t.id} style={{
+                    <div key={item.id} style={{
                       display: 'flex', gap: 12, alignItems: 'flex-start',
-                      padding: '13px 0', borderTop: `1px solid ${C.line}`,
+                      padding: '12px 0', borderTop: `1px solid ${C.line}`,
                     }}>
-                      <div {...clickable(() => completeTask(t), 'Mark as done')}
+                      <div {...clickable(() => toggleRoutine(item), isDone ? 'Mark as not done' : 'Mark as done')}
                            style={{
                              width: 17, height: 17, flex: '0 0 17px', marginTop: 1, borderRadius: 5,
-                             cursor: 'pointer', border: '1.5px solid var(--border-strong)', background: 'transparent',
-                           }}/>
-                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <div style={{ fontSize: 13, lineHeight: 1.4 }}>{t.title}</div>
-                        <div style={{ fontSize: 11, color: C.muted }}>
-                          {clientMap[t.clientId] ? `${clientMap[t.clientId]} · ` : ''}{t.priority || 'Medium'}
-                        </div>
+                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                             fontSize: 11, color: 'var(--bg)',
+                             border: `1.5px solid ${isDone ? 'var(--accent)' : 'var(--border-strong)'}`,
+                             background: isDone ? 'var(--accent)' : 'transparent',
+                           }}>
+                        {isDone ? '✓' : ''}
                       </div>
-                      <div style={{
-                        fontFamily: mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase',
-                        padding: '5px 9px', borderRadius: 99, whiteSpace: 'nowrap',
-                        background: late ? 'var(--danger-dim)' : 'var(--accent-dim)',
-                        color: late ? C.red : C.accent,
-                      }}>
-                        {late ? 'Late' : 'Today'}
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <div style={{
+                          fontSize: 13, lineHeight: 1.4,
+                          color: isDone ? C.muted : 'var(--ink)',
+                          textDecoration: isDone ? 'line-through' : 'none',
+                        }}>
+                          {item.title}
+                        </div>
+                        {item.note && <div style={{ fontSize: 11, color: C.muted }}>{item.note}</div>}
                       </div>
                     </div>
                   );
                 }) : (
                   <Empty style={{ paddingBottom: 14 }}>
-                    Nothing due or overdue. Add tasks against a file in <b>Pipeline</b>.
+                    Start with two or three in <b>Weekly</b>.
                   </Empty>
                 )}
               </section>

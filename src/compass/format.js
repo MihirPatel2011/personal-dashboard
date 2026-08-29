@@ -97,3 +97,32 @@ export function dueText(iso) {
 }
 
 export const pct = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0)
+
+/* ── Weeks ─────────────────────────────────────────────────────────────────
+   Weeks run Monday–Sunday and are keyed by their Monday, so a key sorts
+   chronologically as a plain string and never drifts across a year boundary
+   the way ISO week numbers can. */
+
+export function weekStartOf(iso = TODAY) {
+  const d = new Date(`${iso}T00:00:00`)
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  return todayIso(d)
+}
+
+export const THIS_WEEK = weekStartOf(TODAY)
+
+export function shiftWeek(weekKey, weeks) {
+  const d = new Date(`${weekKey}T00:00:00`)
+  d.setDate(d.getDate() + weeks * 7)
+  return todayIso(d)
+}
+
+/** "18 – 24 Aug" for a week, or "This week" when it is the current one. */
+export function weekLabel(weekKey) {
+  const start = new Date(`${weekKey}T00:00:00`)
+  const end = new Date(start)
+  end.setDate(start.getDate() + 6)
+  const sameMonth = start.getMonth() === end.getMonth()
+  const left = sameMonth ? `${start.getDate()}` : `${start.getDate()} ${MONTHS[start.getMonth()]}`
+  return `${left} – ${end.getDate()} ${MONTHS[end.getMonth()]}`
+}

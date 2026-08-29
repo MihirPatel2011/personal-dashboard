@@ -634,6 +634,10 @@ export default function Pipeline() {
     });
 
   const countByStatus = s => activeLoans.filter(l => l.status === s).length;
+  const sumOf = arr => arr.reduce((t, l) => t + (Number(l.value) || 0), 0);
+  const valueByStatus = s => sumOf(activeLoans.filter(l => l.status === s));
+  // What the current filter is actually worth, and what is on screen after search.
+  const shownValue = sumOf(filtered);
   const pipelineVal   = activeLoans
     .filter(l => ACTIVE_STAGES.includes(l.stage))
     .reduce((s, l) => s + (Number(l.value) || 0), 0);
@@ -737,12 +741,14 @@ export default function Pipeline() {
             onClick={() => { switchToActive(); }}
           >
             All <span className="tab-count">{activeLoans.length}</span>
+            <span className="tab-value">{formatCurrency(sumOf(activeLoans), true)}</span>
           </button>
           {activeStatuses.filter(s => s !== 'Settled').map(s => (
             <button key={s}
               className={`status-tab${!showSettled && selectedStatus === s ? ' active' : ''}`}
               onClick={() => { setShowSettled(false); setSelectedStatus(s); }}>
               {s} <span className="tab-count">{countByStatus(s)}</span>
+              <span className="tab-value">{formatCurrency(valueByStatus(s), true)}</span>
             </button>
           ))}
           {/* Separator + Settled tab */}
@@ -752,7 +758,24 @@ export default function Pipeline() {
             onClick={switchToSettled}
           >
             ✓ Settled <span className="tab-count">{settledLoans.length}</span>
+            <span className="tab-value">{formatCurrency(sumOf(settledLoans), true)}</span>
           </button>
+        </div>
+      </div>
+
+      <div className="crm-body" style={{ padding: '10px 28px 0' }}>
+        <div style={{
+          display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
+          fontSize: 12.5, color: 'var(--ink-3)',
+        }}>
+          <span style={{ ...labelSm, fontSize: 9 }}>
+            {showSettled ? 'Settled' : (selectedStatus === 'all' ? 'All active' : selectedStatus)}
+          </span>
+          <span>
+            <span style={{ fontFamily: mono, color: 'var(--ink)' }}>{formatCurrency(shownValue, true)}</span>
+            {' across '}{filtered.length} {filtered.length === 1 ? 'file' : 'files'}
+            {search ? ' matching your search' : ''}
+          </span>
         </div>
       </div>
 

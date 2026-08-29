@@ -13,7 +13,7 @@ import Pipeline from './pages/mortgage/Pipeline';
 import Clients from './pages/mortgage/Clients';
 import Followups from './pages/mortgage/Followups';
 import Notes from './pages/mortgage/Notes';
-import Tasks from './pages/Tasks';
+import Weekly from './pages/Weekly';
 import Performance from './pages/mortgage/Performance';
 import Settings from './pages/mortgage/Settings';
 import PersonalNotes from './pages/PersonalNotes';
@@ -80,7 +80,8 @@ function AppShell() {
           <Route path="/"                    element={<Navigate to="/dashboard" replace/>}/>
           <Route path="/dashboard"           element={<Dashboard/>}/>
           <Route path="/goals"               element={<Goals/>}/>
-          <Route path="/tasks"               element={<Tasks/>}/>
+          <Route path="/weekly"              element={<Weekly/>}/>
+          <Route path="/tasks"               element={<Navigate to="/weekly" replace/>}/>
           <Route path="/money"               element={<Money/>}/>
           <Route path="/notes"               element={<PersonalNotes/>}/>
           <Route path="/mortgage"            element={<MortgageLayout/>}>
@@ -89,7 +90,7 @@ function AppShell() {
             <Route path="clients"            element={<Clients/>}/>
             <Route path="followups"          element={<Followups/>}/>
             <Route path="notes"              element={<Notes/>}/>
-            <Route path="tasks"              element={<Navigate to="/tasks" replace/>}/>
+            <Route path="tasks"              element={<Navigate to="/weekly" replace/>}/>
             <Route path="performance"        element={<Performance/>}/>
             <Route path="settings"           element={<Settings/>}/>
           </Route>
