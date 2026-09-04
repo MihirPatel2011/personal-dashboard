@@ -1,226 +1,315 @@
+// src/pages/Dashboard.jsx — Compass's "Today": the numbers, what to do next,
+// where the quarter stands, and the money, all fed from live CRM data.
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, CheckSquare, Building2, TrendingUp, AlertCircle, Calendar, DollarSign, ArrowRight, Plus } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
-import { useAuth } from '../context/AuthContext';
-import { formatCurrency, fmtShortDate, getGreeting, getDayLabel, pctRound, getGoalActuals, getGoalPeriods, paceStatus, getGoalIdeal, isToday, isPast, isWithinDays } from '../utils';
-import { STAGE_COLORS, ACTIVE_STAGES, ACTIVE_STAGES as ACTIVE } from '../constants';
-import { StageBadge } from '../components/common/Badge';
-
-function KpiCard({ icon: Icon, label, value, sub, color, soft, onClick }) {
-  return (
-    <div className="kpi-card" style={{ '--kpi-color': color, '--kpi-soft': soft }} onClick={onClick}>
-      <div className="kpi-icon"><Icon size={16}/></div>
-      <div className="kpi-value">{value}</div>
-      <div className="kpi-label">{label}</div>
-      {sub && <div className="kpi-sub">{sub}</div>}
-    </div>
-  );
-}
+import CheckinWidget from '../components/dashboard/CheckinWidget';
+import { Bar, Empty, Progress } from '../compass/ui';
+import { clickable } from '../compass/interaction';
+import { C, serif, mono, card, label, grid, linkAction, sectionTitle } from '../compass/tokens';
+import { annualView, monthlyView } from '../compass/goals';
+import {
+  money, short, dateLabel, monthLabel, headerDate, weekLabel,
+  THIS_MONTH, TODAY, THIS_WEEK, CURRENT_QUARTER, MONTH_NAMES,
+} from '../compass/format';
+import { ACTIVE_STAGES } from '../constants';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { goals, goalLog, personalTasks, loans, clients, notes, crmTasks, loading } = useData();
+  const {
+    loans, clients, goalsV2, assets, liabs, income, expenses,
+    weeklyRoutine, weeklyDone, setRoutineDone, loading,
+  } = useData();
 
-  // ── Goals metrics ──────────────────────────────────────────────────────────
-  const activeGoals = goals.filter(g => !g.status || g.status === 'active');
-  const goalsOnTrack = activeGoals.filter(g => {
-    const act = getGoalActuals(g, goalLog);
-    const ideal = getGoalIdeal(g, 'year');
-    const ps = paceStatus(act.year, g.year?.target, ideal);
-    return ps.key !== 'behind';
-  }).length;
+  const clientMap = useMemo(
+    () => Object.fromEntries(clients.map(c => [c.id, c.name])),
+    [clients],
+  );
+  const loanName = l => l.clientObj || clientMap[l.clientId] || 'Unknown';
 
-  // ── Task metrics ───────────────────────────────────────────────────────────
-  const essential = personalTasks.find(t => t.status === 'essential');
-  const secondary = personalTasks.filter(t => t.status === 'secondary');
-  const inboxCount = personalTasks.filter(t => t.status === 'inbox').length;
-  const tasksDueToday = personalTasks.filter(t =>
-    !['done','nd'].includes(t.status) && isToday(t.dueDate)
-  ).length;
+  /* ── Goals ─────────────────────────────────────────────────────────────── */
+  const goals = useMemo(
+    () => goalsV2.map(g => ({
+      ...g,
+      target: Number(g.target) || 0,
+      qTargets: g.qTargets || [0, 0, 0, 0],
+      logs: Object.entries(g.logs || {}).map(([id, l]) => ({ id, ...l, amount: Number(l.amount) || 0 })),
+    })),
+    [goalsV2],
+  );
+  const annual = useMemo(
+    () => goals.filter(g => g.type === 'annual').map(g => annualView(g, goals)),
+    [goals],
+  );
+  const monthly = useMemo(
+    () => goals.filter(g => g.type === 'monthly' && g.month === THIS_MONTH).map(g => monthlyView(g, goals)),
+    [goals],
+  );
 
-  // ── Mortgage metrics ────────────────────────────────────────────────────────
-  const activeLoans   = loans.filter(l => ACTIVE_STAGES.includes(l.stage));
-  const pipelineValue = activeLoans.reduce((s, l) => s + (Number(l.value) || 0), 0);
-  const overdueCrm    = crmTasks.filter(t => !['Done','Cancelled'].includes(t.status) && isPast(t.dueDate) && !isToday(t.dueDate)).length;
-  const followUps7    = crmTasks.filter(t => !['Done','Cancelled'].includes(t.status) && isWithinDays(t.dueDate, 7)).length;
+  /* ── Pipeline ──────────────────────────────────────────────────────────── */
+  const activeLoans = loans.filter(l => ACTIVE_STAGES.includes(l.stage));
+  const pipelineVal = activeLoans.reduce((s, l) => s + (Number(l.value) || 0), 0);
 
-  const clientMap = Object.fromEntries(clients.map(c => [c.id, c.name]));
-  const recentLoans = [...loans].sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0)).slice(0, 5);
-  const recentNotes = [...notes].sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0)).slice(0, 4);
+  const settlingThisMonth = loans.filter(l => (l.settlementDate || '').slice(0, 7) === THIS_MONTH);
+  const settlingVal = settlingThisMonth.reduce((s, l) => s + (Number(l.value) || 0), 0);
 
-  const rawName   = user?.email?.split('@')[0] || 'Mihir';
-  const firstName = rawName.split(/[-._]/)[0];
+  /* ── This week ─────────────────────────────────────────────────────────── */
+  const routine = useMemo(
+    () => [...weeklyRoutine].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.createdAt || 0) - (b.createdAt || 0)),
+    [weeklyRoutine],
+  );
+  const doneThisWeek = weeklyDone[THIS_WEEK] || {};
+  const routineDone = routine.filter(i => doneThisWeek[i.id]).length;
+  const routinePct = routine.length ? Math.round((routineDone / routine.length) * 100) : 0;
+
+
+  /* ── Money ─────────────────────────────────────────────────────────────── */
+  const totalAssets = assets.reduce((a, x) => a + (Number(x.value) || 0), 0);
+  const totalLiabs = liabs.reduce((a, x) => a + (Number(x.value) || 0), 0);
+  const thisMonth = x => (x.date || '').slice(0, 7) === THIS_MONTH;
+  const monthIncome = income.filter(thisMonth).reduce((a, x) => a + (Number(x.amount) || 0), 0);
+  const monthExpenses = expenses.filter(thisMonth).reduce((a, x) => a + (Number(x.amount) || 0), 0);
+  const bizNetMonth = monthIncome - monthExpenses;
+
+  const lead = annual[0];
+  const monthName = MONTH_NAMES[Number(TODAY.slice(5, 7)) - 1];
+
+  const stats = [
+    {
+      label: 'Pipeline',
+      value: short(pipelineVal),
+      sub: activeLoans.length ? `${activeLoans.length} files in progress` : 'No active files yet',
+      go: () => navigate('/mortgage/pipeline'),
+    },
+    {
+      label: 'Settling this month',
+      value: short(settlingVal),
+      sub: settlingThisMonth.length
+        ? settlingThisMonth.slice(0, 3).map(l => loanName(l).split(' ')[0]).join(', ')
+        : 'Nothing booked in yet',
+      go: () => navigate('/mortgage/pipeline'),
+    },
+    {
+      label: 'This week',
+      value: routine.length ? `${routineDone}/${routine.length}` : '—',
+      sub: routine.length
+        ? (routineDone === routine.length ? 'All done' : `${routine.length - routineDone} still to do`)
+        : 'Set up your weekly routine',
+      go: () => navigate('/weekly'),
+    },
+    {
+      label: 'Year to target',
+      value: lead ? `${lead.pct}%` : '—',
+      sub: lead ? `${lead.current} of ${lead.target}` : 'Set a yearly goal to track this',
+      go: () => navigate('/goals'),
+    },
+  ];
+
+  const toggleRoutine = (item) =>
+    setRoutineDone(THIS_WEEK, item.id, !doneThisWeek[item.id])
+      .catch(() => toast.error('Failed to update.'));
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', flexDirection: 'column', gap: 16 }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }}/>
-        <span style={{ color: 'var(--ink-3)', fontSize: 14 }}>Loading your dashboard…</span>
-      </div>
+      <div className="page-body" style={{ fontSize: 12.5, color: C.muted }}>Loading…</div>
     );
   }
 
   return (
-    <div className="page-body fade-in">
-      {/* Greeting */}
-      <div className="dash-greeting">
-        <div className="dash-greeting-text">{getGreeting()}, {firstName.charAt(0).toUpperCase() + firstName.slice(1)} 👋</div>
-        <div className="dash-greeting-sub">{getDayLabel()}</div>
-      </div>
-
-      {/* KPIs */}
-      <div className="kpi-grid" style={{ marginBottom: 32 }}>
-        <KpiCard icon={Target}      label="Goals on Track"    value={`${goalsOnTrack}/${activeGoals.length}`}
-          color="var(--goals)" soft="var(--goals-dim)" onClick={() => navigate('/goals')}/>
-        <KpiCard icon={CheckSquare} label="Tasks Due Today"   value={tasksDueToday}
-          sub={inboxCount > 0 ? `${inboxCount} in inbox` : undefined}
-          color="var(--tasks)" soft="var(--tasks-dim)" onClick={() => navigate('/tasks')}/>
-        <KpiCard icon={TrendingUp}  label="Pipeline Value"    value={formatCurrency(pipelineValue, true)}
-          sub={`${activeLoans.length} active loans`}
-          color="var(--mortgage)" soft="var(--mortgage-dim)" onClick={() => navigate('/mortgage/pipeline')}/>
-        <KpiCard icon={AlertCircle} label="Overdue CRM Tasks" value={overdueCrm}
-          sub={followUps7 > 0 ? `${followUps7} due this week` : undefined}
-          color={overdueCrm > 0 ? 'var(--danger)' : 'var(--ok)'} soft={overdueCrm > 0 ? 'var(--danger-dim)' : 'var(--ok-dim)'}
-          onClick={() => navigate('/mortgage/tasks')}/>
-      </div>
-
-      {/* 3-column content */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
-
-        {/* Goals column */}
-        <div className="dash-section">
-          <div className="dash-section-header">
-            <div className="dash-section-title">
-              <span className="section-pip" style={{ background: 'var(--goals)' }}/>
-              <span style={{ color: 'var(--goals)' }}>Goals</span>
-            </div>
-            <button className="btn ghost sm" onClick={() => navigate('/goals')} style={{ gap: 4 }}>
-              View all <ArrowRight size={12}/>
-            </button>
+    <>
+      <div className="page-header">
+        <div>
+          <div style={{
+            fontFamily: mono, fontSize: 10.5, letterSpacing: '0.16em',
+            textTransform: 'uppercase', color: C.muted, marginBottom: 6,
+          }}>
+            {headerDate()}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {activeGoals.length === 0 && (
-              <div style={{ color: 'var(--ink-3)', fontSize: 13, padding: '20px 0', textAlign: 'center' }}>
-                No active goals yet.
-              </div>
-            )}
-            {activeGoals.slice(0, 5).map(g => {
-              const act    = getGoalActuals(g, goalLog);
-              const pct    = pctRound(act.year, g.year?.target);
-              const ideal  = getGoalIdeal(g, 'year');
-              const status = paceStatus(act.year, g.year?.target, ideal);
-              const fillColor = status.key === 'behind' ? 'var(--danger)' : status.key === 'ahead' ? 'var(--ok)' : 'var(--goals)';
-              return (
-                <div key={g.id} className="goal-dash-row" onClick={() => navigate('/goals')}>
-                  <div className={`goal-icon ${g.cls || 'gc0'}`}>{g.glyph || '🎯'}</div>
-                  <div className="goal-dash-info">
-                    <div className="goal-dash-name">{g.label}</div>
-                    <div style={{ marginTop: 5 }}>
-                      <div className="progress-bar" style={{ height: 4 }}>
-                        <div className="progress-fill" style={{ width: pct + '%', background: fillColor }}/>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="goal-dash-pct">{pct}%</div>
-                </div>
-              );
-            })}
-          </div>
-          <button className="btn ghost sm" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={() => navigate('/goals')}>
-            <Plus size={13}/> Add Goal
-          </button>
+          <div className="page-title">Today</div>
         </div>
+        <div style={{ fontSize: 12.5, color: C.muted2, textAlign: 'right', maxWidth: 330, lineHeight: 1.5 }}>
+          Your next moves, the money, and where this quarter stands.
+        </div>
+      </div>
 
-        {/* Tasks column */}
-        <div className="dash-section">
-          <div className="dash-section-header">
-            <div className="dash-section-title">
-              <span className="section-pip" style={{ background: 'var(--tasks)' }}/>
-              <span style={{ color: 'var(--tasks)' }}>Today's Focus</span>
-            </div>
-            <button className="btn ghost sm" onClick={() => navigate('/tasks')} style={{ gap: 4 }}>
-              View all <ArrowRight size={12}/>
-            </button>
-          </div>
+      <div className="page-body">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <CheckinWidget/>
 
-          {/* Essential */}
-          <div className="essential-dash" onClick={() => navigate('/tasks')} style={{ cursor: 'pointer', marginBottom: 10 }}>
-            <div className="ess-label">⭐ Essential</div>
-            {essential
-              ? <div className="ess-task-title">{essential.title}</div>
-              : <div className="ess-empty-hint">No essential task set — tap to add one</div>
-            }
-          </div>
-
-          {/* Secondary */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {secondary.slice(0, 3).map(t => (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r)', cursor: 'pointer' }} onClick={() => navigate('/tasks')}>
-                <div style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid var(--border-strong)', flexShrink: 0 }}/>
-                <span style={{ fontSize: 13, color: 'var(--ink-2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
+          {/* ── Four numbers ── */}
+          <div style={grid(210, 14)}>
+            {stats.map(s => (
+              <div key={s.label} {...clickable(s.go, s.label)}
+                   style={{ ...card, padding: 18, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer' }}>
+                <div style={label}>{s.label}</div>
+                <div style={{ fontFamily: serif, fontSize: 32, lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 11.5, color: C.muted2 }}>{s.sub}</div>
               </div>
             ))}
-            {inboxCount > 0 && (
-              <div style={{ padding: '8px 12px', background: 'var(--tasks-dim)', border: '1px solid var(--tasks-border)', borderRadius: 'var(--r)', fontSize: 12, color: 'var(--tasks)', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/tasks')}>
-                {inboxCount} item{inboxCount > 1 ? 's' : ''} waiting in inbox →
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Mortgage column */}
-        <div className="dash-section">
-          <div className="dash-section-header">
-            <div className="dash-section-title">
-              <span className="section-pip" style={{ background: 'var(--mortgage)' }}/>
-              <span style={{ color: 'var(--mortgage)' }}>Pipeline</span>
-            </div>
-            <button className="btn ghost sm" onClick={() => navigate('/mortgage/pipeline')} style={{ gap: 4 }}>
-              View all <ArrowRight size={12}/>
-            </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {recentLoans.length === 0 && (
-              <div style={{ color: 'var(--ink-3)', fontSize: 13, padding: '20px 0', textAlign: 'center' }}>
-                No loans in pipeline yet.
-              </div>
-            )}
-            {recentLoans.map(l => {
-              const c = STAGE_COLORS[l.stage] || {};
-              return (
-                <div key={l.id} className="pipeline-mini-row" onClick={() => navigate('/mortgage/pipeline')}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.text || 'var(--mortgage)', flexShrink: 0 }}/>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {l.clientObj || clientMap[l.clientId] || 'Unknown'}
+          <div style={grid(420)}>
+            {/* ── Left column ── */}
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+              <section style={{ ...card, padding: '22px 22px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+                  <h2 style={sectionTitle}>This week — {weekLabel(THIS_WEEK)}</h2>
+                  <span {...clickable(() => navigate('/weekly'))} style={linkAction}>Weekly</span>
+                </div>
+                <p style={{ margin: '6px 0 12px', fontSize: 11.5, color: C.muted, lineHeight: 1.55 }}>
+                  {routine.length
+                    ? `${routineDone} of ${routine.length} done — tick them off here or on the Weekly page.`
+                    : 'No weekly routine yet — add the handful of things you do every week.'}
+                </p>
+                {routine.length > 0 && <Bar pct={routinePct} height={6} style={{ marginBottom: 4 }}/>}
+
+                {routine.length ? routine.map(item => {
+                  const isDone = !!doneThisWeek[item.id];
+                  return (
+                    <div key={item.id} style={{
+                      display: 'flex', gap: 12, alignItems: 'flex-start',
+                      padding: '12px 0', borderTop: `1px solid ${C.line}`,
+                    }}>
+                      <div {...clickable(() => toggleRoutine(item), isDone ? 'Mark as not done' : 'Mark as done')}
+                           style={{
+                             width: 17, height: 17, flex: '0 0 17px', marginTop: 1, borderRadius: 5,
+                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                             fontSize: 11, color: 'var(--bg)',
+                             border: `1.5px solid ${isDone ? 'var(--accent)' : 'var(--border-strong)'}`,
+                             background: isDone ? 'var(--accent)' : 'transparent',
+                           }}>
+                        {isDone ? '✓' : ''}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <div style={{
+                          fontSize: 13, lineHeight: 1.4,
+                          color: isDone ? C.muted : 'var(--ink)',
+                          textDecoration: isDone ? 'line-through' : 'none',
+                        }}>
+                          {item.title}
+                        </div>
+                        {item.note && <div style={{ fontSize: 11, color: C.muted }}>{item.note}</div>}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{l.lender} · {l.objective}</div>
-                  </div>
-                  <StageBadge stage={l.stage}/>
-                </div>
-              );
-            })}
-          </div>
+                  );
+                }) : (
+                  <Empty style={{ paddingBottom: 14 }}>
+                    Start with two or three in <b>Weekly</b>.
+                  </Empty>
+                )}
+              </section>
 
-          {/* Recent notes */}
-          {recentNotes.length > 0 && (
-            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-              <div className="section-label" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                Recent Notes
-                <button className="btn ghost sm" onClick={() => navigate('/mortgage/notes')} style={{ gap: 4 }}>All <ArrowRight size={11}/></button>
-              </div>
-              {recentNotes.map(n => (
-                <div key={n.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)', cursor: 'pointer' }} onClick={() => navigate('/mortgage/notes')}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>{n.title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{clientMap[n.clientId] || '—'} · {n.channel}</div>
+              <div style={card}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
+                  <h2 style={sectionTitle}>This quarter — Q{CURRENT_QUARTER + 1}</h2>
+                  <span {...clickable(() => navigate('/goals'))} style={linkAction}>Goals</span>
                 </div>
-              ))}
-            </div>
-          )}
+                {annual.length ? annual.map(g => (
+                  <Progress
+                    key={g.goal.id}
+                    title={g.goal.title}
+                    pctLabel={g.goal.qTargets?.[CURRENT_QUARTER] ? `${g.quarterPct}%` : '—'}
+                    barPct={g.quarterPct}
+                    left={g.quarterNote}
+                    right={`${g.monthLabelValue} this month`}
+                  />
+                )) : (
+                  <Empty>No yearly goals yet — set up to three in <b>Goals</b>.</Empty>
+                )}
+              </div>
+            </section>
+
+            {/* ── Right column ── */}
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+              <div style={{ background: 'var(--ink)', color: 'var(--bg)', borderRadius: 14, padding: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ ...label, color: 'var(--bg)', opacity: 0.6 }}>Net position</span>
+                  <span {...clickable(() => navigate('/money'))}
+                        style={{ ...linkAction, color: 'var(--accent)' }}>Money</span>
+                </div>
+                <div style={{ fontFamily: serif, fontSize: 44, lineHeight: 1.05, margin: '10px 0 4px' }}>
+                  {money(totalAssets - totalLiabs)}
+                </div>
+                <div style={{ fontSize: 11.5, opacity: 0.6 }}>
+                  {assets.length + liabs.length
+                    ? `${assets.length} assets · ${liabs.length} liabilities`
+                    : 'Add assets and liabilities in Money to build this out'}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', marginTop: 18, borderTop: '1px solid rgba(233,227,213,0.14)' }}>
+                  {[
+                    ['Assets', money(totalAssets)],
+                    ['Liabilities', `-${money(totalLiabs)}`],
+                    [`Business net · ${monthName}`, money(bizNetMonth)],
+                  ].map(([k, v]) => (
+                    <div key={k} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                      gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(233,227,213,0.08)',
+                    }}>
+                      <span style={{ fontSize: 12.5, opacity: 0.75 }}>{k}</span>
+                      <span style={{ fontFamily: mono, fontSize: 12.5 }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={card}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 2 }}>
+                  <h2 style={sectionTitle}>This month — {monthLabel(THIS_MONTH).split(' ')[0]}</h2>
+                  <span {...clickable(() => navigate('/goals'))} style={linkAction}>Goals</span>
+                </div>
+                <p style={{ margin: '6px 0 0', fontSize: 11.5, color: C.muted, lineHeight: 1.55 }}>
+                  {monthly.length
+                    ? 'Monthly goals for this month — linked ones feed straight into the yearly totals.'
+                    : 'No monthly goals set for this month yet.'}
+                </p>
+                {monthly.map(g => (
+                  <Progress
+                    key={g.goal.id}
+                    title={g.goal.title}
+                    pctLabel={`${g.pct}%`}
+                    barPct={g.pct}
+                    color={g.parent ? C.accent : 'var(--ink-4)'}
+                    left={`${g.current} of ${g.target}`}
+                    right={g.parent ? `Feeds ${g.parent.tag}` : 'Standalone'}
+                  />
+                ))}
+                {!monthly.length && (
+                  <Empty>Create one in <b>Goals</b> — it can roll into a yearly goal.</Empty>
+                )}
+              </div>
+
+              {settlingThisMonth.length > 0 && (
+                <div style={card}>
+                  <h2 style={{ ...sectionTitle, marginBottom: 4 }}>Settling in {monthName}</h2>
+                  {settlingThisMonth
+                    .slice()
+                    .sort((a, b) => (a.settlementDate || '').localeCompare(b.settlementDate || ''))
+                    .map(l => (
+                      <div key={l.id} style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '11px 0', borderTop: `1px solid ${C.line}`,
+                      }}>
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <span style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {loanName(l)}
+                          </span>
+                          <span style={{ fontSize: 11, color: C.muted }}>{l.lender || '—'} · {l.stage}</span>
+                        </div>
+                        <span style={{ fontFamily: mono, fontSize: 12.5, whiteSpace: 'nowrap' }}>
+                          {money(Number(l.value) || 0)}
+                        </span>
+                        <span style={{ fontFamily: mono, fontSize: 11, color: C.muted, whiteSpace: 'nowrap' }}>
+                          {dateLabel(l.settlementDate)}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </section>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
