@@ -23,7 +23,7 @@ import { C, mono, card, labelSm } from '../../compass/tokens';
 // the table always fits its card rather than scrolling sideways.
 const ROW_GRID = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(0,0.5fr) minmax(0,1.7fr) minmax(0,0.8fr) minmax(0,0.9fr) minmax(0,1fr) minmax(0,1fr)',
+  gridTemplateColumns: 'minmax(0,0.5fr) minmax(0,1.6fr) minmax(0,0.75fr) minmax(0,0.85fr) minmax(0,0.95fr) minmax(0,0.95fr) minmax(0,0.6fr)',
   gap: 10,
   alignItems: 'center',
 };
@@ -203,8 +203,10 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
       <aside className="detail-panel">
         <div className="drawer-head">
           <div>
-            <h2>{clientName || loan.clientObj || 'Unknown Client'}</h2>
-            <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>{loan.lender} · {loan.objective}</div>
+            <h2>{clientName || 'Unknown Client'}</h2>
+            <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>
+              {[loan.ref, loan.lender, loan.objective].filter(Boolean).join(' · ') || 'No details yet'}
+            </div>
           </div>
           <button className="icon-btn" onClick={onClose} title="Close">✕</button>
         </div>
@@ -216,7 +218,7 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
         </div>
         {tab === 'compliance' ? (
           <div className="drawer-body">
-            <LoanCompliance loan={loan} clientName={clientName || loan.clientObj || 'Unknown Client'} onUpdate={onUpdate}/>
+            <LoanCompliance loan={loan} clientName={clientName || 'Unknown Client'} onUpdate={onUpdate}/>
           </div>
         ) : (
         <div className="drawer-body">
@@ -251,9 +253,9 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
             <div className="section-label" style={{ marginBottom: 8 }}>Notes</div>
             <NotesField value={loan.notes || ''} onCommit={v => onUpdate({ notes: v })}/>
           </div>
-          <ConversationLog clientId={loan.clientId} clientName={clientName || loan.clientObj}/>
+          <ConversationLog clientId={loan.clientId} clientName={clientName}/>
 
-          <ClientTasks clientId={loan.clientId} clientName={clientName || loan.clientObj}/>
+          <ClientTasks clientId={loan.clientId} clientName={clientName}/>
 
           <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>Added {fmtRelative(loan.createdAt)}</div>
         </div>
@@ -264,6 +266,105 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
           <button className="btn primary" onClick={onEdit}><Edit3 size={14}/> Edit</button>
         </div>
       </aside>
+  );
+}
+
+// ─── Row tasks ────────────────────────────────────────────────────────────────
+// A file's tasks live in its own row, so they travel with it as the table
+// re-sorts rather than sitting in a fixed panel somewhere else.
+function RowTaskToggle({ open, count, onToggle }) {
+  return (
+    <div {...clickable(onToggle, open ? 'Hide tasks' : 'Show tasks')}
+         style={{
+           display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+           padding: '4px 9px', borderRadius: 99,
+           background: open ? 'var(--accent-dim)' : 'var(--surface-3)',
+           color: open ? 'var(--accent)' : (count ? 'var(--ink-2)' : 'var(--ink-3)'),
+           fontFamily: mono, fontSize: 10, letterSpacing: '.06em', whiteSpace: 'nowrap',
+         }}>
+      {count ? `${count} open` : 'Add'}
+      <span style={{ fontSize: 9 }}>{open ? '▴' : '▾'}</span>
+    </div>
+  );
+}
+
+function RowTasks({ clientId, clientName }) {
+  const { crmTasks, addCrmTask, updateCrmTask, deleteCrmTask } = useData();
+  const [title, setTitle] = useState('');
+  const [due, setDue] = useState('');
+
+  const mine = crmTasks
+    .filter(t => t.clientId === clientId)
+    .sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
+
+  const add = async () => {
+    const t = title.trim();
+    if (!t) return;
+    if (!clientId) { toast.error('Link this loan to a client first.'); return; }
+    try {
+      await addCrmTask({ title: t, clientId, type: '', priority: 'Medium', status: 'To Do', dueDate: due || '', notes: '' });
+      setTitle(''); setDue('');
+    } catch { toast.error('Failed to add task.'); }
+  };
+
+  return (
+    <div style={{
+      border: `1px solid ${C.line}`, borderRadius: 'var(--r)',
+      background: 'var(--surface-2)', padding: '10px 12px',
+      display: 'flex', flexDirection: 'column', gap: 8,
+    }}>
+      <div style={{ ...labelSm, fontSize: 9 }}>
+        Tasks{clientName ? ` · ${clientName}` : ''}
+      </div>
+
+      {mine.map(t => {
+        const done = ['Done', 'Cancelled'].includes(t.status);
+        return (
+          <div key={t.id} style={{ display: 'flex', gap: 9, alignItems: 'center' }}>
+            <div {...clickable(
+                   () => updateCrmTask(t.id, { status: done ? 'To Do' : 'Done' }).catch(() => toast.error('Failed.')),
+                   done ? 'Mark as not done' : 'Mark as done')}
+                 style={{
+                   width: 15, height: 15, flex: '0 0 15px', borderRadius: 4, cursor: 'pointer',
+                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                   fontSize: 10, color: 'var(--bg)',
+                   border: `1.5px solid ${done ? 'var(--accent)' : 'var(--border-strong)'}`,
+                   background: done ? 'var(--accent)' : 'transparent',
+                 }}>
+              {done ? '✓' : ''}
+            </div>
+            <span style={{
+              flex: 1, minWidth: 0, fontSize: 12.5,
+              color: done ? 'var(--ink-3)' : 'var(--ink)',
+              textDecoration: done ? 'line-through' : 'none',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {t.title}
+            </span>
+            {t.dueDate && (
+              <span style={{ fontFamily: mono, fontSize: 10, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
+                {fmtDate(t.dueDate)}
+              </span>
+            )}
+            <XDel size={14} onClick={() => deleteCrmTask(t.id).catch(() => toast.error('Failed.'))}/>
+          </div>
+        );
+      })}
+
+      {!mine.length && (
+        <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>Nothing on this file yet.</div>
+      )}
+
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <input value={title} onChange={e => setTitle(e.target.value)}
+               onKeyDown={e => e.key === 'Enter' && add()}
+               placeholder="Add a task…"
+               style={{ ...panelInput, flex: '1 1 150px', padding: '7px 10px', fontSize: 12 }}/>
+        <input type="date" value={due} onChange={e => setDue(e.target.value)}
+               style={{ ...panelInput, flex: '0 1 125px', padding: '6px 9px', fontSize: 11.5 }}/>
+        <button className="btn accent sm" onClick={add}>Add</button>
+      </div>
+    </div>
   );
 }
 
@@ -568,7 +669,7 @@ function StageSelector({ loan, stages, open, onOpen, onClose, onSelect }) {
 
 // ─── Pipeline Page ────────────────────────────────────────────────────────────
 export default function Pipeline() {
-  const { loans, clients, addLoan, updateLoan, deleteLoan, addNote, mortgageSettings } = useData();
+  const { loans, clients, crmTasks, addLoan, updateLoan, deleteLoan, addNote, mortgageSettings } = useData();
 
   const activeLenders  = mortgageSettings?.lenders  || LENDERS;
   const activeStages   = mortgageSettings?.stages   || LOAN_STAGES;
@@ -586,6 +687,7 @@ export default function Pipeline() {
   const [viewLoan,        setViewLoan]         = useState(null);
   const [delLoan,         setDelLoan]          = useState(null);
   const [showNoteForm,    setShowNoteForm]      = useState(false);
+  const [openTasksFor,    setOpenTasksFor]      = useState(null); // loan id with its task strip open
 
   // Close stage popover on outside click
   useEffect(() => {
@@ -598,6 +700,10 @@ export default function Pipeline() {
   }, [editStageId]);
 
   const clientMap = Object.fromEntries(clients.map(c => [c.id, c.name]));
+  // Table, panel, search and confirm dialogs all name a file the same way.
+  const loanName = l => (l && (clientMap[l.clientId] || l.clientObj)) || 'Unknown';
+  const openTaskCount = clientId =>
+    clientId ? crmTasks.filter(t => t.clientId === clientId && !['Done', 'Cancelled'].includes(t.status)).length : 0;
 
   // Keep the drawer in sync with live Firebase data (compliance edits update in place)
   const liveViewLoan = viewLoan ? loans.find(x => x.id === viewLoan.id) || null : null;
@@ -611,7 +717,7 @@ export default function Pipeline() {
   const filtered = baseLoans
     .filter(l => {
       const matchStatus = showSettled || selectedStatus === 'all' || l.status === selectedStatus;
-      const name = (l.clientObj || clientMap[l.clientId] || '').toLowerCase();
+      const name = loanName(l).toLowerCase();
       const q = search.toLowerCase();
       const matchSearch = !search || name.includes(q) ||
         (l.lender || '').toLowerCase().includes(q) ||
@@ -802,18 +908,19 @@ export default function Pipeline() {
               <div style={CELL}>Bank</div>
               <div style={CELL}>Stage</div>
               <div style={CELL}>Key date</div>
+              <div style={CELL}>Tasks</div>
             </div>
 
             {filtered.map(l => {
-              const name = l.clientObj || clientMap[l.clientId] || 'Unknown';
+              const name = loanName(l);
               const selected = viewLoan?.id === l.id;
               return (
+                <div key={l.id}>
                 <div
-                  key={l.id}
                   {...clickable(() => setViewLoan(l), `Open ${name}`)}
                   style={{
                     ...ROW_GRID, padding: '12px 16px', cursor: 'pointer',
-                    borderBottom: `1px solid ${C.line}`,
+                    borderBottom: openTasksFor === l.id ? 'none' : `1px solid ${C.line}`,
                     background: selected ? 'var(--surface-2)' : 'var(--surface)',
                     boxShadow: `inset 2px 0 0 ${selected ? C.accent : 'transparent'}`,
                   }}
@@ -867,6 +974,28 @@ export default function Pipeline() {
                       <button className="icon-btn sm danger" onClick={e => { e.stopPropagation(); setDelLoan(l); }}><Trash2 size={12}/></button>
                     </div>
                   </div>
+
+                  {/* Tasks for this file, in the row itself */}
+                  <div style={{ minWidth: 0 }} onClick={e => e.stopPropagation()}>
+                    <RowTaskToggle
+                      open={openTasksFor === l.id}
+                      count={openTaskCount(l.clientId)}
+                      onToggle={() => setOpenTasksFor(openTasksFor === l.id ? null : l.id)}
+                    />
+                  </div>
+                </div>
+
+                {openTasksFor === l.id && (
+                  <div onClick={e => e.stopPropagation()}
+                       style={{
+                         padding: '4px 16px 14px 16px',
+                         borderBottom: `1px solid ${C.line}`,
+                         background: selected ? 'var(--surface-2)' : 'var(--surface)',
+                         boxShadow: `inset 2px 0 0 ${selected ? C.accent : 'transparent'}`,
+                       }}>
+                    <RowTasks clientId={l.clientId} clientName={name}/>
+                  </div>
+                )}
                 </div>
               );
             })}
@@ -877,7 +1006,7 @@ export default function Pipeline() {
         {liveViewLoan ? (
           <LoanPanel
             loan={liveViewLoan}
-            clientName={clientMap[liveViewLoan.clientId] || liveViewLoan.clientObj}
+            clientName={loanName(liveViewLoan)}
             lenders={activeLenders}
             stages={activeStages}
             statuses={activeStatuses}
@@ -912,7 +1041,7 @@ export default function Pipeline() {
         isOpen={!!delLoan} onClose={() => setDelLoan(null)}
         onConfirm={() => handleDelete(delLoan?.id)}
         title="Delete Loan?"
-        message={`Delete loan for "${delLoan?.clientObj || clientMap[delLoan?.clientId]}"?`}
+        message={`Delete loan for "${loanName(delLoan)}"?`}
         confirmLabel="Delete Loan"
       />
     </>

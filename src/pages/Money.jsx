@@ -4,6 +4,7 @@ import { useData } from '../context/DataContext';
 import Modal from '../components/common/Modal';
 import { Bar, Empty, XDel } from '../compass/ui';
 import { clickable } from '../compass/interaction';
+import EditField from '../compass/EditField';
 import {
   C, serif, mono, card, input, inputWhite, btnDark, label, labelSm, grid,
   linkAction, segment, segmentWrap, chip,
@@ -53,7 +54,7 @@ const listOf = (map) => Object.entries(map || {}).map(([id, v]) => ({ id, name: 
 export default function Money() {
   const {
     assets: rawAssets, liabs: rawLiabs, expenses: rawExpenses, income: rawIncome,
-    moneySettings, netWorthLog, addMoneyRow, deleteMoneyRow,
+    moneySettings, netWorthLog, addMoneyRow, updateMoneyRow, deleteMoneyRow,
     addMoneySetting, renameMoneySetting, removeMoneySetting,
     recordNetWorth, deleteNetWorth,
   } = useData();
@@ -378,7 +379,7 @@ export default function Money() {
             <BalanceSheet
               assets={assets} liabs={liabs}
               totalAssets={totalAssets} totalLiabs={totalLiabs}
-              addRow={addMoneyRow} removeRow={deleteMoneyRow}
+              addRow={addMoneyRow} updateRow={updateMoneyRow} removeRow={deleteMoneyRow}
             />
           </div>
 
@@ -508,7 +509,7 @@ export default function Money() {
 
 /* ─── Balance sheet ─────────────────────────────────────────────────────── */
 
-function BalanceSheet({ assets, liabs, totalAssets, totalLiabs, addRow, removeRow }) {
+function BalanceSheet({ assets, liabs, totalAssets, totalLiabs, addRow, updateRow, removeRow }) {
   const [kind, setKind] = useState('assets');
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
@@ -518,34 +519,69 @@ function BalanceSheet({ assets, liabs, totalAssets, totalLiabs, addRow, removeRo
     const n = name.trim();
     const v = parseFloat(String(value).replace(/[^0-9.]/g, ''));
     if (!n || !v) { toast.error('Add a name and a value'); return; }
-    await addRow(kind, { name: n, kind: note.trim() || (kind === 'assets' ? 'Asset' : 'Debt'), value: v });
+    await addRow(kind, {
+      name: n,
+      kind: note.trim() || (kind === 'assets' ? 'Asset' : 'Debt'),
+      value: v,
+      updatedAt: TODAY,
+    });
     setName(''); setNote(''); setValue('');
     toast.success(kind === 'assets' ? 'Asset added' : 'Liability added');
   };
+
+  // Any edit stamps the row, so you can see at a glance which figures are
+  // current and which have been sitting there since the last review.
+  const edit = (node, id, patch) =>
+    updateRow(node, id, { ...patch, updatedAt: TODAY }).catch(() => toast.error('Failed to save.'));
 
   const rows = [
     ...assets.map(a => ({ ...a, _node: 'assets' })),
     ...liabs.map(l => ({ ...l, _node: 'liabs' })),
   ];
+  const stale = rows.filter(r => !r.updatedAt).length;
 
   return (
     <section style={{ ...card, padding: 24 }}>
-      <h2 style={{ margin: '0 0 16px', fontFamily: serif, fontWeight: 400, fontSize: 22 }}>Balance sheet</h2>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+        <h2 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 22 }}>Balance sheet</h2>
+        <span style={{ fontSize: 11.5, color: C.muted }}>
+          {rows.length
+            ? (stale ? `${stale} never updated` : 'Every line dated')
+            : ''}
+        </span>
+      </div>
 
       {rows.map(r => (
-        <div key={`${r._node}-${r.id}`} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 0', borderTop: `1px solid ${C.line}` }}>
+        <div key={`${r._node}-${r.id}`} style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '10px 0', borderTop: `1px solid ${C.line}`,
+        }}>
           <span style={{
             width: 7, height: 7, flex: '0 0 7px',
             borderRadius: r._node === 'assets' ? '50%' : 2,
             background: r._node === 'assets' ? C.accent : C.dim,
           }} />
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 13.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</span>
-            <span style={{ fontSize: 11, color: C.muted }}>{r.kind}</span>
+
+          <div style={{ flex: '1 1 150px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <EditField value={r.name} placeholder="Name" fontSize={13}
+                       onCommit={v => edit(r._node, r.id, { name: v })}/>
+            <EditField value={r.kind} placeholder="Type" fontSize={11}
+                       onCommit={v => edit(r._node, r.id, { kind: v })}/>
           </div>
-          <span style={{ fontFamily: mono, fontSize: 13, whiteSpace: 'nowrap', color: r._node === 'assets' ? C.ink : C.red }}>
-            {r._node === 'assets' ? money(r.value) : `-${money(r.value)}`}
-          </span>
+
+          <div style={{ flex: '0 0 108px', display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+            <EditField
+              value={r._node === 'assets' ? money(r.value) : `-${money(r.value)}`}
+              type="number"
+              placeholder="$0"
+              fontSize={13}
+              style={{ width: '100%' }}
+              onCommit={v => edit(r._node, r.id, { value: Math.abs(v) })}/>
+            <span style={{ fontFamily: mono, fontSize: 9.5, color: r.updatedAt ? C.muted : 'var(--warn)' }}>
+              {r.updatedAt ? dateLabel(r.updatedAt) : 'not dated'}
+            </span>
+          </div>
+
           <XDel size={15} onClick={() => removeRow(r._node, r.id)} />
         </div>
       ))}
@@ -567,6 +603,11 @@ function BalanceSheet({ assets, liabs, totalAssets, totalLiabs, addRow, removeRo
                onKeyDown={e => e.key === 'Enter' && add()}
                placeholder="Value" style={{ ...input, flex: '0 1 100px' }} />
         <button onClick={add} style={btnDark}>Add</button>
+      </div>
+
+      <div style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.55 }}>
+        Every line is editable — click a name, type or figure to change it. Editing stamps
+        that line with today's date and records the new net worth on the trend above.
       </div>
 
       <div style={{
