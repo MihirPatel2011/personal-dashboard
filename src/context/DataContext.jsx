@@ -14,9 +14,24 @@ export function DataProvider({ children }) {
   const [crmTasks,         setCrmTasks]         = useState([]);
   const [goals,            setGoals]            = useState([]);
   const [goalLog,          setGoalLog]          = useState([]);
-  const [personalTasks,    setPersonalTasks]    = useState([]);
-  const [taskCategories,   setTaskCategories]   = useState([]);
   const [mortgageSettings, setMortgageSettings] = useState({});
+  const [personalNotes,    setPersonalNotes]    = useState([]);
+  const [followups,        setFollowups]        = useState([]);
+  const [checkins,         setCheckins]         = useState({});   // { 'YYYY-MM-DD': { am: ts|null, pm: ts|null } }
+  // Compass-model goals live under goalsV2 so the legacy `goals` node stays
+  // untouched and recoverable.
+  const [goalsV2,          setGoalsV2]          = useState([]);
+  const [assets,           setAssets]           = useState([]);
+  const [liabs,            setLiabs]            = useState([]);
+  const [expenses,         setExpenses]         = useState([]);
+  const [income,           setIncome]           = useState([]);
+  const [moneySettings,    setMoneySettings]    = useState({});
+  // One net-worth reading per date, so the trend line has history to draw.
+  const [netWorthLog,      setNetWorthLog]      = useState({});
+  // The weekly routine: a short list of guideline tasks, plus which of them
+  // were ticked off in a given week.
+  const [weeklyRoutine,    setWeeklyRoutine]    = useState([]);
+  const [weeklyDone,       setWeeklyDone]       = useState({});
   const [loading,          setLoading]          = useState(true);
 
   const toArr = snap => {
@@ -27,27 +42,41 @@ export function DataProvider({ children }) {
   useEffect(() => {
     if (!user) {
       setClients([]); setLoans([]); setNotes([]); setCrmTasks([]);
-      setGoals([]); setGoalLog([]); setPersonalTasks([]); setTaskCategories([]);
+      setGoals([]); setGoalLog([]); setPersonalNotes([]); setFollowups([]);
+      setCheckins({});
+      setGoalsV2([]); setAssets([]); setLiabs([]); setIncome([]); setExpenses([]);
+      setMoneySettings({}); setNetWorthLog({});
+      setWeeklyRoutine([]); setWeeklyDone({});
       setMortgageSettings({});
       setLoading(false);
       return;
     }
     setLoading(true);
     let count = 0;
-    const TOTAL = 9;
+    const TOTAL = 19;
     const done = () => { count++; if (count >= TOTAL) setLoading(false); };
 
-    const u1 = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
-    const u2 = onValue(ref(db, 'loans'),            s => { setLoans(toArr(s));                 done(); });
-    const u3 = onValue(ref(db, 'notes'),            s => { setNotes(toArr(s));                 done(); });
-    const u4 = onValue(ref(db, 'tasks'),            s => { setCrmTasks(toArr(s));              done(); });
-    const u5 = onValue(ref(db, 'goals'),            s => { setGoals(toArr(s));                 done(); });
-    const u6 = onValue(ref(db, 'goalLog'),          s => { setGoalLog(toArr(s));               done(); });
-    const u7 = onValue(ref(db, 'personalTasks'),    s => { setPersonalTasks(toArr(s));         done(); });
-    const u8 = onValue(ref(db, 'taskCategories'),   s => { setTaskCategories(toArr(s));        done(); });
-    const u9 = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
+    const u1  = onValue(ref(db, 'clients'),          s => { setClients(toArr(s));               done(); });
+    const u2  = onValue(ref(db, 'loans'),            s => { setLoans(toArr(s));                 done(); });
+    const u3  = onValue(ref(db, 'notes'),            s => { setNotes(toArr(s));                 done(); });
+    const u4  = onValue(ref(db, 'tasks'),            s => { setCrmTasks(toArr(s));              done(); });
+    const u5  = onValue(ref(db, 'goals'),            s => { setGoals(toArr(s));                 done(); });
+    const u6  = onValue(ref(db, 'goalLog'),          s => { setGoalLog(toArr(s));               done(); });
+    const u7  = onValue(ref(db, 'mortgageSettings'), s => { setMortgageSettings(s.val() || {}); done(); });
+    const u8  = onValue(ref(db, 'personalNotes'),    s => { setPersonalNotes(toArr(s));         done(); });
+    const u9  = onValue(ref(db, 'followups'),        s => { setFollowups(toArr(s));             done(); });
+    const u10 = onValue(ref(db, 'checkins'),         s => { setCheckins(s.val() || {});         done(); });
+    const u11 = onValue(ref(db, 'goalsV2'),          s => { setGoalsV2(toArr(s));                done(); });
+    const u12 = onValue(ref(db, 'assets'),           s => { setAssets(toArr(s));                 done(); });
+    const u13 = onValue(ref(db, 'liabs'),            s => { setLiabs(toArr(s));                  done(); });
+    const u14 = onValue(ref(db, 'expenses'),         s => { setExpenses(toArr(s));               done(); });
+    const u15 = onValue(ref(db, 'income'),           s => { setIncome(toArr(s));                 done(); });
+    const u16 = onValue(ref(db, 'moneySettings'),    s => { setMoneySettings(s.val() || {});     done(); });
+    const u17 = onValue(ref(db, 'netWorthLog'),      s => { setNetWorthLog(s.val() || {});       done(); });
+    const u18 = onValue(ref(db, 'weeklyRoutine'),    s => { setWeeklyRoutine(toArr(s));          done(); });
+    const u19 = onValue(ref(db, 'weeklyDone'),       s => { setWeeklyDone(s.val() || {});        done(); });
 
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); };
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); u11(); u12(); u13(); u14(); u15(); u16(); u17(); u18(); u19(); };
   }, [user]);
 
   // ─── Clients ──────────────────────────────────────────────────────────────
@@ -62,8 +91,14 @@ export function DataProvider({ children }) {
     if (c?.loanIds) for (const lid of Object.keys(c.loanIds)) await remove(ref(db, `loans/${lid}`));
     if (c?.noteIds) for (const nid of Object.keys(c.noteIds)) await remove(ref(db, `notes/${nid}`));
     if (c?.taskIds) for (const tid of Object.keys(c.taskIds)) await remove(ref(db, `tasks/${tid}`));
+    if (c?.followupIds) for (const fid of Object.keys(c.followupIds)) await remove(ref(db, `followups/${fid}`));
     await remove(ref(db, `clients/${id}`));
   }, [clients]);
+
+  // ─── Personal Notes ───────────────────────────────────────────────────────────
+  const addPersonalNote    = useCallback(async data => { const r = push(ref(db, 'personalNotes')); await set(r, { ...data, createdAt: Date.now(), updatedAt: Date.now() }); return r.key; }, []);
+  const updatePersonalNote = useCallback(async (id, data) => update(ref(db, `personalNotes/${id}`), { ...data, updatedAt: Date.now() }), []);
+  const deletePersonalNote = useCallback(async id => remove(ref(db, `personalNotes/${id}`)), []);
 
   // ─── Loans ────────────────────────────────────────────────────────────────
   const addLoan = useCallback(async data => {
@@ -119,10 +154,31 @@ export function DataProvider({ children }) {
     await remove(ref(db, `tasks/${id}`));
   }, [crmTasks]);
 
+  // ─── Client Follow-ups ──────────────────────────────────────────────────────
+  const addFollowup    = useCallback(async data => {
+    const r  = push(ref(db, 'followups'));
+    const id = r.key;
+    await set(r, { status: 'waiting_me', dueDate: '', ...data, createdAt: Date.now(), updatedAt: Date.now() });
+    if (data.clientId) await set(ref(db, `clients/${data.clientId}/followupIds/${id}`), true);
+    return id;
+  }, []);
+  const updateFollowup = useCallback(async (id, data) =>
+    update(ref(db, `followups/${id}`), { ...data, updatedAt: Date.now() }), []);
+  const deleteFollowup = useCallback(async id => {
+    const f = followups.find(x => x.id === id);
+    if (f?.clientId) await remove(ref(db, `clients/${f.clientId}/followupIds/${id}`));
+    await remove(ref(db, `followups/${id}`));
+  }, [followups]);
+
   // ─── Mortgage Settings ────────────────────────────────────────────────────
   const saveMortgageSettings = useCallback(async (section, arr) => {
     await set(ref(db, `mortgageSettings/${section}`), arr);
   }, []);
+
+  // ─── Daily review check-ins ───────────────────────────────────────────────
+  // value=true stamps now; value=false clears (mis-tap undo).
+  const setCheckin = useCallback(async (dateKey, part, value) =>
+    set(ref(db, `checkins/${dateKey}/${part}`), value ? Date.now() : null), []);
 
   // ─── Goals ───────────────────────────────────────────────────────────────
   const addGoal       = useCallback(async data => { const r = push(ref(db, 'goals')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
@@ -132,30 +188,64 @@ export function DataProvider({ children }) {
   const updateGoalLog = useCallback(async (id, data) => update(ref(db, `goalLog/${id}`), data), []);
   const deleteGoalLog = useCallback(async id => remove(ref(db, `goalLog/${id}`)), []);
 
-  // ─── Personal Tasks ───────────────────────────────────────────────────────
-  const addPersonalTask    = useCallback(async data => { const r = push(ref(db, 'personalTasks')); await set(r, { ...data, createdAt: Date.now(), updatedAt: Date.now() }); return r.key; }, []);
-  const updatePersonalTask = useCallback(async (id, data) => update(ref(db, `personalTasks/${id}`), { ...data, updatedAt: Date.now() }), []);
-  const deletePersonalTask = useCallback(async id => remove(ref(db, `personalTasks/${id}`)), []);
+  // ─── Goals (Compass model) ────────────────────────────────────────────────
+  // { type: 'annual'|'monthly', tag, title, unit: 'money'|'count', target,
+  //   month, parentId, qTargets[4], logs/{id}: { date, amount, note } }
+  const addGoalV2     = useCallback(async data => { const r = push(ref(db, 'goalsV2')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
+  const updateGoalV2  = useCallback(async (id, data) => update(ref(db, `goalsV2/${id}`), data), []);
+  const deleteGoalV2  = useCallback(async (id, all = []) => {
+    // Monthly goals that fed this one become standalone rather than orphaned.
+    for (const g of all) if (g.parentId === id) await update(ref(db, `goalsV2/${g.id}`), { parentId: '' });
+    await remove(ref(db, `goalsV2/${id}`));
+  }, []);
+  const addGoalV2Log  = useCallback(async (goalId, entry) => { const r = push(ref(db, `goalsV2/${goalId}/logs`)); await set(r, entry); }, []);
+  const delGoalV2Log  = useCallback(async (goalId, logId) => remove(ref(db, `goalsV2/${goalId}/logs/${logId}`)), []);
+  const editGoalV2Log = useCallback(async (goalId, logId, entry) => update(ref(db, `goalsV2/${goalId}/logs/${logId}`), entry), []);
 
-  // ─── Task Categories ──────────────────────────────────────────────────────
-  const addTaskCategory    = useCallback(async data => { const r = push(ref(db, 'taskCategories')); await set(r, { ...data, createdAt: Date.now() }); return r.key; }, []);
-  const updateTaskCategory = useCallback(async (id, data) => update(ref(db, `taskCategories/${id}`), data), []);
-  const deleteTaskCategory = useCallback(async id => remove(ref(db, `taskCategories/${id}`)), []);
+  // ─── Money ────────────────────────────────────────────────────────────────
+  const addMoneyRow    = useCallback(async (node, data) => { const r = push(ref(db, node)); await set(r, data); return r.key; }, []);
+  const updateMoneyRow = useCallback(async (node, id, data) => update(ref(db, `${node}/${id}`), data), []);
+  const deleteMoneyRow = useCallback(async (node, id) => remove(ref(db, `${node}/${id}`)), []);
+  // Keyed by date: re-recording on the same day corrects that day's reading
+  // rather than stacking duplicate points on the chart.
+  const recordNetWorth = useCallback(async (dateKey, entry) => set(ref(db, `netWorthLog/${dateKey}`), entry), []);
+  const deleteNetWorth = useCallback(async (dateKey) => remove(ref(db, `netWorthLog/${dateKey}`)), []);
+
+  // ─── Weekly routine ───────────────────────────────────────────────────────
+  const addRoutineItem    = useCallback(async data => { const r = push(ref(db, 'weeklyRoutine')); await set(r, { createdAt: Date.now(), ...data }); return r.key; }, []);
+  const updateRoutineItem = useCallback(async (id, data) => update(ref(db, `weeklyRoutine/${id}`), data), []);
+  const removeRoutineItem = useCallback(async id => remove(ref(db, `weeklyRoutine/${id}`)), []);
+  // Completion is per week, so the routine itself stays untouched as weeks roll.
+  const setRoutineDone    = useCallback(async (weekKey, itemId, done) =>
+    set(ref(db, `weeklyDone/${weekKey}/${itemId}`), done ? Date.now() : null), []);
+
+  // moneySettings holds the managed lists: buckets, expCats, incCats.
+  const addMoneySetting    = useCallback(async (list, name) => { const r = push(ref(db, `moneySettings/${list}`)); await set(r, { name }); }, []);
+  const renameMoneySetting = useCallback(async (list, id, name) => set(ref(db, `moneySettings/${list}/${id}/name`), name), []);
+  const removeMoneySetting = useCallback(async (list, id) => remove(ref(db, `moneySettings/${list}/${id}`)), []);
 
   return (
     <DataContext.Provider value={{
-      clients, loans, notes, crmTasks,
-      goals, goalLog, personalTasks, taskCategories,
+      clients, loans, notes, crmTasks, followups,
+      goals, goalLog, personalNotes, checkins,
+      goalsV2, assets, liabs, expenses, income, moneySettings, netWorthLog,
+      weeklyRoutine, weeklyDone,
       mortgageSettings, loading,
       addClient,    updateClient,    deleteClient,
       addLoan,      updateLoan,      deleteLoan,
       addNote,      updateNote,      deleteNote,
       addCrmTask,   updateCrmTask,   deleteCrmTask,
+      addFollowup,  updateFollowup,  deleteFollowup,
       saveMortgageSettings,
       addGoal,      updateGoal,      deleteGoal,
       addGoalLog,   updateGoalLog,   deleteGoalLog,
-      addPersonalTask, updatePersonalTask, deletePersonalTask,
-      addTaskCategory, updateTaskCategory, deleteTaskCategory,
+      addPersonalNote, updatePersonalNote, deletePersonalNote,
+      setCheckin,
+      addGoalV2, updateGoalV2, deleteGoalV2, addGoalV2Log, delGoalV2Log, editGoalV2Log,
+      addMoneyRow, updateMoneyRow, deleteMoneyRow,
+      addMoneySetting, renameMoneySetting, removeMoneySetting,
+      recordNetWorth, deleteNetWorth,
+      addRoutineItem, updateRoutineItem, removeRoutineItem, setRoutineDone,
     }}>
       {children}
     </DataContext.Provider>

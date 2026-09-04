@@ -98,7 +98,7 @@ function NoteDetail({ note, clientName, onEdit, onDelete, onClose }) {
 
           <div>
             <div className="section-label" style={{ marginBottom: 8 }}>Note</div>
-            <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.7, background: 'var(--surface-2)', padding: '14px 16px', borderRadius: 'var(--r)', border: '1px solid var(--border)', whiteSpace: 'pre-wrap' }}>
+            <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.7, background: 'var(--surface-2)', padding: '14px 16px', borderRadius: 'var(--r)', border: '1px solid var(--border)', whiteSpace: 'pre-wrap' }}>
               {note.body}
             </div>
           </div>
@@ -152,7 +152,7 @@ export default function Notes() {
 
   return (
     <>
-      <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+      <div className="crm-toolbar" style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ position: 'relative' }}>
             <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }}/>
@@ -170,7 +170,7 @@ export default function Notes() {
         </button>
       </div>
 
-      <div style={{ padding: '20px 28px' }}>
+      <div className="crm-body" style={{ padding: '20px 28px' }}>
         {filtered.length === 0 ? (
           <EmptyState emoji="📝" title="No notes yet" description="Keep track of client interactions and important conversations."
             actionLabel="Add Note" onAction={() => { setEditNote(null); setShowForm(true); }}/>
@@ -186,11 +186,11 @@ export default function Notes() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <FileText size={13} style={{ color: 'var(--mortgage)', flexShrink: 0 }}/>
-                      <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{n.title}</span>
-                      {n.channel && <span className="badge mortgage" style={{ fontSize: 10 }}>{n.channel}</span>}
-                      {n.type && <span className="badge" style={{ fontSize: 10, background: 'var(--surface-2)', color: 'var(--ink-3)', border: '1px solid var(--border)' }}>{n.type}</span>}
+                      <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{n.title}</span>
+                      {n.channel && <span className="badge mortgage" style={{ fontSize: 10.5 }}>{n.channel}</span>}
+                      {n.type && <span className="badge" style={{ fontSize: 10.5, background: 'var(--surface-2)', color: 'var(--ink-3)', border: '1px solid var(--border)' }}>{n.type}</span>}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 6 }}>
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 6 }}>
                       {clientMap[n.clientId] || '—'}{n.date ? ` · ${fmtDate(n.date)}` : ''} · {fmtRelative(n.createdAt)}
                     </div>
                     {n.body && (

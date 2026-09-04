@@ -4,16 +4,18 @@ import {
   LineChart, Line, CartesianGrid, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { useData } from '../../context/DataContext';
-import { formatCurrency, fmtShortDate, isThisYear, isThisMonth } from '../../utils';
+import { formatCurrency, isThisYear, isThisMonth } from '../../utils';
 import { ACTIVE_STAGES } from '../../constants';
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const TEAL  = '#3DBBA0';
-const GOLD  = '#C8922A';
-const BLUE  = '#7B8FDE';
-const AMBER = '#E8924A';
+// Literal mid-tones of the earth palette — SVG fill attributes cannot read
+// CSS variables, and these need to hold on both paper and ink.
+const TEAL  = '#B06A38'; // terracotta (kept the old names to avoid churn)
+const GOLD  = '#B08A3C'; // ochre
+const BLUE  = '#5D7C96'; // slate
+const AMBER = '#9C7C54'; // tan
 
-const STAGE_PIE_COLORS = [TEAL, GOLD, BLUE, AMBER, '#A370DB', '#E06B6B', '#5BC4B4', '#C4C45B'];
+const STAGE_PIE_COLORS = [TEAL, GOLD, BLUE, AMBER, '#8B6789', '#A8564A', '#6A9C8C', '#55875F'];
 
 // ─── Stat Card ─────────────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, color }) {
@@ -22,9 +24,9 @@ function StatCard({ label, value, sub, color }) {
       background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)',
       padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 4
     }}>
-      <div style={{ fontSize: 12, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || 'var(--ink)', lineHeight: 1.15 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{sub}</div>}
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.12em', fontWeight: 500 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--display)', fontSize: 28, fontWeight: 400, color: color || 'var(--ink)', lineHeight: 1.15 }}>{value}</div>
+      {sub && <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{sub}</div>}
     </div>
   );
 }
@@ -33,7 +35,7 @@ function StatCard({ label, value, sub, color }) {
 function ChartTooltip({ active, payload, label, format }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '8px 12px', fontSize: 12 }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '8px 12px', fontSize: 12.5 }}>
       <div style={{ color: 'var(--ink-3)', marginBottom: 4 }}>{label}</div>
       {payload.map((p, i) => (
         <div key={i} style={{ color: p.color || 'var(--ink)', fontWeight: 600 }}>
@@ -54,19 +56,39 @@ export default function Performance() {
     const thisYearSett = settled.filter(l => isThisYear(l.settlementDate));
     const thisMonSett  = settled.filter(l => isThisMonth(l.settlementDate));
 
+    const submitted     = loans.filter(l => l.submissionDate);
+    const thisYearSubs  = submitted.filter(l => isThisYear(l.submissionDate));
+    const thisMonSubs   = submitted.filter(l => isThisMonth(l.submissionDate));
+    const subVolYTD     = thisYearSubs.reduce((s, l) => s + (Number(l.value) || 0), 0);
+    const subVolMTD     = thisMonSubs.reduce((s, l) => s + (Number(l.value) || 0), 0);
+
     const commYTD  = thisYearSett.reduce((s, l) => s + (Number(l.comms) || 0), 0);
     const commMTD  = thisMonSett.reduce((s, l)  => s + (Number(l.comms) || 0), 0);
     const commPaid = loans.filter(l => l.datePaid).reduce((s, l) => s + (Number(l.comms) || 0), 0);
     const volYTD   = thisYearSett.reduce((s, l) => s + (Number(l.value) || 0), 0);
     const pipeline = active.reduce((s, l) => s + (Number(l.value) || 0), 0);
 
-    return { commYTD, commMTD, commPaid, volYTD, pipeline, settledCount: thisYearSett.length, activeCount: active.length };
+    return {
+      commYTD, commMTD, commPaid, volYTD, pipeline,
+      settledCount: thisYearSett.length, activeCount: active.length,
+      subVolYTD, subVolMTD, subCountYTD: thisYearSubs.length, subCountMTD: thisMonSubs.length,
+    };
   }, [loans]);
 
   // Monthly settlements bar chart
   const monthlyData = useMemo(() => {
-    const buckets = Array.from({ length: 12 }, (_, i) => ({ month: MONTH_NAMES[i], settlements: 0, volume: 0, commission: 0 }));
+    const buckets = Array.from({ length: 12 }, (_, i) => ({
+      month: MONTH_NAMES[i], settlements: 0, volume: 0, commission: 0,
+      submissions: 0, subVolume: 0,
+    }));
     const year = new Date().getFullYear();
+    loans.filter(l => l.submissionDate).forEach(l => {
+      const d = new Date(l.submissionDate);
+      if (d.getFullYear() === year) {
+        buckets[d.getMonth()].submissions += 1;
+        buckets[d.getMonth()].subVolume   += Number(l.value) || 0;
+      }
+    });
     loans.filter(l => l.stage === 'Settled' && l.settlementDate).forEach(l => {
       const d = new Date(l.settlementDate);
       if (d.getFullYear() === year) {
@@ -114,7 +136,7 @@ export default function Performance() {
 
   if (loans.length === 0) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--ink-3)', fontSize: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--ink-3)', fontSize: 13 }}>
         No loan data yet — add loans to see performance metrics.
       </div>
     );
@@ -124,6 +146,8 @@ export default function Performance() {
     <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* KPI Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 12 }}>
+        <StatCard label="Submitted YTD"     value={formatCurrency(stats.subVolYTD, true)} sub={`${stats.subCountYTD} loans submitted`} color={TEAL}/>
+        <StatCard label="Submitted MTD"     value={formatCurrency(stats.subVolMTD, true)} sub={`${stats.subCountMTD} this month`}      color={TEAL}/>
         <StatCard label="Commission YTD"    value={formatCurrency(stats.commYTD, true)}   color={TEAL}/>
         <StatCard label="Commission MTD"    value={formatCurrency(stats.commMTD, true)}   color={TEAL}/>
         <StatCard label="Commission Paid"   value={formatCurrency(stats.commPaid, true)}  color={GOLD}/>
@@ -143,6 +167,7 @@ export default function Performance() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--ink-3)' }} axisLine={false} tickLine={false}/>
               <YAxis tick={{ fontSize: 11, fill: 'var(--ink-3)' }} axisLine={false} tickLine={false} allowDecimals={false}/>
               <Tooltip content={<ChartTooltip/>}/>
+              <Bar dataKey="submissions" name="Submissions" fill={GOLD} radius={[3, 3, 0, 0]}/>
               <Bar dataKey="settlements" name="Settlements" fill={TEAL} radius={[3, 3, 0, 0]}/>
             </BarChart>
           </ResponsiveContainer>
