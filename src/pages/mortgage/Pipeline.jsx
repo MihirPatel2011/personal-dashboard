@@ -21,11 +21,30 @@ import { C, mono, card, labelSm } from '../../compass/tokens';
 
 // Compass's clients table: every column can shrink, long values ellipsis, so
 // the table always fits its card rather than scrolling sideways.
-const ROW_GRID = {
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0,0.45fr) minmax(0,1.5fr) minmax(0,0.7fr) minmax(0,0.8fr) minmax(0,0.9fr) minmax(0,0.9fr) minmax(0,1.5fr)',
-  gap: 10,
-  alignItems: 'start',
+// The header and every row are separate grid containers, so content-based
+// track sizing (fit-content/max-content) would let them size independently and
+// fall out of alignment. Widths are measured once from the data instead and
+// handed to every grid, so the lender column is as wide as the widest name
+// actually on screen — and all the rows still line up.
+const px = (chars, perChar, pad, min, max) =>
+  `${Math.min(max, Math.max(min, Math.round(chars * perChar + pad)))}px`;
+
+const rowGrid = (loans) => {
+  const longest = (get) => loans.reduce((n, l) => Math.max(n, String(get(l) || '').length), 0);
+  return {
+    display: 'grid',
+    gridTemplateColumns: [
+      px(Math.max(longest(l => l.ref), 3), 6.6, 10, 44, 96),      // ref — mono
+      'minmax(0,1.1fr)',                                          // client · referrer
+      px(7, 6.6, 10, 56, 74),                                     // loan — "$1.2M" compact
+      px(Math.max(longest(l => l.lender), 4), 7.1, 12, 58, 150),  // lender
+      'minmax(0,0.8fr)',                                          // stage
+      'minmax(0,0.85fr)',                                         // key date + actions
+      'minmax(0,2.4fr)',                                          // tasks
+    ].join(' '),
+    gap: 10,
+    alignItems: 'start',
+  };
 };
 const CELL = { minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
 
@@ -716,6 +735,8 @@ export default function Pipeline() {
   const valueByStatus = s => sumOf(activeLoans.filter(l => l.status === s));
   // What the current filter is actually worth, and what is on screen after search.
   const shownValue = sumOf(filtered);
+  // Column widths follow the data currently listed.
+  const ROW_GRID = rowGrid(filtered);
   const pipelineVal   = activeLoans
     .filter(l => ACTIVE_STAGES.includes(l.stage))
     .reduce((s, l) => s + (Number(l.value) || 0), 0);
@@ -910,8 +931,9 @@ export default function Pipeline() {
                     </div>
                   </div>
 
-                  <div style={{ fontFamily: mono, fontSize: 12.5, ...CELL }}>
-                    {l.value ? formatCurrency(Number(l.value)) : '—'}
+                  <div style={{ fontFamily: mono, fontSize: 12.5, ...CELL }}
+                       title={l.value ? formatCurrency(Number(l.value)) : ''}>
+                    {l.value ? formatCurrency(Number(l.value), true) : '—'}
                   </div>
 
                   <div style={{ fontSize: 12.5, color: l.lender ? C.ink : C.dim, ...CELL }} title={l.lender || ''}>
