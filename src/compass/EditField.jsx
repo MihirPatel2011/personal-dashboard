@@ -65,22 +65,26 @@ export default function EditField({
   placeholder = '—',
   fontSize = 13,
   style,
+  format,
 }) {
-  const [local, setLocal] = useState(value ?? '')
-  const [focused, setFocused] = useState(false)
-
-  // Adjust during render rather than in an effect: while the field is not being
-  // edited it mirrors the stored value, but a value arriving mid-edit must not
-  // yank what the user is typing out from under them.
-  const [lastValue, setLastValue] = useState(value)
-  if (!focused && value !== lastValue) {
-    setLastValue(value)
-    setLocal(value ?? '')
-  }
+  // `draft` is null whenever the field is at rest, so the resting value always
+  // mirrors the stored one — no syncing needed. Editing money used to mean
+  // typing into a formatted string ("$1,150,000"), which appended rather than
+  // replaced and committed nonsense; the draft holds the raw value instead.
+  const [draft, setDraft] = useState(null)
+  const editing = draft !== null
+  const shown = editing
+    ? draft
+    : (value === '' || value === null || value === undefined
+        ? ''
+        : (format ? format(value) : value))
 
   const commit = () => {
-    setFocused(false)
-    const next = type === 'number' ? Number(String(local).replace(/[^0-9.-]/g, '')) || 0 : local
+    if (draft === null) return
+    const next = type === 'number'
+      ? Number(String(draft).replace(/[^0-9.-]/g, '')) || 0
+      : draft
+    setDraft(null)
     if (next !== value) onCommit(next)
   }
 
@@ -89,20 +93,27 @@ export default function EditField({
       {label ? <span style={labelSm}>{label}</span> : null}
       <input
         type={type === 'number' ? 'text' : type}
-        value={local}
+        value={shown}
         placeholder={placeholder}
-        onChange={(e) => setLocal(e.target.value)}
-        onFocus={() => setFocused(true)}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={(e) => {
+          setDraft(value === null || value === undefined ? '' : String(value))
+          // Typing should replace the figure, not land in the middle of it.
+          requestAnimationFrame(() => e.target.select?.())
+        }}
         onBlur={commit}
-        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+          if (e.key === 'Escape') { setDraft(null); e.currentTarget.blur() }
+        }}
         style={{
           width: '100%',
           fontSize,
           padding: '4px 6px',
           margin: '-4px -6px',
           borderRadius: 6,
-          border: `1px solid ${focused ? C.field : 'transparent'}`,
-          background: focused ? C.cardTint : 'transparent',
+          border: `1px solid ${editing ? C.field : 'transparent'}`,
+          background: editing ? C.cardTint : 'transparent',
           color: C.ink,
         }}
       />

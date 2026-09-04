@@ -571,8 +571,9 @@ function BalanceSheet({ assets, liabs, totalAssets, totalLiabs, addRow, updateRo
 
           <div style={{ flex: '0 0 108px', display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
             <EditField
-              value={r._node === 'assets' ? money(r.value) : `-${money(r.value)}`}
+              value={r.value}
               type="number"
+              format={v => (r._node === 'assets' ? money(v) : `-${money(v)}`)}
               placeholder="$0"
               fontSize={13}
               style={{ width: '100%' }}

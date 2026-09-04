@@ -230,8 +230,9 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
           <div className="field-grid">
             <EditField label="File ref" value={loan.ref} placeholder="e.g. 2026-014"
                        onCommit={v => onUpdate({ ref: v })}/>
-            <EditField label="Value" value={loan.value ? formatCurrency(Number(loan.value)) : ''}
-                       type="number" placeholder="$0"
+            <EditField label="Value" value={Number(loan.value) || 0}
+                       type="number" format={v => (v ? formatCurrency(v) : '')}
+                       placeholder="$0"
                        onCommit={v => onUpdate({ value: v })}/>
             <SelectField label="Lender" value={loan.lender} options={lenders} placeholder="Pick a lender"
                          onCommit={v => onUpdate({ lender: v })}/>
