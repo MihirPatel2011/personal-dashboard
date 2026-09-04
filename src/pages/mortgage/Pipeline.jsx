@@ -23,9 +23,9 @@ import { C, mono, card, labelSm } from '../../compass/tokens';
 // the table always fits its card rather than scrolling sideways.
 const ROW_GRID = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(0,0.5fr) minmax(0,1.6fr) minmax(0,0.75fr) minmax(0,0.85fr) minmax(0,0.95fr) minmax(0,0.95fr) minmax(0,0.6fr)',
+  gridTemplateColumns: 'minmax(0,0.45fr) minmax(0,1.5fr) minmax(0,0.7fr) minmax(0,0.8fr) minmax(0,0.9fr) minmax(0,0.9fr) minmax(0,1.5fr)',
   gap: 10,
-  alignItems: 'center',
+  alignItems: 'start',
 };
 const CELL = { minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
 
@@ -196,11 +196,20 @@ function LoanForm({ loan, clients, lenders, stages, statuses, onSave, onClose })
 // ─── Loan Panel ───────────────────────────────────────────────────────────────
 // Sits beside the table rather than sliding over it, so the file you picked
 // stays in view next to the rest of the pipeline.
-function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDelete, onDuplicate, onClose, onUpdate }) {
+function LoanModal({ loan, clientName, lenders, stages, statuses, onEdit, onDelete, onDuplicate, onClose, onUpdate }) {
   const [tab, setTab] = useState('details');
+
+  // Escape closes it, like every other dialog in the app.
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   if (!loan) return null;
   return (
-      <aside className="detail-panel">
+      <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal file-modal" style={{ maxWidth: 860 }}>
         <div className="drawer-head">
           <div>
             <h2>{clientName || 'Unknown Client'}</h2>
@@ -266,105 +275,63 @@ function LoanPanel({ loan, clientName, lenders, stages, statuses, onEdit, onDele
           <button className="btn" onClick={onDuplicate}><Copy size={14}/> Duplicate</button>
           <button className="btn primary" onClick={onEdit}><Edit3 size={14}/> Edit</button>
         </div>
-      </aside>
+      </div>
+      </div>
   );
 }
 
 // ─── Row tasks ────────────────────────────────────────────────────────────────
 // A file's tasks live in its own row, so they travel with it as the table
 // re-sorts rather than sitting in a fixed panel somewhere else.
-function RowTaskToggle({ open, count, onToggle }) {
-  return (
-    <div {...clickable(onToggle, open ? 'Hide tasks' : 'Show tasks')}
-         style={{
-           display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-           padding: '4px 9px', borderRadius: 99,
-           background: open ? 'var(--accent-dim)' : 'var(--surface-3)',
-           color: open ? 'var(--accent)' : (count ? 'var(--ink-2)' : 'var(--ink-3)'),
-           fontFamily: mono, fontSize: 10, letterSpacing: '.06em', whiteSpace: 'nowrap',
-         }}>
-      {count ? `${count} open` : 'Add'}
-      <span style={{ fontSize: 9 }}>{open ? '▴' : '▾'}</span>
-    </div>
-  );
-}
-
-function RowTasks({ clientId, clientName }) {
-  const { crmTasks, addCrmTask, updateCrmTask, deleteCrmTask } = useData();
+function RowChecklist({ clientId }) {
+  const { crmTasks, addCrmTask, updateCrmTask } = useData();
   const [title, setTitle] = useState('');
-  const [due, setDue] = useState('');
 
-  const mine = crmTasks
-    .filter(t => t.clientId === clientId)
+  // Only what still needs doing. Ticking something off clears it from the
+  // row; it stays on the file, visible in the popup.
+  const open = crmTasks
+    .filter(t => t.clientId === clientId && !['Done', 'Cancelled'].includes(t.status))
     .sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
 
   const add = async () => {
     const t = title.trim();
     if (!t) return;
     if (!clientId) { toast.error('Link this loan to a client first.'); return; }
+    setTitle('');
     try {
-      await addCrmTask({ title: t, clientId, type: '', priority: 'Medium', status: 'To Do', dueDate: due || '', notes: '' });
-      setTitle(''); setDue('');
+      await addCrmTask({ title: t, clientId, type: '', priority: 'Medium', status: 'To Do', dueDate: '', notes: '' });
     } catch { toast.error('Failed to add task.'); }
   };
 
+  const complete = (t) =>
+    updateCrmTask(t.id, { status: 'Done' }).catch(() => toast.error('Failed.'));
+
   return (
-    <div style={{
-      border: `1px solid ${C.line}`, borderRadius: 'var(--r)',
-      background: 'var(--surface-2)', padding: '10px 12px',
-      display: 'flex', flexDirection: 'column', gap: 8,
-    }}>
-      <div style={{ ...labelSm, fontSize: 9 }}>
-        Tasks{clientName ? ` · ${clientName}` : ''}
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+      {open.map(t => (
+        <div key={t.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <div {...clickable(() => complete(t), `Complete ${t.title}`)}
+               style={{
+                 width: 14, height: 14, flex: '0 0 14px', marginTop: 2, borderRadius: 4,
+                 cursor: 'pointer', border: '1.5px solid var(--border-strong)', background: 'transparent',
+               }}/>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 12, lineHeight: 1.4, color: 'var(--ink)' }}>
+            {t.title}
+          </span>
+        </div>
+      ))}
 
-      {mine.map(t => {
-        const done = ['Done', 'Cancelled'].includes(t.status);
-        return (
-          <div key={t.id} style={{ display: 'flex', gap: 9, alignItems: 'center' }}>
-            <div {...clickable(
-                   () => updateCrmTask(t.id, { status: done ? 'To Do' : 'Done' }).catch(() => toast.error('Failed.')),
-                   done ? 'Mark as not done' : 'Mark as done')}
-                 style={{
-                   width: 15, height: 15, flex: '0 0 15px', borderRadius: 4, cursor: 'pointer',
-                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                   fontSize: 10, color: 'var(--bg)',
-                   border: `1.5px solid ${done ? 'var(--accent)' : 'var(--border-strong)'}`,
-                   background: done ? 'var(--accent)' : 'transparent',
-                 }}>
-              {done ? '✓' : ''}
-            </div>
-            <span style={{
-              flex: 1, minWidth: 0, fontSize: 12.5,
-              color: done ? 'var(--ink-3)' : 'var(--ink)',
-              textDecoration: done ? 'line-through' : 'none',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {t.title}
-            </span>
-            {t.dueDate && (
-              <span style={{ fontFamily: mono, fontSize: 10, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
-                {fmtDate(t.dueDate)}
-              </span>
-            )}
-            <XDel size={14} onClick={() => deleteCrmTask(t.id).catch(() => toast.error('Failed.'))}/>
-          </div>
-        );
-      })}
-
-      {!mine.length && (
-        <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>Nothing on this file yet.</div>
-      )}
-
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <input value={title} onChange={e => setTitle(e.target.value)}
-               onKeyDown={e => e.key === 'Enter' && add()}
-               placeholder="Add a task…"
-               style={{ ...panelInput, flex: '1 1 150px', padding: '7px 10px', fontSize: 12 }}/>
-        <input type="date" value={due} onChange={e => setDue(e.target.value)}
-               style={{ ...panelInput, flex: '0 1 125px', padding: '6px 9px', fontSize: 11.5 }}/>
-        <button className="btn accent sm" onClick={add}>Add</button>
-      </div>
+      <input
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') add(); }}
+        onBlur={add}
+        placeholder={open.length ? 'Another task…' : 'Add a task…'}
+        style={{
+          width: '100%', minWidth: 0, padding: '3px 0', border: 'none',
+          borderBottom: '1px dashed var(--border-2)', borderRadius: 0,
+          background: 'transparent', color: 'var(--ink)', fontSize: 12,
+        }}/>
     </div>
   );
 }
@@ -467,9 +434,13 @@ function ClientTasks({ clientId, clientName }) {
   const [title, setTitle] = useState('');
   const [due, setDue] = useState('');
 
-  const mine = crmTasks
-    .filter(t => t.clientId === clientId)
-    .sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
+  // The row shows only outstanding work; here is the whole history, done
+  // ones last so completed tasks remain findable after they leave the row.
+  const all = crmTasks.filter(t => t.clientId === clientId);
+  const isDone = t => ['Done', 'Cancelled'].includes(t.status);
+  const mine = [...all].sort((a, b) =>
+    (isDone(a) - isDone(b)) || (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
+  const doneCount = all.filter(isDone).length;
 
   const add = async () => {
     const t = title.trim();
@@ -496,6 +467,9 @@ function ClientTasks({ clientId, clientName }) {
     <div>
       <div className="section-label" style={{ marginBottom: 10 }}>
         Tasks {clientName ? `for ${clientName}` : 'for this client'}
+        {doneCount > 0 && (
+          <span style={{ color: 'var(--ink-4)', marginLeft: 8 }}>{doneCount} completed</span>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -670,7 +644,7 @@ function StageSelector({ loan, stages, open, onOpen, onClose, onSelect }) {
 
 // ─── Pipeline Page ────────────────────────────────────────────────────────────
 export default function Pipeline() {
-  const { loans, clients, crmTasks, addLoan, updateLoan, deleteLoan, addNote, mortgageSettings } = useData();
+  const { loans, clients, addLoan, updateLoan, deleteLoan, addNote, mortgageSettings } = useData();
 
   const activeLenders  = mortgageSettings?.lenders  || LENDERS;
   const activeStages   = mortgageSettings?.stages   || LOAN_STAGES;
@@ -688,7 +662,6 @@ export default function Pipeline() {
   const [viewLoan,        setViewLoan]         = useState(null);
   const [delLoan,         setDelLoan]          = useState(null);
   const [showNoteForm,    setShowNoteForm]      = useState(false);
-  const [openTasksFor,    setOpenTasksFor]      = useState(null); // loan id with its task strip open
 
   // Close stage popover on outside click
   useEffect(() => {
@@ -703,8 +676,6 @@ export default function Pipeline() {
   const clientMap = Object.fromEntries(clients.map(c => [c.id, c.name]));
   // Table, panel, search and confirm dialogs all name a file the same way.
   const loanName = l => (l && (clientMap[l.clientId] || l.clientObj)) || 'Unknown';
-  const openTaskCount = clientId =>
-    clientId ? crmTasks.filter(t => t.clientId === clientId && !['Done', 'Cancelled'].includes(t.status)).length : 0;
 
   // Keep the drawer in sync with live Firebase data (compliance edits update in place)
   const liveViewLoan = viewLoan ? loans.find(x => x.id === viewLoan.id) || null : null;
@@ -886,9 +857,8 @@ export default function Pipeline() {
         </div>
       </div>
 
-      {/* ── Table + detail panel, side by side ── */}
-      <div className="crm-body split-view" style={{ padding: '16px 28px 28px' }}>
-        <div style={{ minWidth: 0 }}>
+      {/* ── Table ── */}
+      <div className="crm-body" style={{ padding: '16px 28px 28px' }}>
         {filtered.length === 0 ? (
           <EmptyState
             emoji={showSettled ? '🏡' : '🏠'}
@@ -914,16 +884,14 @@ export default function Pipeline() {
 
             {filtered.map(l => {
               const name = loanName(l);
-              const selected = viewLoan?.id === l.id;
               return (
-                <div key={l.id}>
                 <div
+                  key={l.id}
                   {...clickable(() => setViewLoan(l), `Open ${name}`)}
                   style={{
                     ...ROW_GRID, padding: '12px 16px', cursor: 'pointer',
-                    borderBottom: openTasksFor === l.id ? 'none' : `1px solid ${C.line}`,
-                    background: selected ? 'var(--surface-2)' : 'var(--surface)',
-                    boxShadow: `inset 2px 0 0 ${selected ? C.accent : 'transparent'}`,
+                    borderBottom: `1px solid ${C.line}`,
+                    background: 'var(--surface)',
                   }}
                 >
                   <div style={{ fontFamily: mono, fontSize: 11.5, color: l.ref ? C.ink : 'var(--ink-4)', ...CELL }} title={l.ref || 'No ref'}>
@@ -950,7 +918,9 @@ export default function Pipeline() {
                     {l.lender || '—'}
                   </div>
 
-                  <div style={{ minWidth: 0 }} onClick={e => e.stopPropagation()}>
+                  <div style={{ minWidth: 0 }}
+                       onClick={e => e.stopPropagation()}
+                       onKeyDown={e => e.stopPropagation()}>
                     <StageSelector
                       loan={l}
                       stages={activeStages}
@@ -961,7 +931,7 @@ export default function Pipeline() {
                     />
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, minWidth: 0 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1 }}>
                       <span style={{ fontSize: 12.5, color: C.ink, ...CELL }}>
                         {l.settlementDate ? fmtDate(l.settlementDate) : '—'}
@@ -976,60 +946,35 @@ export default function Pipeline() {
                     </div>
                   </div>
 
-                  {/* Tasks for this file, in the row itself */}
-                  <div style={{ minWidth: 0 }} onClick={e => e.stopPropagation()}>
-                    <RowTaskToggle
-                      open={openTasksFor === l.id}
-                      count={openTaskCount(l.clientId)}
-                      onToggle={() => setOpenTasksFor(openTasksFor === l.id ? null : l.id)}
-                    />
+                  {/* The checklist lives in the row and grows with it. */}
+                  <div style={{ minWidth: 0 }}
+                       onClick={e => e.stopPropagation()}
+                       onKeyDown={e => e.stopPropagation()}>
+                    <RowChecklist clientId={l.clientId}/>
                   </div>
-                </div>
-
-                {openTasksFor === l.id && (
-                  <div onClick={e => e.stopPropagation()}
-                       style={{
-                         padding: '4px 16px 14px 16px',
-                         borderBottom: `1px solid ${C.line}`,
-                         background: selected ? 'var(--surface-2)' : 'var(--surface)',
-                         boxShadow: `inset 2px 0 0 ${selected ? C.accent : 'transparent'}`,
-                       }}>
-                    <RowTasks clientId={l.clientId} clientName={name}/>
-                  </div>
-                )}
                 </div>
               );
             })}
           </section>
         )}
-        </div>
-
-        {liveViewLoan ? (
-          <LoanPanel
-            loan={liveViewLoan}
-            clientName={loanName(liveViewLoan)}
-            lenders={activeLenders}
-            stages={activeStages}
-            statuses={activeStatuses}
-            onEdit={() => { setEditLoan(liveViewLoan); setShowForm(true); }}
-            onDelete={() => setDelLoan(liveViewLoan)}
-            onDuplicate={() => handleDuplicate(liveViewLoan)}
-            onClose={() => setViewLoan(null)}
-            onUpdate={data => updateLoan(liveViewLoan.id, data).catch(() => toast.error('Failed to save.'))}
-          />
-        ) : (
-          <aside className="detail-panel empty">
-            <div className="drawer-body">
-              <h2 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 24, margin: 0 }}>No file selected</h2>
-              <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.6 }}>
-                Pick a loan on the left to see its details, compliance and tasks here.
-              </div>
-            </div>
-          </aside>
-        )}
       </div>
 
       {/* ── Modals ── */}
+      {liveViewLoan && (
+        <LoanModal
+          loan={liveViewLoan}
+          clientName={loanName(liveViewLoan)}
+          lenders={activeLenders}
+          stages={activeStages}
+          statuses={activeStatuses}
+          onEdit={() => { setEditLoan(liveViewLoan); setViewLoan(null); setShowForm(true); }}
+          onDelete={() => setDelLoan(liveViewLoan)}
+          onDuplicate={() => handleDuplicate(liveViewLoan)}
+          onClose={() => setViewLoan(null)}
+          onUpdate={data => updateLoan(liveViewLoan.id, data).catch(() => toast.error('Failed to save.'))}
+        />
+      )}
+
       {showForm && (
         <LoanForm loan={editLoan} clients={clients} lenders={activeLenders}
           stages={activeStages} statuses={activeStatuses}

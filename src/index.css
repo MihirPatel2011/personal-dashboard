@@ -1529,3 +1529,13 @@ button[style*="borderRadius: 6px"]:hover {
   white-space: nowrap;
 }
 .status-tab.active .tab-value { color: var(--accent); }
+
+/* The file popup: taller than a form dialog, since it carries tabs,
+   compliance, the conversation log and tasks. */
+.modal.file-modal {
+  max-height: 88vh;
+}
+.modal.file-modal .drawer-body {
+  max-height: 62vh;
+  overflow-y: auto;
+}
